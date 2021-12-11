@@ -2,6 +2,8 @@
 import configparser
 import telebot
 import logging
+import requests
+import datetime
 
 from TBotClass import TBotClass
 
@@ -28,6 +30,7 @@ def TBot():
             if message.json['from']['id'] != int(config['MAIN']['chat_id']):
                bot.send_message(message.chat.id, "I know nothing. Go away!")
             else:
+                print(TB._get_exchange())
                 TB.replace(bot, message)
         except Exception as ex:
             logging.exception(f'Exception: {ex}')
@@ -38,4 +41,5 @@ if __name__ == '__main__':
     logging.basicConfig(filename='run.log',
                         level=logging.INFO,
                         format='%(asctime)s - %(levelname)s - %(message)s')
+    start = datetime.datetime.now()
     TBot()
