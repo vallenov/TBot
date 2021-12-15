@@ -7,7 +7,7 @@ import configparser
 
 class TBotClass:
     def __init__(self):
-        self._get_config()
+        self.__get_config()
 
     def replace(self, message) -> None:
         '''
@@ -19,24 +19,23 @@ class TBotClass:
         :return:
         '''
         if message.content_type == 'text':
-            if message.text.lower() == 'qwe':
-                return f"Maybe, you meant 'qwerty'?"
+            if message.text.lower() == 'help':
+                return 'Hello! My name is DevInfoBot\nMy functions ->\n' + self.__dict_to_str(self.__get_help(False))
+                #return f" "
             elif message.text.lower() == 'ex':
-                exchange = self._get_exchange()
-                exchange_str = ''
-                for ex in exchange.keys():
-                    exchange_str += f'{ex} = {exchange[ex]}\n'
-                return exchange_str
+                return self.__dict_to_str(self._get_exchange())
             elif message.text.lower() == 'weather':
-                weather = self._get_weather()
-                weather_str = ''
-                for we in weather.keys():
-                    weather_str += f'{we}: {weather[we]}\n'
-                return weather_str
+                return self.__dict_to_str(self._get_weather())
             else:
                 return "I do not understand"
 
-    def _get_config(self):
+    def __dict_to_str(self, di: dict) -> str:
+        fin_str = ''
+        for d in di.keys():
+            fin_str += f'{d} = {di[d]}\n'
+        return fin_str
+
+    def __get_config(self):
         self.config = configparser.ConfigParser()
         self.config.read('TBot.ini', encoding='windows-1251')
 
@@ -49,7 +48,7 @@ class TBotClass:
         :return resp: string like {'USD': '73,6059', 'EUR':'83,1158'}
         '''
         ex = ['USD', 'EUR']
-        soup = BeautifulSoup(requests.get(self.config['MAIN']['exchange_url']).text, 'lxml')
+        soup = BeautifulSoup(requests.get(self.config['URL']['exchange_url']).text, 'lxml')
         parse = soup.find_all('tr')
         resp = {}
         for item in parse[1:]:
@@ -76,10 +75,7 @@ class TBotClass:
         :return resp: dict like {'Сегодня': '10°/15°', 'ср 12': '11°/18°'}
         '''
 
-        res = requests.get(self.config['MAIN']['weather_url']).text
-        with open('res.html', 'w', encoding="utf-8") as file:
-            file.write(res)
-        soup = BeautifulSoup(requests.get(self.config['MAIN']['weather_url']).text, 'lxml')
+        soup = BeautifulSoup(requests.get(self.config['URL']['weather_url']).text, 'lxml')
         parse = soup.find_all('div', class_='DetailsSummary--DetailsSummary--2HluQ DetailsSummary--fadeOnOpen--vFCc_')
         resp = {}
         for i in parse:
@@ -89,3 +85,15 @@ class TBotClass:
             span = list(map(lambda x: x.text, span))
             resp[h2.text] = ''.join(span[:-1])
         return resp
+
+    def __get_help(self, dev: bool) -> dict:
+        docs_str = {}
+        if dev:
+            docs = list(filter(lambda x: '__' not in x and x.startswith('_'), dir(self)))
+            for doc in docs:
+                if str(eval(f'self.{doc}.__doc__')) is not None:
+                    docs_str[doc] = str(eval(f'self.{doc}.__doc__')).split('\n')[1].strip()
+        else:
+            docs_str['ex'] = 'Получить курс доллара и евро'
+            docs_str['weather'] = 'Получить прогноз погоды'
+        return docs_str
