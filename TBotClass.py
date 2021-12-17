@@ -9,7 +9,7 @@ class TBotClass:
     def __init__(self):
         self.__get_config()
 
-    def replace(self, message) -> None:
+    def replace(self, message) -> str:
         '''
         Send result message to chat
 
@@ -31,9 +31,21 @@ class TBotClass:
 
     def __dict_to_str(self, di: dict) -> str:
         fin_str = ''
-        for d in di.keys():
-            fin_str += f'{d} = {di[d]}\n'
+        for key, value in di.items():
+            fin_str += f'{key} = {value}\n'
         return fin_str
+
+    def __get_help(self, dev: bool) -> dict:
+        docs_str = {}
+        if dev:
+            docs = list(filter(lambda x: '__' not in x and x.startswith('_'), dir(self)))
+            for doc in docs:
+                if str(eval(f'self.{doc}.__doc__')) is not None:
+                    docs_str[doc] = str(eval(f'self.{doc}.__doc__')).split('\n')[1].strip()
+        else:
+            docs_str['ex'] = 'Получить курс доллара и евро'
+            docs_str['weather'] = 'Получить прогноз погоды'
+        return docs_str
 
     def __get_config(self):
         self.config = configparser.ConfigParser()
@@ -85,15 +97,3 @@ class TBotClass:
             span = list(map(lambda x: x.text, span))
             resp[h2.text] = ''.join(span[:-1])
         return resp
-
-    def __get_help(self, dev: bool) -> dict:
-        docs_str = {}
-        if dev:
-            docs = list(filter(lambda x: '__' not in x and x.startswith('_'), dir(self)))
-            for doc in docs:
-                if str(eval(f'self.{doc}.__doc__')) is not None:
-                    docs_str[doc] = str(eval(f'self.{doc}.__doc__')).split('\n')[1].strip()
-        else:
-            docs_str['ex'] = 'Получить курс доллара и евро'
-            docs_str['weather'] = 'Получить прогноз погоды'
-        return docs_str
