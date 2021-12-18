@@ -4,6 +4,7 @@ import random
 import requests
 from bs4 import BeautifulSoup
 import configparser
+import re
 
 class TBotClass:
     def __init__(self):
@@ -21,18 +22,19 @@ class TBotClass:
         if message.content_type == 'text':
             if message.text.lower() == 'help':
                 return 'Hello! My name is DevInfoBot\nMy functions ->\n' + self.__dict_to_str(self.__get_help(False))
-                #return f" "
             elif message.text.lower() == 'ex':
                 return self.__dict_to_str(self._get_exchange())
             elif message.text.lower() == 'weather':
                 return self.__dict_to_str(self._get_weather())
+            elif message.text.lower() == 'quote':
+                return self.__dict_to_str(self._get_quote(), '\n')
             else:
                 return "I do not understand"
 
-    def __dict_to_str(self, di: dict) -> str:
+    def __dict_to_str(self, di: dict, delimiter: str = ' = ') -> str:
         fin_str = ''
         for key, value in di.items():
-            fin_str += f'{key} = {value}\n'
+            fin_str += f'{key}{delimiter}{value}\n'
         return fin_str
 
     def __get_help(self, dev: bool) -> dict:
@@ -97,3 +99,22 @@ class TBotClass:
             span = list(map(lambda x: x.text, span))
             resp[h2.text] = ''.join(span[:-1])
         return resp
+
+    def _get_quote(self) -> dict:
+        '''
+        Get quote from internet
+
+        :param:
+
+        :return resp: dict like {1: 'quote1', 2: 'quote2'}
+        '''
+
+        soup = BeautifulSoup(requests.get(self.config['URL']['quote_url']).text, 'lxml')
+        quotes = soup.find_all('div', class_='quote')
+        resp = {}
+        for quote in quotes:
+            author = quote.find('a')
+            text = quote.find('div', class_='quote_name')
+            resp[text.text] = author.text
+        random_key = random.choice(list(resp.keys()))
+        return {random_key: resp[random_key]}

@@ -15,7 +15,7 @@ def TBot():
     config.read('TBot.ini', encoding='windows-1251')
     token = config['MAIN']['token']
     bot = telebot.TeleBot(token)
-    TB = TBotClass()
+    tb = TBotClass()
 
     @bot.message_handler(commands=['start'])
     def start_message(message):
@@ -29,7 +29,7 @@ def TBot():
             if message.json['from']['id'] != int(config['MAIN']['chat_id']):
                bot.send_message(message.chat.id, "I know nothing. Go away!")
             else:
-                bot.send_message(message.chat.id, TB.replace(message))
+                bot.send_message(message.chat.id, tb.replace(message))
         except Exception as ex:
             logging.exception(f'Exception: {ex}')
 
