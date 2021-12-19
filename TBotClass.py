@@ -3,19 +3,17 @@ import requests
 from bs4 import BeautifulSoup
 import configparser
 
+
 class TBotClass:
     def __init__(self):
         self.__get_config()
 
     def replace(self, message) -> str:
-        '''
+        """
         Send result message to chat
-
-        :param bot: object TeleBot()
         :param message: message from user
-
-        :return:
-        '''
+        :return: replace string
+        """
         if message.content_type == 'text':
             if message.text.lower() == 'help':
                 return 'Hello! My name is DevInfoBot\nMy functions ->\n' + self.__dict_to_str(self.__get_help(False))
@@ -39,12 +37,12 @@ class TBotClass:
 
     @staticmethod
     def _site_to_lxml(url: str) -> BeautifulSoup:
-        '''
+        """
         Get site and convert it to the lxml
 
         :param url: https://site.com/
         :return: BeautifulSoup object
-        '''
+        """
         return BeautifulSoup(requests.get(url).text, 'lxml')
 
     def __get_help(self, dev: bool) -> dict:
@@ -66,11 +64,11 @@ class TBotClass:
         self.config.read('TBot.ini', encoding='windows-1251')
 
     def _get_exchange(self) -> dict:
-        '''
+        """
         Get exchange from internet
         :param:
         :return: string like {'USD': '73,6059', 'EUR':'83,1158'}
-        '''
+        """
 
         ex = ['USD', 'EUR']
         soup = TBotClass._site_to_lxml(self.config['URL']['exchange_url'])
@@ -92,11 +90,11 @@ class TBotClass:
         return resp
 
     def _get_weather(self) -> dict:
-        '''
+        """
         Get weather from internet
         :param:
         :return: dict like {'Сегодня': '10°/15°', 'ср 12': '11°/18°'}
-        '''
+        """
 
         soup = TBotClass._site_to_lxml(self.config['URL']['weather_url'])
         parse = soup.find_all('div', class_='DetailsSummary--DetailsSummary--2HluQ DetailsSummary--fadeOnOpen--vFCc_')
@@ -110,11 +108,11 @@ class TBotClass:
         return resp
 
     def _get_quote(self) -> dict:
-        '''
+        """
         Get quote from internet
         :param:
         :return: dict like {'quote1': 'author1', 'quote2: 'author2'}
-        '''
+        """
 
         soup = TBotClass._site_to_lxml(self.config['URL']['quote_url'])
         quotes = soup.find_all('div', class_='quote')
@@ -126,12 +124,12 @@ class TBotClass:
         random_key = random.choice(list(resp.keys()))
         return {random_key: resp[random_key]}
 
-    def _get_wish(self) -> dict:
-        '''
+    def _get_wish(self) -> str:
+        """
         Get wish from internet
         :param:
         :return: wish string
-        '''
+        """
 
         soup = TBotClass._site_to_lxml(self.config['URL']['wish_url'])
         wishes = soup.find_all('ol')
