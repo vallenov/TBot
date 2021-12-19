@@ -1,10 +1,7 @@
-import os
-import string
 import random
 import requests
 from bs4 import BeautifulSoup
 import configparser
-import re
 
 class TBotClass:
     def __init__(self):
@@ -47,6 +44,7 @@ class TBotClass:
         else:
             docs_str['ex'] = 'Получить курс доллара и евро'
             docs_str['weather'] = 'Получить прогноз погоды'
+            docs_str['quote'] = 'Получить цитату'
         return docs_str
 
     def __get_config(self):
