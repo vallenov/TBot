@@ -25,6 +25,8 @@ class TBotClass:
                 return self.__dict_to_str(self._get_weather())
             elif message.text.lower() == 'quote':
                 return self.__dict_to_str(self._get_quote(), '\n')
+            elif message.text.lower() == 'wish':
+                return self._get_wish()
             else:
                 return "I do not understand"
 
@@ -45,6 +47,7 @@ class TBotClass:
             docs_str['ex'] = 'Получить курс доллара и евро'
             docs_str['weather'] = 'Получить прогноз погоды'
             docs_str['quote'] = 'Получить цитату'
+            docs_str['wish'] = 'Получить пожелание на день'
         return docs_str
 
     def __get_config(self):
@@ -104,7 +107,7 @@ class TBotClass:
 
         :param:
 
-        :return resp: dict like {1: 'quote1', 2: 'quote2'}
+        :return resp: dict like {'quote1': 'author1', 'quote2: 'author2'}
         '''
 
         soup = BeautifulSoup(requests.get(self.config['URL']['quote_url']).text, 'lxml')
@@ -116,3 +119,17 @@ class TBotClass:
             resp[text.text] = author.text
         random_key = random.choice(list(resp.keys()))
         return {random_key: resp[random_key]}
+
+    def _get_wish(self) -> dict:
+        '''
+        Get wish from internet
+
+        :param:
+
+        :return: wish string
+        '''
+
+        soup = BeautifulSoup(requests.get(self.config['URL']['wish_url']).text, 'lxml')
+        wishes = soup.find_all('ol')
+        wish_list = wishes[0].find_all('li')
+        return random.choice(wish_list).text
