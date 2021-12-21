@@ -15,16 +15,23 @@ class TBotClass:
         :return: replace string
         """
         if message.content_type == 'text':
-            if message.text.lower() == 'help':
+            form_text = message.text.lower().strip()
+            if form_text == 'help':
                 return 'Hello! My name is DevInfoBot\nMy functions ->\n' + self.__dict_to_str(self.__get_help(False))
-            elif message.text.lower() == 'ex':
+            elif form_text == 'ex':
                 return self.__dict_to_str(self._get_exchange())
-            elif message.text.lower() == 'weather':
+            elif form_text == 'weather':
                 return self.__dict_to_str(self._get_weather())
-            elif message.text.lower() == 'quote':
+            elif form_text == 'quote':
                 return self.__dict_to_str(self._get_quote(), '\n')
-            elif message.text.lower() == 'wish':
+            elif form_text == 'wish':
                 return self._get_wish()
+            elif form_text.startswith('news'):
+                text_split = form_text.split()
+                if len(text_split) > 1:
+                    return self.__dict_to_str(self._get_news(int(text_split[1])), '\n')
+                else:
+                    return self.__dict_to_str(self._get_news(), '\n')
             else:
                 return "I do not understand"
 
@@ -57,6 +64,7 @@ class TBotClass:
             docs_str['weather'] = 'Получить прогноз погоды'
             docs_str['quote'] = 'Получить цитату'
             docs_str['wish'] = 'Получить пожелание на день'
+            docs_str['news'] = 'Получить последние новости (после news можно указать число новостей)'
         return docs_str
 
     def __get_config(self):
@@ -135,3 +143,23 @@ class TBotClass:
         wishes = soup.find_all('ol')
         wish_list = wishes[0].find_all('li')
         return random.choice(wish_list).text
+
+    def _get_news(self, count: int = 5) -> dict:
+        """
+        Get news from internet
+        :param:
+        :return: wish string
+        """
+
+        soup = TBotClass._site_to_lxml(self.config['URL']['news_url'])
+        news = soup.find_all('div', class_='cell-list__item-info')
+        resp = {}
+        for n in news:
+            time = n.find('span', class_='elem-info__date')
+            text = n.find('span', class_='share')
+            if time and text:
+                resp[time.text] = text.get('data-title')
+            if len(resp) == count:
+                break
+        return resp
+
