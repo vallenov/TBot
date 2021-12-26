@@ -59,6 +59,8 @@ class TBotClass:
         except Exception as _ex:
             logging.exception(f'Exception in {__name__}:\n{_ex}')
             return None
+        else:
+            logging.info(f'Get successful ({url})')
         return soup
 
     def __get_help(self, dev: bool) -> dict:

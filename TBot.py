@@ -38,9 +38,7 @@ def TBot():
         '''
         Save file
 
-        :param downloaded_file: info about file
-        :param file_type: audio, voice, photo etc
-        :param file_extention: .mp3, .jpg etc
+        :param message: input message
 
         :return:
         '''
