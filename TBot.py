@@ -11,6 +11,7 @@ import random
 from TBotClass import TBotClass
 
 def TBot():
+    INFINITI = 1000000
     config = configparser.ConfigParser()
     config.read('TBot.ini', encoding='windows-1251')
     token = config['MAIN']['token']
@@ -80,7 +81,7 @@ def TBot():
             name += random.choice(simbols)
         return name
 
-    bot.infinity_polling()
+    bot.infinity_polling(timeout=INFINITI)
 
 if __name__ == '__main__':
     logging.basicConfig(filename='run.log',
