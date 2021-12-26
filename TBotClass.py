@@ -120,9 +120,12 @@ class TBotClass:
         :return: dict like {'Сегодня': '10°/15°', 'ср 12': '11°/18°'}
         """
 
-        soup = TBotClass._site_to_lxml(self.config['URL']['weather_url'])
-        parse = soup.find_all('div', class_='DetailsSummary--DetailsSummary--2HluQ DetailsSummary--fadeOnOpen--vFCc_')
         resp = {}
+        soup = TBotClass._site_to_lxml(self.config['URL']['weather_url'])
+        if soup is None:
+            resp['res'] = 'ERROR'
+            return resp
+        parse = soup.find_all('div', class_='DetailsSummary--DetailsSummary--2HluQ DetailsSummary--fadeOnOpen--vFCc_')
         for i in parse:
             h2 = i.find('h2')
             div = i.find('div')
@@ -139,9 +142,12 @@ class TBotClass:
         :return: dict like {'quote1': 'author1', 'quote2: 'author2'}
         """
 
-        soup = TBotClass._site_to_lxml(self.config['URL']['quote_url'])
-        quotes = soup.find_all('div', class_='quote')
         resp = {}
+        soup = TBotClass._site_to_lxml(self.config['URL']['quote_url'])
+        if soup is None:
+            resp['res'] = 'ERROR'
+            return resp
+        quotes = soup.find_all('div', class_='quote')
         for quote in quotes:
             author = quote.find('a')
             text = quote.find('div', class_='quote_name')
@@ -157,6 +163,8 @@ class TBotClass:
         """
 
         soup = TBotClass._site_to_lxml(self.config['URL']['wish_url'])
+        if soup is None:
+            return 'Something is wrong!'
         wishes = soup.find_all('ol')
         wish_list = wishes[0].find_all('li')
         return random.choice(wish_list).text
@@ -168,9 +176,12 @@ class TBotClass:
         :return: wish string
         """
 
-        soup = TBotClass._site_to_lxml(self.config['URL']['news_url'])
-        news = soup.find_all('div', class_='cell-list__item-info')
         resp = {}
+        soup = TBotClass._site_to_lxml(self.config['URL']['news_url'])
+        if soup is None:
+            resp['res'] = 'ERROR'
+            return resp
+        news = soup.find_all('div', class_='cell-list__item-info')
         for n in news:
             time = n.find('span', class_='elem-info__date')
             text = n.find('span', class_='share')
