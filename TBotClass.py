@@ -2,7 +2,7 @@ import random
 import requests
 from bs4 import BeautifulSoup
 import configparser
-
+import logging
 
 class TBotClass:
     def __init__(self):
@@ -38,19 +38,28 @@ class TBotClass:
     @staticmethod
     def __dict_to_str(di: dict, delimiter: str = ' = ') -> str:
         fin_str = ''
+        if di.get('res').upper() == 'ERROR':
+            return 'Something is wrong!'
         for key, value in di.items():
+            if key.lower() == 'res':
+                continue
             fin_str += f'{key}{delimiter}{value}\n'
         return fin_str
 
     @staticmethod
-    def _site_to_lxml(url: str) -> BeautifulSoup:
+    def _site_to_lxml(url: str) -> BeautifulSoup or None:
         """
         Get site and convert it to the lxml
 
         :param url: https://site.com/
         :return: BeautifulSoup object
         """
-        return BeautifulSoup(requests.get(url).text, 'lxml')
+        try:
+            soup = BeautifulSoup(requests.get(url).text, 'lxml')
+        except Exception as _ex:
+            logging.exception(f'Exception in {__name__}:\n{_ex}')
+            return None
+        return soup
 
     def __get_help(self, dev: bool) -> dict:
         docs_str = {}
@@ -65,6 +74,7 @@ class TBotClass:
             docs_str['quote'] = 'Получить цитату'
             docs_str['wish'] = 'Получить пожелание на день'
             docs_str['news'] = 'Получить последние новости (после news можно указать число новостей)'
+        docs_str['res'] = 'OK'
         return docs_str
 
     def __get_config(self):
@@ -79,9 +89,12 @@ class TBotClass:
         """
 
         ex = ['USD', 'EUR']
-        soup = TBotClass._site_to_lxml(self.config['URL']['exchange_url'])
-        parse = soup.find_all('tr')
         resp = {}
+        soup = TBotClass._site_to_lxml(self.config['URL']['exchange_url'])
+        if soup is None:
+            resp['res'] = 'ERROR'
+            return resp
+        parse = soup.find_all('tr')
         for item in parse[1:]:
             inf = item.find_all('td')
             if inf[1].text not in ex: continue
@@ -95,6 +108,7 @@ class TBotClass:
             tmp['exchange'] = inf[4].text
             '''
             resp[inf[1].text] = inf[4].text
+        resp['res'] = 'OK'
         return resp
 
     def _get_weather(self) -> dict:
@@ -113,6 +127,7 @@ class TBotClass:
             span = div.find_all('span')
             span = list(map(lambda x: x.text, span))
             resp[h2.text] = ''.join(span[:-1])
+        resp['res'] = 'OK'
         return resp
 
     def _get_quote(self) -> dict:
@@ -130,7 +145,7 @@ class TBotClass:
             text = quote.find('div', class_='quote_name')
             resp[text.text] = author.text
         random_key = random.choice(list(resp.keys()))
-        return {random_key: resp[random_key]}
+        return {'res': 'OK', random_key: resp[random_key]}
 
     def _get_wish(self) -> str:
         """
@@ -161,5 +176,6 @@ class TBotClass:
                 resp[time.text] = text.get('data-title')
             if len(resp) == count:
                 break
+        resp['res'] = 'OK'
         return resp
 
