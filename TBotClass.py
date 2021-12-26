@@ -1,12 +1,18 @@
 import random
+import traceback
+
 import requests
 from bs4 import BeautifulSoup
 import configparser
 import logging
+import traceback
 
 class TBotClass:
     def __init__(self):
         self.__get_config()
+
+    def __del__(self):
+        logging.error(f'Traceback: {traceback.format_exc()}')
 
     def replace(self, message) -> str:
         """
