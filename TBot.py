@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import configparser
+import json
 import time
 import traceback
 
@@ -14,6 +15,33 @@ import random
 import urllib3.exceptions
 
 from TBotClass import TBotClass
+
+telebot.apihelper.RETRY_ON_ERROR = 0
+
+# telebot.apihelper.RETRY_ENGINE = 1
+# telebot.apihelper.CUSTOM_REQUEST_SENDER
+
+MAX_TRY = 15
+
+def custom_request_sender(method, request_url, params=None, files=None,
+                          timeout=(None, None), proxies=None) -> str:
+    headers = {'Connection': 'close'}
+    s = requests.Session()
+    current_try = 0
+    while current_try < MAX_TRY:
+        current_try += 1
+        try:
+            resp = s.request(method=method, url=request_url, params=params, headers=headers, files=files,
+                            timeout=timeout, proxies=proxies)
+        except requests.exceptions.ConnectionError as rec:
+            logging.exception(f'Request exception: {rec}')
+        except Exception as e:
+            logging.exception(f'Custom request exception: {e}')
+        else:
+            if resp:
+                s.close()
+                return resp
+    logging.error(f'MAX_TRY exceeded')
 
 
 def TBot():
@@ -36,9 +64,6 @@ def TBot():
                 bot.send_message(message.chat.id, "I know nothing. Go away!")
             else:
                 bot.send_message(message.chat.id, tb.replace(message))
-        except requests.exceptions.ConnectionError as rec:
-            logging.exception(f'Exception: {rec}')
-            time.sleep(1)
         except ConnectionResetError as cre:
             logging.exception(f'ConnectionResetError exception: {cre}')
         except urllib3.exceptions.ProtocolError as uep:
@@ -106,4 +131,5 @@ if __name__ == '__main__':
                         level=logging.INFO,
                         format='%(asctime)s - %(levelname)s - %(message)s')
     start = datetime.datetime.now()
+    telebot.apihelper.CUSTOM_REQUEST_SENDER = custom_request_sender
     TBot()
