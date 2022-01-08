@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 import configparser
+import time
+import traceback
+
 import telebot
 import logging
 import requests
@@ -8,10 +11,12 @@ import os
 import string
 import random
 
+import urllib3.exceptions
+
 from TBotClass import TBotClass
 
+
 def TBot():
-    INFINITI = 1000000
     config = configparser.ConfigParser()
     config.read('TBot.ini', encoding='windows-1251')
     token = config['MAIN']['token']
@@ -28,11 +33,22 @@ def TBot():
         try:
             _save_file(message)
             if message.json['from']['id'] != int(config['MAIN']['chat_id']):
-               bot.send_message(message.chat.id, "I know nothing. Go away!")
+                bot.send_message(message.chat.id, "I know nothing. Go away!")
             else:
                 bot.send_message(message.chat.id, tb.replace(message))
+        except requests.exceptions.ConnectionError as rec:
+            logging.exception(f'Exception: {rec}')
+            time.sleep(1)
+        except ConnectionResetError as cre:
+            logging.exception(f'ConnectionResetError exception: {cre}')
+        except urllib3.exceptions.ProtocolError as uep:
+            logging.exception(f'urllib3 exception: {uep}')
+        except telebot.apihelper.ApiException as taa:
+            logging.exception(f'Telegram exception: {taa}')
         except Exception as ex:
-            logging.exception(f'Exception: {ex}')
+            logging.exception(f'Unrecognized exception: {ex}')
+        else:
+            logging.info('Send successful')
 
     def _save_file(message) -> None:
         '''
@@ -79,7 +95,11 @@ def TBot():
             name += random.choice(simbols)
         return name
 
-    bot.infinity_polling(timeout=INFINITI)
+    try:
+        bot.infinity_polling()
+    except Exception as ex:
+        logging.exception(f'Infinity polling exception: {ex}\n{traceback.format_exc()}')
+
 
 if __name__ == '__main__':
     logging.basicConfig(filename='run.log',
