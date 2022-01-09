@@ -64,16 +64,21 @@ def TBot():
     @bot.message_handler(func=lambda message: True, content_types=['audio', 'photo', 'voice', 'video', 'document',
                                                                    'text', 'location', 'contact', 'sticker'])
     def send_text(message):
-        try:
-            _save_file(message)
-            if message.json['from']['id'] != int(config['MAIN']['chat_id']):
-                bot.send_message(message.chat.id, "I know nothing. Go away!")
+        current_try = 0
+        while current_try < MAX_TRY:
+            current_try += 1
+            try:
+                _save_file(message)
+                if message.json['from']['id'] != int(config['MAIN']['chat_id']):
+                    bot.send_message(message.chat.id, "I know nothing. Go away!")
+                else:
+                    bot.send_message(message.chat.id, tb.replace(message))
+            except Exception as ex:
+                logging.exception(f'Unrecognized exception: {ex}')
+                time.sleep(0.1)
             else:
-                bot.send_message(message.chat.id, tb.replace(message))
-        except Exception as ex:
-            logging.exception(f'Unrecognized exception: {ex}')
-        else:
-            logging.info('Send successful')
+                logging.info('Send successful')
+                break
 
     def _save_file(message) -> None:
         '''
