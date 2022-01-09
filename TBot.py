@@ -35,6 +35,12 @@ def custom_request_sender(method, request_url, params=None, files=None,
                             timeout=timeout, proxies=proxies)
         except requests.exceptions.ConnectionError as rec:
             logging.exception(f'Request exception: {rec}')
+        except ConnectionResetError as cre:
+            logging.exception(f'ConnectionResetError exception: {cre}')
+        except urllib3.exceptions.ProtocolError as uep:
+            logging.exception(f'urllib3 exception: {uep}')
+        except telebot.apihelper.ApiException as taa:
+            logging.exception(f'Telegram exception: {taa}')
         except Exception as e:
             logging.exception(f'Custom request exception: {e}')
         else:
@@ -64,12 +70,6 @@ def TBot():
                 bot.send_message(message.chat.id, "I know nothing. Go away!")
             else:
                 bot.send_message(message.chat.id, tb.replace(message))
-        except ConnectionResetError as cre:
-            logging.exception(f'ConnectionResetError exception: {cre}')
-        except urllib3.exceptions.ProtocolError as uep:
-            logging.exception(f'urllib3 exception: {uep}')
-        except telebot.apihelper.ApiException as taa:
-            logging.exception(f'Telegram exception: {taa}')
         except Exception as ex:
             logging.exception(f'Unrecognized exception: {ex}')
         else:
