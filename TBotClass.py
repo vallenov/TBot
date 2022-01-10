@@ -7,6 +7,7 @@ import configparser
 import logging
 import traceback
 
+
 class TBotClass:
     def __init__(self):
         self.__get_config()
@@ -95,7 +96,6 @@ class TBotClass:
         :param:
         :return: string like {'USD': '73,6059', 'EUR':'83,1158'}
         """
-
         ex = ['USD', 'EUR']
         resp = {}
         soup = TBotClass._site_to_lxml(self.config['URL']['exchange_url'])
@@ -125,7 +125,6 @@ class TBotClass:
         :param:
         :return: dict like {'Сегодня': '10°/15°', 'ср 12': '11°/18°'}
         """
-
         resp = {}
         soup = TBotClass._site_to_lxml(self.config['URL']['weather_url'])
         if soup is None:
@@ -147,7 +146,6 @@ class TBotClass:
         :param:
         :return: dict like {'quote1': 'author1', 'quote2: 'author2'}
         """
-
         resp = {}
         soup = TBotClass._site_to_lxml(self.config['URL']['quote_url'])
         if soup is None:
@@ -167,7 +165,6 @@ class TBotClass:
         :param:
         :return: wish string
         """
-
         soup = TBotClass._site_to_lxml(self.config['URL']['wish_url'])
         if soup is None:
             return 'Something is wrong!'
@@ -181,7 +178,6 @@ class TBotClass:
         :param:
         :return: wish string
         """
-
         resp = {}
         soup = TBotClass._site_to_lxml(self.config['URL']['news_url'])
         if soup is None:

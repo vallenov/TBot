@@ -23,6 +23,7 @@ telebot.apihelper.RETRY_ON_ERROR = 0
 
 MAX_TRY = 15
 
+
 def custom_request_sender(method, request_url, params=None, files=None,
                           timeout=(None, None), proxies=None) -> str:
     headers = {'Connection': 'close'}
@@ -80,13 +81,11 @@ def TBot():
                 break
 
     def _save_file(message) -> None:
-        '''
+        """
         Save file
-
         :param message: input message
-
         :return:
-        '''
+        """
         file_info = None
         file_extention = None
         if message.content_type == 'text':
@@ -111,13 +110,11 @@ def TBot():
             new_file.write(downloaded_file)
 
     def _get_hash_name() -> str:
-        '''
+        """
         Generate hash name
-
         :param:
-
         :return name: name of file
-        '''
+        """
         simbols = string.ascii_lowercase + string.ascii_uppercase
         name = ''
         for _ in range(15):
