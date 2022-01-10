@@ -23,9 +23,7 @@ class TBotClass:
         """
         if message.content_type == 'text':
             form_text = message.text.lower().strip()
-            if form_text == 'help':
-                return 'Hello! My name is DevInfoBot\nMy functions ->\n' + self.__dict_to_str(self.__get_help(False))
-            elif form_text == 'ex':
+            if form_text == 'ex':
                 return self.__dict_to_str(self._get_exchange())
             elif form_text == 'weather':
                 return self.__dict_to_str(self._get_weather())
@@ -40,7 +38,7 @@ class TBotClass:
                 else:
                     return self.__dict_to_str(self._get_news(), '\n')
             else:
-                return "I do not understand"
+                return 'Hello! My name is DevInfoBot\nMy functions ->\n' + self.__dict_to_str(self.__get_help(False))
 
     @staticmethod
     def __dict_to_str(di: dict, delimiter: str = ' = ') -> str:
