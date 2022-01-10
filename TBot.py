@@ -75,7 +75,6 @@ def TBot():
                     bot.send_message(message.chat.id, tb.replace(message))
             except Exception as ex:
                 logging.exception(f'Unrecognized exception: {ex}')
-                time.sleep(0.1)
             else:
                 logging.info('Send successful')
                 break
