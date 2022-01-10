@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 import configparser
-import json
-import time
 import traceback
-
 import telebot
 import logging
 import requests
@@ -14,6 +11,7 @@ import random
 
 import urllib3.exceptions
 
+from requests import Response
 from TBotClass import TBotClass
 
 telebot.apihelper.RETRY_ON_ERROR = 0
@@ -25,7 +23,7 @@ MAX_TRY = 15
 
 
 def custom_request_sender(method, request_url, params=None, files=None,
-                          timeout=(None, None), proxies=None) -> str:
+                          timeout=(None, None), proxies=None) -> Response:
     headers = {'Connection': 'close'}
     s = requests.Session()
     current_try = 0
@@ -33,7 +31,7 @@ def custom_request_sender(method, request_url, params=None, files=None,
         current_try += 1
         try:
             resp = s.request(method=method, url=request_url, params=params, headers=headers, files=files,
-                            timeout=timeout, proxies=proxies)
+                             timeout=timeout, proxies=proxies)
         except requests.exceptions.ConnectionError as rec:
             logging.exception(f'Request exception: {rec}')
         except ConnectionResetError as cre:
@@ -51,7 +49,7 @@ def custom_request_sender(method, request_url, params=None, files=None,
     logging.error(f'MAX_TRY exceeded')
 
 
-def TBot():
+def tbot():
     config = configparser.ConfigParser()
     config.read('TBot.ini', encoding='windows-1251')
     token = config['MAIN']['token']
@@ -74,8 +72,8 @@ def TBot():
                     bot.send_message(message.chat.id, "I know nothing. Go away!")
                 else:
                     bot.send_message(message.chat.id, tb.replace(message))
-            except Exception as ex:
-                logging.exception(f'Unrecognized exception: {ex}')
+            except Exception as _ex:
+                logging.exception(f'Unrecognized exception: {_ex}')
             else:
                 logging.info('Send successful')
                 break
@@ -133,4 +131,4 @@ if __name__ == '__main__':
                         format='%(asctime)s - %(levelname)s - %(message)s')
     start = datetime.datetime.now()
     telebot.apihelper.CUSTOM_REQUEST_SENDER = custom_request_sender
-    TBot()
+    tbot()

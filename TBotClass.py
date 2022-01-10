@@ -1,6 +1,4 @@
 import random
-import traceback
-
 import requests
 from bs4 import BeautifulSoup
 import configparser
@@ -103,7 +101,8 @@ class TBotClass:
         parse = soup.find_all('tr')
         for item in parse[1:]:
             inf = item.find_all('td')
-            if inf[1].text not in ex: continue
+            if inf[1].text not in ex:
+                continue
             '''
             Structure of inf:
             tmp = {}
@@ -191,4 +190,3 @@ class TBotClass:
                 break
         resp['res'] = 'OK'
         return resp
-
