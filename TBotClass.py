@@ -8,10 +8,12 @@ import traceback
 
 class TBotClass:
     def __init__(self):
+        logging.info('TBot is started')
         self.__get_config()
 
     def __del__(self):
         logging.error(f'Traceback: {traceback.format_exc()}')
+        logging.info('TBot is stopped')
 
     def replace(self, message) -> str:
         """
