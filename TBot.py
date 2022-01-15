@@ -8,6 +8,7 @@ import datetime
 import os
 import string
 import random
+import datetime
 
 import urllib3.exceptions
 
@@ -64,14 +65,20 @@ def tbot():
                                                                    'text', 'location', 'contact', 'sticker'])
     def send_text(message):
         current_try = 0
+        _save_file(message)
         while current_try < MAX_TRY:
             current_try += 1
             try:
-                _save_file(message)
-                if message.json['from']['id'] != int(config['MAIN']['chat_id']):
-                    bot.send_message(message.chat.id, "I know nothing. Go away!")
+                trust_ids = []
+                if ',' in config['MAIN']['trust_ids'].split(','):
+                    trust_ids = list(map(lambda x: int(x), config['MAIN']['trust_ids'].split(',')))
                 else:
+                    trust_ids.append(int(config['MAIN']['trust_ids']))
+                if message.json['from']['id'] == int(config['MAIN']['root_id']) \
+                        or message.json['from']['id'] in trust_ids:
                     bot.send_message(message.chat.id, tb.replace(message))
+                else:
+                    bot.send_message(message.chat.id, "I know nothing. Go away!")
             except Exception as _ex:
                 logging.exception(f'Unrecognized exception: {_ex}')
             else:
@@ -86,8 +93,10 @@ def tbot():
         """
         file_info = None
         file_extention = None
+        curdir = os.curdir
         if message.content_type == 'text':
-            return
+            file_extention = '.txt'
+            file_info = message.json
         if message.content_type == 'photo':
             file_extention = '.jpg'
             file_info = bot.get_file(message.photo[-1].file_id)
@@ -100,12 +109,18 @@ def tbot():
         if message.content_type == 'video':
             file_extention = '.mp4'
             file_info = bot.get_file(message.video.file_id)
-        downloaded_file = bot.download_file(file_info.file_path)
-        curdir = os.curdir
         if not os.path.exists(os.path.join(curdir, message.content_type)):
             os.mkdir(os.path.join(curdir, message.content_type))
-        with open(os.path.join(curdir, message.content_type, f'{_get_hash_name()}{file_extention}'), 'wb') as new_file:
-            new_file.write(downloaded_file)
+        if file_extention == '.txt':
+            with open(os.path.join(curdir, message.content_type, f'text{file_extention}'), 'a') as new_file:
+                new_file.write(f'{datetime.datetime.now()} {str(file_info)}\n')
+        else:
+            downloaded_file = bot.download_file(file_info.file_path)
+            with open(os.path.join(curdir,
+                                   message.content_type,
+                                   f'{_get_hash_name()}{file_extention}'),
+                      'wb') as new_file:
+                new_file.write(downloaded_file)
 
     def _get_hash_name() -> str:
         """
