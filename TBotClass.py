@@ -6,7 +6,21 @@ import logging
 import traceback
 
 
+def permission(func):
+    def func(*args, **kwargs):
+        resp = {}
+        if not TBotClass._permission:
+            resp['res'] = "ERROR"
+            return resp
+        res = func(*args, **kwargs)
+        return res
+
+    return func
+
+
 class TBotClass:
+    _permission = False
+
     def __init__(self):
         logging.info('TBot is started')
         self.__get_config()
@@ -44,7 +58,7 @@ class TBotClass:
     def __dict_to_str(di: dict, delimiter: str = ' = ') -> str:
         fin_str = ''
         if di.get('res').upper() == 'ERROR':
-            return 'Something is wrong!'
+            return 'Operation not permitted'
         for key, value in di.items():
             if key.lower() == 'res':
                 continue
@@ -94,8 +108,8 @@ class TBotClass:
         :param:
         :return: string like {'USD': '73,6059', 'EUR':'83,1158'}
         """
-        ex = ['USD', 'EUR']
         resp = {}
+        ex = ['USD', 'EUR']
         soup = TBotClass._site_to_lxml(self.config['URL']['exchange_url'])
         if soup is None:
             resp['res'] = 'ERROR'

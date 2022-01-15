@@ -74,11 +74,13 @@ def tbot():
                     trust_ids = list(map(lambda x: int(x), config['MAIN']['trust_ids'].split(',')))
                 else:
                     trust_ids.append(int(config['MAIN']['trust_ids']))
-                if message.json['from']['id'] == int(config['MAIN']['root_id']) \
-                        or message.json['from']['id'] in trust_ids:
-                    bot.send_message(message.chat.id, tb.replace(message))
-                else:
-                    bot.send_message(message.chat.id, "I know nothing. Go away!")
+                if message.json['from']['id'] == int(config['MAIN']['root_id']):
+                    tb._permission = True
+                elif message.json['from']['id'] in trust_ids:
+                    tb._permission = False
+                bot.send_message(message.chat.id, tb.replace(message))
+                # else:
+                #     bot.send_message(message.chat.id, "I know nothing. Go away!")
             except Exception as _ex:
                 logging.exception(f'Unrecognized exception: {_ex}')
             else:
