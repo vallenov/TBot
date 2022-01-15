@@ -75,12 +75,10 @@ def tbot():
                 else:
                     trust_ids.append(int(config['MAIN']['trust_ids']))
                 if message.json['from']['id'] == int(config['MAIN']['root_id']):
-                    tb._permission = True
+                    TBotClass._permission = True
                 elif message.json['from']['id'] in trust_ids:
-                    tb._permission = False
+                    TBotClass._permission = False
                 bot.send_message(message.chat.id, tb.replace(message))
-                # else:
-                #     bot.send_message(message.chat.id, "I know nothing. Go away!")
             except Exception as _ex:
                 logging.exception(f'Unrecognized exception: {_ex}')
             else:

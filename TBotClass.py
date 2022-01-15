@@ -7,15 +7,15 @@ import traceback
 
 
 def permission(func):
-    def func(*args, **kwargs):
+    def wrap(*args, **kwargs):
         resp = {}
         if not TBotClass._permission:
             resp['res'] = "ERROR"
-            return resp
-        res = func(*args, **kwargs)
+            res = resp
+        else:
+            res = func(*args, **kwargs)
         return res
-
-    return func
+    return wrap
 
 
 class TBotClass:
