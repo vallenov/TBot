@@ -79,13 +79,13 @@ def tbot():
             except Exception as _ex:
                 logging.exception(f'Unrecognized exception: {_ex}')
             else:
-                save_text(replace)
+                save_response(replace)
                 logging.info('Send successful')
                 break
 
-    def save_text(text):
+    def save_response(text):
         curdir = os.curdir
-        file_name = os.path.join(curdir, 'text', TBotClass.get_logfile_name())
+        file_name = os.path.join(curdir, 'text', f'{now_time()[:10]}.txt')
         with open(file_name, 'a') as file:
             text = str(text).replace('\n', '')
             file.write(f"{datetime.datetime.now()} {text}\n")
@@ -119,13 +119,21 @@ def tbot():
             os.mkdir(os.path.join(curdir, message.content_type))
             os.chown(os.path.join(curdir, message.content_type), 1000, 1000)
         if file_extention == '.txt':
-            save_text(file_info)
+            write_type = 'a'
+            file_name = os.path.join(curdir, message.content_type, f'{now_time()[:10]}{file_extention}')
+            downloaded_info = str(file_info).replace('\n', '')
+            downloaded_info = f"{datetime.datetime.now()} {downloaded_info}\n"
         else:
-            downloaded_file = bot.download_file(file_info.file_path)
-            file_name = os.path.join(curdir, message.content_type, f'{_get_hash_name()}{file_extention}')
-            with open(file_name, 'wb') as new_file:
-                new_file.write(downloaded_file)
-            os.chown(file_name, 1000, 1000)
+            write_type = 'wb'
+            file_name = os.path.join(curdir, message.content_type,
+                                     f'{now_time()}{_get_hash_name()}{file_extention}')
+            downloaded_info = bot.download_file(file_info.file_path)
+        with open(file_name, write_type) as new_file:
+            new_file.write(downloaded_info)
+        os.chown(file_name, 1000, 1000)
+
+    def now_time() -> str:
+        return str(datetime.datetime.now()).replace(':', '').replace(' ', '')[:16]
 
     def _get_hash_name() -> str:
         """
