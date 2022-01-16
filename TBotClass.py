@@ -89,7 +89,7 @@ class TBotClass:
         Get filename like: '2022-01-16'
         :return: filename
         """
-        return str(datetime.datetime.now()).replace(':', '').replace(' ', '')[:10]
+        return str(datetime.datetime.now()).replace(':', '').replace(' ', '')[:10] + '.txt'
 
     def __get_help(self, dev: bool) -> dict:
         docs_str = {}

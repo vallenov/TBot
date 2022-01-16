@@ -18,6 +18,7 @@ telebot.apihelper.RETRY_ON_ERROR = 0
 
 MAX_TRY = 15
 
+
 def custom_request_sender(method, request_url, params=None, files=None,
                           timeout=(None, None), proxies=None) -> Response:
     headers = {'Connection': 'close'}
