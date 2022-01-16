@@ -7,10 +7,10 @@ import traceback
 import datetime
 
 
-def permission(func):
+def check_permission(func):
     def wrap(*args, **kwargs):
         resp = {}
-        if not TBotClass._permission:
+        if not TBotClass.permission:
             resp['res'] = "ERROR"
             res = resp
         else:
@@ -20,7 +20,7 @@ def permission(func):
 
 
 class TBotClass:
-    _permission = False
+    permission = False
 
     def __init__(self):
         logging.info('TBot is started')

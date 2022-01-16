@@ -4,7 +4,6 @@ import traceback
 import telebot
 import logging
 import requests
-import datetime
 import os
 import string
 import random
@@ -16,9 +15,6 @@ from requests import Response
 from TBotClass import TBotClass
 
 telebot.apihelper.RETRY_ON_ERROR = 0
-
-# telebot.apihelper.RETRY_ENGINE = 1
-# telebot.apihelper.CUSTOM_REQUEST_SENDER
 
 MAX_TRY = 15
 
