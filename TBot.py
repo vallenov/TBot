@@ -22,7 +22,6 @@ telebot.apihelper.RETRY_ON_ERROR = 0
 
 MAX_TRY = 15
 
-
 def custom_request_sender(method, request_url, params=None, files=None,
                           timeout=(None, None), proxies=None) -> Response:
     headers = {'Connection': 'close'}
@@ -68,6 +67,7 @@ def tbot():
         _save_file(message)
         while current_try < MAX_TRY:
             current_try += 1
+            replace = tb.replace(message)
             try:
                 trust_ids = []
                 if ',' in config['MAIN']['trust_ids'].split(','):
@@ -78,12 +78,19 @@ def tbot():
                     TBotClass._permission = True
                 elif message.json['from']['id'] in trust_ids:
                     TBotClass._permission = False
-                bot.send_message(message.chat.id, tb.replace(message))
+                bot.send_message(message.chat.id, replace)
             except Exception as _ex:
                 logging.exception(f'Unrecognized exception: {_ex}')
             else:
+                save_text(replace)
                 logging.info('Send successful')
                 break
+
+    def save_text(text):
+        curdir = os.curdir
+        with open(os.path.join(curdir, 'text', TBotClass.get_logfile_name()), 'a') as file:
+            text = str(text).replace('\n', '')
+            file.write(f"{datetime.datetime.now()} {text}\n")
 
     def _save_file(message) -> None:
         """
@@ -112,8 +119,7 @@ def tbot():
         if not os.path.exists(os.path.join(curdir, message.content_type)):
             os.mkdir(os.path.join(curdir, message.content_type))
         if file_extention == '.txt':
-            with open(os.path.join(curdir, message.content_type, f'text{file_extention}'), 'a') as new_file:
-                new_file.write(f'{datetime.datetime.now()} {str(file_info)}\n')
+            save_text(file_info)
         else:
             downloaded_file = bot.download_file(file_info.file_path)
             with open(os.path.join(curdir,
