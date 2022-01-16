@@ -85,9 +85,11 @@ def tbot():
 
     def save_text(text):
         curdir = os.curdir
-        with open(os.path.join(curdir, 'text', TBotClass.get_logfile_name()), 'a') as file:
+        file_name = os.path.join(curdir, 'text', TBotClass.get_logfile_name())
+        with open(file_name, 'a') as file:
             text = str(text).replace('\n', '')
             file.write(f"{datetime.datetime.now()} {text}\n")
+        os.chown(file_name, 1000, 1000)
 
     def _save_file(message) -> None:
         """
@@ -115,15 +117,15 @@ def tbot():
             file_info = bot.get_file(message.video.file_id)
         if not os.path.exists(os.path.join(curdir, message.content_type)):
             os.mkdir(os.path.join(curdir, message.content_type))
+            os.chown(os.path.join(curdir, message.content_type), 1000, 1000)
         if file_extention == '.txt':
             save_text(file_info)
         else:
             downloaded_file = bot.download_file(file_info.file_path)
-            with open(os.path.join(curdir,
-                                   message.content_type,
-                                   f'{_get_hash_name()}{file_extention}'),
-                      'wb') as new_file:
+            file_name = os.path.join(curdir, message.content_type, f'{_get_hash_name()}{file_extention}')
+            with open(file_name, 'wb') as new_file:
                 new_file.write(downloaded_file)
+            os.chown(file_name, 1000, 1000)
 
     def _get_hash_name() -> str:
         """
