@@ -61,7 +61,7 @@ def tbot():
                                                                    'text', 'location', 'contact', 'sticker'])
     def send_text(message):
         current_try = 0
-        _save_file(message)
+        save_file(message)
         while current_try < MAX_TRY:
             current_try += 1
             replace = tb.replace(message)
@@ -83,15 +83,20 @@ def tbot():
                 logging.info('Send successful')
                 break
 
-    def save_response(text):
+    def save_response(text: str) -> None:
+        """
+        Save bot response text to the file
+        :param text: text to save
+        :return:
+        """
         curdir = os.curdir
         file_name = os.path.join(curdir, 'text', f'{now_time()[:10]}.txt')
         with open(file_name, 'a') as file:
-            text = str(text).replace('\n', '')
+            text = text.replace('\n', '')
             file.write(f"{datetime.datetime.now()} {text}\n")
         os.chown(file_name, 1000, 1000)
 
-    def _save_file(message) -> None:
+    def save_file(message) -> None:
         """
         Save file
         :param message: input message
