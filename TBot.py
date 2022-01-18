@@ -138,6 +138,9 @@ def tbot():
         os.chown(file_name, 1000, 1000)
 
     def now_time() -> str:
+        """
+        Get nowtime like: 20222-01-18123458
+        """
         return str(datetime.datetime.now()).replace(':', '').replace(' ', '')[:16]
 
     def _get_hash_name() -> str:
