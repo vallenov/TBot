@@ -92,7 +92,7 @@ def tbot():
         curdir = os.curdir
         file_name = os.path.join(curdir, 'text', f'{now_time()[:10]}.txt')
         with open(file_name, 'a') as file:
-            text = text.replace('\n', '')
+            text = text.replace('\n', ' ')
             file.write(f"{datetime.datetime.now()} {text}\n")
         os.chown(file_name, 1000, 1000)
 
@@ -126,7 +126,7 @@ def tbot():
         if file_extention == '.txt':
             write_type = 'a'
             file_name = os.path.join(curdir, message.content_type, f'{now_time()[:10]}{file_extention}')
-            downloaded_info = str(file_info).replace('\n', '')
+            downloaded_info = str(file_info).replace('\n', ' ')
             downloaded_info = f"{datetime.datetime.now()} {downloaded_info}\n"
         else:
             write_type = 'wb'
