@@ -4,10 +4,21 @@ from bs4 import BeautifulSoup
 import configparser
 import logging
 import traceback
-import datetime
+import time
+
+logger = logging.getLogger(__name__)
+handler = logging.FileHandler('run.log')
+handler.setLevel(logging.INFO)
+handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+logger.addHandler(handler)
 
 
 def check_permission(func):
+    """
+    Check permission before execute func
+    :param func: input func
+    :return: wrapped func
+    """
     def wrap(*args, **kwargs):
         resp = {}
         if not TBotClass.permission:
@@ -19,17 +30,28 @@ def check_permission(func):
     return wrap
 
 
+def benchmark(func):
+    def wrap(*args, **kwargs):
+        start = time.time()
+        res = func(*args, **kwargs)
+        duration = time.time() - start
+        logger.info(f'Duration: {duration:.3} sec')
+        return res
+    return wrap
+
+
 class TBotClass:
     permission = False
 
     def __init__(self):
-        logging.info('TBot is started')
+        logger.info('TBotClass init')
         self.__get_config()
 
     def __del__(self):
-        logging.error(f'Traceback: {traceback.format_exc()}')
-        logging.info('TBot is stopped')
+        logger.error(f'Traceback: {traceback.format_exc()}')
+        logger.info('TBotClass deleted')
 
+    @benchmark
     def replace(self, message) -> str:
         """
         Send result message to chat
@@ -77,10 +99,10 @@ class TBotClass:
         try:
             soup = BeautifulSoup(requests.get(url).text, 'lxml')
         except Exception as _ex:
-            logging.exception(f'Exception in {__name__}:\n{_ex}')
+            logger.exception(f'Exception in {__name__}:\n{_ex}')
             return None
         else:
-            logging.info(f'Get successful ({url})')
+            logger.info(f'Get successful ({url})')
         return soup
 
     def __get_help(self, dev: bool) -> dict:

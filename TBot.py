@@ -30,20 +30,20 @@ def custom_request_sender(method, request_url, params=None, files=None,
             resp = s.request(method=method, url=request_url, params=params, headers=headers, files=files,
                              timeout=timeout, proxies=proxies)
         except requests.exceptions.ConnectionError as rec:
-            logging.exception(f'Request exception: {rec}')
+            logger.exception(f'Request exception: {rec}')
         except ConnectionResetError as cre:
-            logging.exception(f'ConnectionResetError exception: {cre}')
+            logger.exception(f'ConnectionResetError exception: {cre}')
         except urllib3.exceptions.ProtocolError as uep:
-            logging.exception(f'urllib3 exception: {uep}')
+            logger.exception(f'urllib3 exception: {uep}')
         except telebot.apihelper.ApiException as taa:
-            logging.exception(f'Telegram exception: {taa}')
+            logger.exception(f'Telegram exception: {taa}')
         except Exception as e:
-            logging.exception(f'Custom request exception: {e}')
+            logger.exception(f'Custom request exception: {e}')
         else:
             if resp:
                 s.close()
                 return resp
-    logging.error(f'MAX_TRY exceeded')
+    logger.error(f'MAX_TRY exceeded')
 
 
 def tbot():
@@ -77,10 +77,10 @@ def tbot():
                     TBotClass._permission = False
                 bot.send_message(message.chat.id, replace)
             except Exception as _ex:
-                logging.exception(f'Unrecognized exception: {_ex}')
+                logger.exception(f'Unrecognized exception: {_ex}')
             else:
                 save_response(replace)
-                logging.info('Send successful')
+                logger.info('Send successful')
                 break
 
     def save_response(text: str) -> None:
@@ -158,13 +158,19 @@ def tbot():
     try:
         bot.infinity_polling()
     except Exception as ex:
-        logging.exception(f'Infinity polling exception: {ex}\n{traceback.format_exc()}')
+        logger.exception(f'Infinity polling exception: {ex}\n{traceback.format_exc()}')
 
 
 if __name__ == '__main__':
-    logging.basicConfig(filename='run.log',
-                        level=logging.INFO,
-                        format='%(asctime)s - %(levelname)s - %(message)s')
-    start = datetime.datetime.now()
+    logging.basicConfig(level=logging.INFO)
+
+    logger = logging.getLogger(__name__)
+    handler = logging.FileHandler('run.log')
+    handler.setLevel(logging.INFO)
+    handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    logger.addHandler(handler)
+
+    logger.info('TBot is started')
+    #start = datetime.datetime.now()
     telebot.apihelper.CUSTOM_REQUEST_SENDER = custom_request_sender
     tbot()
