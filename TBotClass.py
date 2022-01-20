@@ -107,6 +107,12 @@ class TBotClass:
         return soup
 
     def __get_help(self, dev: bool) -> dict:
+        """
+        Get bot function
+        :param dev: change view of help
+        :return: {'func': 'description', ...}
+        """
+        logger.info('get_help')
         docs_str = {}
         if dev:
             docs = list(filter(lambda x: '__' not in x and x.startswith('_'), dir(self)))
