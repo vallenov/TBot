@@ -75,6 +75,8 @@ class TBotClass:
                     return self.__dict_to_str(self._get_news(int(text_split[1])), '\n')
                 else:
                     return self.__dict_to_str(self._get_news(), '\n')
+            elif form_text == 'affirmation':
+                return self._get_affirmation()
             else:
                 return 'Hello! My name is DevInfoBot\nMy functions ->\n' + self.__dict_to_str(self.__get_help(False))
 
@@ -125,6 +127,7 @@ class TBotClass:
             docs_str['quote'] = 'Получить цитату'
             docs_str['wish'] = 'Получить пожелание на день'
             docs_str['news'] = 'Получить последние новости (после news можно указать число новостей)'
+            docs_str['affirmation'] = 'Получить аффирмацию'
         docs_str['res'] = 'OK'
         return docs_str
 
@@ -241,3 +244,25 @@ class TBotClass:
                 break
         resp['res'] = 'OK'
         return resp
+
+    def _get_affirmation(self) -> dict:
+        """
+        Get affirmation from internet
+        :param:
+        :return: affirmation string
+        """
+        logger.info('get_affirmationx')
+        resp = {}
+        soup = TBotClass._site_to_lxml(self.config['URL']['affirmation_url'])
+        if soup is None:
+            resp['res'] = 'ERROR'
+            return resp
+        aff_list = []
+        ul = soup.find_all('ul')
+        for u in ul:
+            li = u.find_all('em')
+            for em in li:
+                if em.text[0].isupper():
+                    aff_list.append(em.text)
+        resp['res'] = 'OK'
+        return random.choice(aff_list)
