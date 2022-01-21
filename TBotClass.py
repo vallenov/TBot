@@ -245,7 +245,7 @@ class TBotClass:
         resp['res'] = 'OK'
         return resp
 
-    def _get_affirmation(self) -> dict:
+    def _get_affirmation(self) -> str:
         """
         Get affirmation from internet
         :param:
