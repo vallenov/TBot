@@ -77,6 +77,8 @@ class TBotClass:
                     return self.__dict_to_str(self._get_news(), '\n')
             elif form_text == 'affirmation':
                 return self.__dict_to_str(self._get_affirmation())
+            elif form_text == 'events':
+                return self.__dict_to_str(self._get_events(), '\n')
             else:
                 return 'Hello! My name is DevInfoBot\nMy functions ->\n' + self.__dict_to_str(self.__get_help(False))
 
@@ -131,6 +133,7 @@ class TBotClass:
             docs_str['wish'] = 'Получить пожелание на день'
             docs_str['news'] = 'Получить последние новости (после news можно указать число новостей)'
             docs_str['affirmation'] = 'Получить аффирмацию'
+            docs_str['events'] = 'Получить мероприятия'
         docs_str['res'] = 'OK'
         return docs_str
 
@@ -273,4 +276,34 @@ class TBotClass:
                     aff_list.append(em.text)
         resp['res'] = 'OK'
         resp[1] = random.choice(aff_list)
+        return resp
+
+    def _get_events(self) -> dict:
+        """
+        Get affirmation from internet
+        :param:
+        :return: affirmation string
+        """
+        logger.info('get_affirmationx')
+        resp = {}
+        soup = TBotClass._site_to_lxml(self.config['URL']['events_url'])
+        if soup is None:
+            resp['res'] = 'ERROR'
+            return resp
+        links = {}
+        div = soup.find_all('div', class_='site-nav-events')
+        raw_a = div[0].find_all('a')
+        for a in raw_a:
+            links[a.text] = a.get('href')
+        events_links = []
+        for name, link in links.items():
+            name = name.replace('\n', '')
+            raw_data = TBotClass._site_to_lxml(link)
+            h2s = raw_data.find_all('h2', class_='post-title')
+            for raw_h2 in h2s:
+                a = raw_h2.find('a')
+                descr = a.text.replace('\n', '')
+                events_links.append(f"{descr}\n{a.get('href')}\n")
+            resp[name] = random.choice(events_links)
+        resp['res'] = 'OK'
         return resp
