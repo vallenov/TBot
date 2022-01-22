@@ -53,34 +53,58 @@ class TBotClass:
         logger.info('TBotClass deleted')
 
     @benchmark
-    def replace(self, message) -> str:
+    def replace(self, message) -> dict:
         """
         Send result message to chat
         :param message: message from user
         :return: replace string
         """
+        resp = {}
+        trust_ids = []
+        if ',' in self.config['MAIN']['trust_ids'].split(','):
+            trust_ids = list(map(lambda x: int(x), self.config['MAIN']['trust_ids'].split(',')))
+        else:
+            trust_ids.append(int(self.config['MAIN']['trust_ids']))
+        if message.json['chat']['id'] == int(self.config['MAIN']['root_id']):
+            TBotClass.permission = True
+        elif message.json['chat']['id'] in trust_ids:
+            TBotClass.permission = False
+        else:
+            resp['status'] = 'ERROR'
+            resp['res'] = 'Permission denied'
+            return resp
         if message.content_type == 'text':
+            resp['status'] = 'OK'
             form_text = message.text.lower().strip()
             if form_text == 'ex':
-                return self.__dict_to_str(self._get_exchange())
+                resp['res'] = self.__dict_to_str(self._get_exchange())
+                return resp
             elif form_text == 'weather':
-                return self.__dict_to_str(self._get_weather())
+                resp['res'] = self.__dict_to_str(self._get_weather())
+                return resp
             elif form_text == 'quote':
-                return self.__dict_to_str(self._get_quote(), '\n')
+                resp['res'] = self.__dict_to_str(self._get_quote(), '\n')
+                return resp
             elif form_text == 'wish':
-                return self.__dict_to_str(self._get_wish())
+                resp['res'] = self.__dict_to_str(self._get_wish())
+                return resp
             elif form_text.startswith('news'):
                 text_split = form_text.split()
                 if len(text_split) > 1:
-                    return self.__dict_to_str(self._get_news(int(text_split[1])), '\n')
+                    resp['res'] = self.__dict_to_str(self._get_news(int(text_split[1])), '\n')
                 else:
-                    return self.__dict_to_str(self._get_news(), '\n')
+                    resp['res'] = self.__dict_to_str(self._get_news(), '\n')
+                return resp
             elif form_text == 'affirmation':
-                return self.__dict_to_str(self._get_affirmation())
+                resp['res'] = self.__dict_to_str(self._get_affirmation())
+                return resp
             elif form_text == 'events':
-                return self.__dict_to_str(self._get_events(), '\n')
+                resp['res'] = self.__dict_to_str(self._get_events(), '\n')
+                return resp
             else:
-                return 'Hello! My name is DevInfoBot\nMy functions ->\n' + self.__dict_to_str(self.__get_help(False))
+                resp['is_help'] = 1
+                resp['res'] = 'Hello! My name is DevInfoBot\nMy functions'
+                return resp
 
     @staticmethod
     def __dict_to_str(di: dict, delimiter: str = ' = ') -> str:

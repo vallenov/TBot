@@ -11,6 +11,8 @@ import datetime
 
 import urllib3.exceptions
 
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+
 from requests import Response
 from TBotClass import TBotClass
 
@@ -53,6 +55,25 @@ def tbot():
     bot = telebot.TeleBot(token)
     tb = TBotClass()
 
+    def gen_markup():
+        markup = InlineKeyboardMarkup()
+        markup.row_width = 1
+        markup.add(InlineKeyboardButton("Exchange", callback_data="ex"),
+                   InlineKeyboardButton("Weather", callback_data="weather"),
+                   InlineKeyboardButton("Quote", callback_data="quote"),
+                   InlineKeyboardButton("Wish", callback_data="wish"),
+                   InlineKeyboardButton("News", callback_data="news"),
+                   InlineKeyboardButton("Affirmation", callback_data="affirmation"),
+                   InlineKeyboardButton("Events", callback_data="events"))
+        return markup
+
+    @bot.callback_query_handler(func=lambda call: True)
+    def callback_query(call):
+        call.message.text = call.data
+        replace = tb.replace(call.message)
+        #bot.answer_callback_query(call.id, replace)
+        bot.send_message(call.message.json['chat']['id'], replace['res'])
+
     @bot.message_handler(commands=['start'])
     def start_message(message):
         bot.send_message(message.chat.id, 'Welcome, my friend!')
@@ -66,20 +87,14 @@ def tbot():
             current_try += 1
             replace = tb.replace(message)
             try:
-                trust_ids = []
-                if ',' in config['MAIN']['trust_ids'].split(','):
-                    trust_ids = list(map(lambda x: int(x), config['MAIN']['trust_ids'].split(',')))
+                if replace.get('is_help', 0):
+                    bot.send_message(message.chat.id, replace['res'], reply_markup=gen_markup())
                 else:
-                    trust_ids.append(int(config['MAIN']['trust_ids']))
-                if message.json['from']['id'] == int(config['MAIN']['root_id']):
-                    TBotClass._permission = True
-                elif message.json['from']['id'] in trust_ids:
-                    TBotClass._permission = False
-                bot.send_message(message.chat.id, replace)
+                    bot.send_message(message.chat.id, replace['res'])
             except Exception as _ex:
                 logger.exception(f'Unrecognized exception: {_ex}')
             else:
-                save_response(replace)
+                save_response(replace['res'])
                 logger.info('Send successful')
                 break
 
