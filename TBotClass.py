@@ -68,7 +68,7 @@ class TBotClass:
             elif form_text == 'quote':
                 return self.__dict_to_str(self._get_quote(), '\n')
             elif form_text == 'wish':
-                return self._get_wish()
+                return self.__dict_to_str(self._get_wish())
             elif form_text.startswith('news'):
                 text_split = form_text.split()
                 if len(text_split) > 1:
@@ -76,7 +76,7 @@ class TBotClass:
                 else:
                     return self.__dict_to_str(self._get_news(), '\n')
             elif form_text == 'affirmation':
-                return self._get_affirmation()
+                return self.__dict_to_str(self._get_affirmation())
             else:
                 return 'Hello! My name is DevInfoBot\nMy functions ->\n' + self.__dict_to_str(self.__get_help(False))
 
@@ -84,11 +84,14 @@ class TBotClass:
     def __dict_to_str(di: dict, delimiter: str = ' = ') -> str:
         fin_str = ''
         if di.get('res').upper() == 'ERROR':
-            return 'Operation not permitted'
+            return 'Something is wrong'
         for key, value in di.items():
-            if key.lower() == 'res':
+            if isinstance(key, int):
+                fin_str += f'{value}\n'
+            elif key.lower() == 'res':
                 continue
-            fin_str += f'{key}{delimiter}{value}\n'
+            else:
+                fin_str += f'{key}{delimiter}{value}\n'
         return fin_str
 
     @staticmethod
@@ -208,19 +211,23 @@ class TBotClass:
         random_key = random.choice(list(resp.keys()))
         return {'res': 'OK', random_key: resp[random_key]}
 
-    def _get_wish(self) -> str:
+    def _get_wish(self) -> dict:
         """
         Get wish from internet
         :param:
         :return: wish string
         """
         logger.info('get_wish')
+        resp = {}
         soup = TBotClass._site_to_lxml(self.config['URL']['wish_url'])
         if soup is None:
-            return 'Something is wrong!'
+            resp['res'] = 'ERROR'
+            return resp
         wishes = soup.find_all('ol')
         wish_list = wishes[0].find_all('li')
-        return random.choice(wish_list).text
+        resp['res'] = 'OK'
+        resp[1] = random.choice(wish_list).text
+        return resp
 
     def _get_news(self, count: int = 5) -> dict:
         """
@@ -236,16 +243,16 @@ class TBotClass:
             return resp
         news = soup.find_all('div', class_='cell-list__item-info')
         for n in news:
-            time = n.find('span', class_='elem-info__date')
+            news_time = n.find('span', class_='elem-info__date')
             text = n.find('span', class_='share')
             if time and text:
-                resp[time.text] = text.get('data-title')
+                resp[news_time.text] = text.get('data-title')
             if len(resp) == count:
                 break
         resp['res'] = 'OK'
         return resp
 
-    def _get_affirmation(self) -> str:
+    def _get_affirmation(self) -> dict:
         """
         Get affirmation from internet
         :param:
@@ -265,4 +272,5 @@ class TBotClass:
                 if em.text[0].isupper():
                     aff_list.append(em.text)
         resp['res'] = 'OK'
-        return random.choice(aff_list)
+        resp[1] = random.choice(aff_list)
+        return resp
