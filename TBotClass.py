@@ -304,9 +304,9 @@ class TBotClass:
 
     def _get_events(self) -> dict:
         """
-        Get affirmation from internet
+        Get events from internet
         :param:
-        :return: affirmation string
+        :return: events digest
         """
         logger.info('get_affirmationx')
         resp = {}
