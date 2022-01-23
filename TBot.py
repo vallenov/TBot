@@ -58,13 +58,13 @@ def tbot():
     def gen_markup():
         markup = InlineKeyboardMarkup()
         markup.row_width = 1
-        markup.add(InlineKeyboardButton("Exchange", callback_data="ex"),
-                   InlineKeyboardButton("Weather", callback_data="weather"),
-                   InlineKeyboardButton("Quote", callback_data="quote"),
-                   InlineKeyboardButton("Wish", callback_data="wish"),
-                   InlineKeyboardButton("News", callback_data="news"),
-                   InlineKeyboardButton("Affirmation", callback_data="affirmation"),
-                   InlineKeyboardButton("Events", callback_data="events"))
+        markup.add(InlineKeyboardButton("💵 Exchange", callback_data="ex"),
+                   InlineKeyboardButton("⛅️Weather", callback_data="weather"),
+                   InlineKeyboardButton("💭 Quote", callback_data="quote"),
+                   InlineKeyboardButton("🤗 Wish", callback_data="wish"),
+                   InlineKeyboardButton("📰 News", callback_data="news"),
+                   InlineKeyboardButton("🧘‍♀️Affirmation", callback_data="affirmation"),
+                   InlineKeyboardButton("🎭 Events", callback_data="events"))
         return markup
 
     @bot.callback_query_handler(func=lambda call: True)
