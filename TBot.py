@@ -73,7 +73,18 @@ def tbot():
         call.message.text = call.data
         replace = tb.replace(call.message)
         #bot.answer_callback_query(call.id, replace)
-        bot.send_message(call.message.json['chat']['id'], replace['res'])
+        current_try = 0
+        save_response(f'{str(call.message.chat)} Callback: {call.message.text}')
+        while current_try < MAX_TRY:
+            current_try += 1
+            try:
+                bot.send_message(call.message.json['chat']['id'], replace['res'])
+            except Exception as _ex:
+                logger.exception(f'Unrecognized exception: {_ex}')
+            else:
+                save_response(replace['res'])
+                logger.info('Send successful')
+                break
 
     @bot.message_handler(commands=['start'])
     def start_message(message):
