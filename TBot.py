@@ -187,5 +187,5 @@ if __name__ == '__main__':
 
     logger.info('TBot is started')
     #start = datetime.datetime.now()
-    telebot.apihelper.CUSTOM_REQUEST_SENDER = custom_request_sender
+    #telebot.apihelper.CUSTOM_REQUEST_SENDER = custom_request_sender
     tbot()
