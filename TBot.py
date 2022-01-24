@@ -3,50 +3,16 @@ import configparser
 import traceback
 import telebot
 import logging
-import requests
 import os
 import string
 import random
 import datetime
 
-import urllib3.exceptions
-
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from requests import Response
 from TBotClass import TBotClass
 
-#telebot.apihelper.RETRY_ON_ERROR = 0
-
 MAX_TRY = 15
-
-
-def custom_request_sender(method, request_url, params=None, files=None,
-                          timeout=(None, None), proxies=None) -> Response:
-    headers = {'Connection': 'close'}
-    s = requests.Session()
-    current_try = 0
-    #raise TypeError('Hm')
-    while current_try < MAX_TRY:
-        current_try += 1
-        try:
-            resp = s.request(method=method, url=request_url, params=params, headers=headers, files=files,
-                             timeout=timeout, proxies=proxies)
-        except requests.exceptions.ConnectionError as rec:
-            logger.exception(f'Request exception: {rec}')
-        except ConnectionResetError as cre:
-            logger.exception(f'ConnectionResetError exception: {cre}')
-        except urllib3.exceptions.ProtocolError as uep:
-            logger.exception(f'urllib3 exception: {uep}')
-        except telebot.apihelper.ApiException as taa:
-            logger.exception(f'Telegram exception: {taa}')
-        except Exception as e:
-            logger.exception(f'Custom request exception: {e}')
-        else:
-            if resp:
-                s.close()
-                return resp
-    logger.error(f'MAX_TRY exceeded')
 
 
 def tbot():
@@ -59,13 +25,13 @@ def tbot():
     def gen_markup():
         markup = InlineKeyboardMarkup()
         markup.row_width = 1
-        markup.add(InlineKeyboardButton("💵 Exchange", callback_data="ex"),
-                   InlineKeyboardButton("⛅️Weather", callback_data="weather"),
-                   InlineKeyboardButton("💭 Quote", callback_data="quote"),
-                   InlineKeyboardButton("🤗 Wish", callback_data="wish"),
-                   InlineKeyboardButton("📰 News", callback_data="news"),
-                   InlineKeyboardButton("🧘‍♀️Affirmation", callback_data="affirmation"),
-                   InlineKeyboardButton("🎭 Events", callback_data="events"))
+        markup.add(InlineKeyboardButton("💵 Exchange/Курс валют", callback_data="ex"),
+                   InlineKeyboardButton("⛅️Weather/Погода", callback_data="weather"),
+                   InlineKeyboardButton("💭 Quote/Цитата", callback_data="quote"),
+                   InlineKeyboardButton("🤗 Wish/Пожелание", callback_data="wish"),
+                   InlineKeyboardButton("📰 News/Новости", callback_data="news"),
+                   InlineKeyboardButton("🧘‍♀️Affirmation/Аффирмация", callback_data="affirmation"),
+                   InlineKeyboardButton("🎭 Events/Мероприятия", callback_data="events"))
         return markup
 
     @bot.callback_query_handler(func=lambda call: True)
@@ -198,6 +164,4 @@ if __name__ == '__main__':
     logger.addHandler(handler)
 
     logger.info('TBot is started')
-    #start = datetime.datetime.now()
-    #telebot.apihelper.CUSTOM_REQUEST_SENDER = custom_request_sender
     tbot()
