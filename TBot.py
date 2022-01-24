@@ -16,7 +16,7 @@ from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from requests import Response
 from TBotClass import TBotClass
 
-telebot.apihelper.RETRY_ON_ERROR = 0
+#telebot.apihelper.RETRY_ON_ERROR = 0
 
 MAX_TRY = 15
 
@@ -26,6 +26,7 @@ def custom_request_sender(method, request_url, params=None, files=None,
     headers = {'Connection': 'close'}
     s = requests.Session()
     current_try = 0
+    #raise TypeError('Hm')
     while current_try < MAX_TRY:
         current_try += 1
         try:
@@ -171,7 +172,7 @@ def tbot():
         return name
 
     try:
-        bot.infinity_polling()
+        bot.infinity_polling(none_stop=True)
     except Exception as ex:
         logger.exception(f'Infinity polling exception: {ex}\n{traceback.format_exc()}')
 
@@ -187,5 +188,5 @@ if __name__ == '__main__':
 
     logger.info('TBot is started')
     #start = datetime.datetime.now()
-    telebot.apihelper.CUSTOM_REQUEST_SENDER = custom_request_sender
+    #telebot.apihelper.CUSTOM_REQUEST_SENDER = custom_request_sender
     tbot()
