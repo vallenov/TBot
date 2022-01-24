@@ -101,6 +101,9 @@ class TBotClass:
             elif form_text == 'events':
                 resp['res'] = self.__dict_to_str(self._get_events(), '\n')
                 return resp
+            elif form_text == 'food':
+                resp['res'] = self.__dict_to_str(self._get_restaurant(), ' ')
+                return resp
             else:
                 resp['is_help'] = 1
                 resp['res'] = 'Hello! My name is DevInfoBot\nMy functions'
@@ -308,7 +311,7 @@ class TBotClass:
         :param:
         :return: events digest
         """
-        logger.info('get_affirmationx')
+        logger.info('get_events')
         resp = {}
         soup = TBotClass._site_to_lxml(self.config['URL']['events_url'])
         if soup is None:
@@ -331,3 +334,43 @@ class TBotClass:
             resp[name] = random.choice(events_links)
         resp['res'] = 'OK'
         return resp
+
+    def _get_restaurant(self) -> dict:
+        """
+        Get restaurant from internet
+        :param:
+        :return: restaurant string
+        """
+        logger.info('get_restaurant')
+        resp = {}
+        soup = TBotClass._site_to_lxml(self.config['URL']['restaurant_url'] + '/msk/catalog/restaurants/all/')
+        if soup is None:
+            resp['res'] = 'ERROR'
+            return resp
+        div_nav_raw = soup.find('div', class_='pagination-wrapper')
+        a_raw = div_nav_raw.find('a')
+        page_count = int(a_raw.get('data-nav-page-count'))
+        rand_page = random.choice(range(1, page_count+1))
+        if rand_page > 1:
+            soup = TBotClass._site_to_lxml(self.config['URL']['restaurant_url']
+                                           + '/msk/catalog/restaurants/all/'
+                                           + f'?page={rand_page}')
+        names = soup.find_all('a', class_='name')
+        restaurant = random.choice(names)
+        soup = TBotClass._site_to_lxml(self.config['URL']['restaurant_url'] + restaurant.get('href'))
+        div_raw = soup.find('div', class_='props one-line-props')
+        final_restaurant = dict()
+        final_restaurant[1] = restaurant.text
+        for d in div_raw:
+            name = d.find('div', class_='name')
+            if name:
+                name = name.text
+            value = d.find('a')
+            if value:
+                value = value.text.strip().replace('\n', '')
+            if name is not None and value is not None:
+                final_restaurant[name] = value
+        final_restaurant[2] = self.config['URL']['restaurant_url'] + restaurant.get('href')
+        final_restaurant['res'] = 'OK'
+        return final_restaurant
+

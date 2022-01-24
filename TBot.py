@@ -31,7 +31,8 @@ def tbot():
                    InlineKeyboardButton("🤗 Wish/Пожелание", callback_data="wish"),
                    InlineKeyboardButton("📰 News/Новости", callback_data="news"),
                    InlineKeyboardButton("🧘‍♀️Affirmation/Аффирмация", callback_data="affirmation"),
-                   InlineKeyboardButton("🎭 Events/Мероприятия", callback_data="events"))
+                   InlineKeyboardButton("🎭 Events/Мероприятия", callback_data="events"),
+                   InlineKeyboardButton("🍲 Food/Еда", callback_data="food"))
         return markup
 
     @bot.callback_query_handler(func=lambda call: True)
