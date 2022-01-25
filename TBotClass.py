@@ -5,6 +5,8 @@ import configparser
 import logging
 import traceback
 import time
+import asyncio
+import aiohttp
 
 logger = logging.getLogger(__name__)
 handler = logging.FileHandler('run.log')
@@ -100,6 +102,9 @@ class TBotClass:
                 return resp
             elif form_text == 'events':
                 resp['res'] = self.__dict_to_str(self._get_events(), '\n')
+                return resp
+            elif form_text == 'aevents':
+                resp['res'] = self.__dict_to_str(asyncio.run(self._async_events()), '\n')
                 return resp
             elif form_text == 'food':
                 resp['res'] = self.__dict_to_str(self._get_restaurant(), ' ')
@@ -304,6 +309,46 @@ class TBotClass:
         resp['res'] = 'OK'
         resp[1] = random.choice(aff_list)
         return resp
+
+    async def __get_url(self, session, url):
+        async with session.get(url) as res:
+            data = await res.text()
+            self.async_url_data.append(data)
+
+    async def _async_events(self):
+        """
+        Get events from internet (async)
+        :param:
+        :return: events digest
+        """
+        self.async_url_data = []
+        tasks = []
+        resp = {}
+        async with aiohttp.ClientSession() as session:
+            tasks.append(asyncio.create_task(self.__get_url(session, self.config['URL']['events_url'])))
+            await asyncio.gather(*tasks)
+            tasks = []
+            for main_site in self.async_url_data:
+                soup = BeautifulSoup(main_site, 'lxml')
+                links = {}
+                div = soup.find_all('div', class_='site-nav-events')
+                raw_a = div[0].find_all('a')
+                for a in raw_a:
+                    links[a.text] = a.get('href')
+                for _, link in links.items():
+                    tasks.append(asyncio.create_task(self.__get_url(session, link)))
+                await asyncio.gather(*tasks)
+                events_links = []
+                for i, raw in enumerate(self.async_url_data):
+                    soup = BeautifulSoup(raw, 'lxml')
+                    h2s = soup.find_all('h2', class_='post-title')
+                    for raw_h2 in h2s:
+                        a = raw_h2.find('a')
+                        descr = a.text.replace('\n', '')
+                        events_links.append(f"{descr}\n{a.get('href')}\n")
+                    resp[i] = random.choice(events_links)
+                resp['res'] = 'OK'
+                return resp
 
     def _get_events(self) -> dict:
         """
