@@ -100,10 +100,10 @@ class TBotClass:
             elif form_text == 'affirmation':
                 resp['res'] = self.__dict_to_str(self._get_affirmation())
                 return resp
+            # elif form_text == 'events':
+            #     resp['res'] = self.__dict_to_str(self._get_events(), '\n')
+            #     return resp
             elif form_text == 'events':
-                resp['res'] = self.__dict_to_str(self._get_events(), '\n')
-                return resp
-            elif form_text == 'aevents':
                 resp['res'] = self.__dict_to_str(asyncio.run(self._async_events()), '\n')
                 return resp
             elif form_text == 'food':
@@ -313,6 +313,10 @@ class TBotClass:
     async def __get_url(self, session, url):
         async with session.get(url) as res:
             data = await res.text()
+            if res.status == 200:
+                logger.info(f'Get successful ({url})')
+            else:
+                logger.error(f'Get unsuccessful ({url})')
             self.async_url_data.append(data)
 
     async def _async_events(self):
@@ -328,27 +332,30 @@ class TBotClass:
             tasks.append(asyncio.create_task(self.__get_url(session, self.config['URL']['events_url'])))
             await asyncio.gather(*tasks)
             tasks = []
-            for main_site in self.async_url_data:
-                soup = BeautifulSoup(main_site, 'lxml')
-                links = {}
-                div = soup.find_all('div', class_='site-nav-events')
-                raw_a = div[0].find_all('a')
-                for a in raw_a:
-                    links[a.text] = a.get('href')
-                for _, link in links.items():
-                    tasks.append(asyncio.create_task(self.__get_url(session, link)))
-                await asyncio.gather(*tasks)
-                events_links = []
-                for i, raw in enumerate(self.async_url_data):
-                    soup = BeautifulSoup(raw, 'lxml')
-                    h2s = soup.find_all('h2', class_='post-title')
+            soup = BeautifulSoup(self.async_url_data.pop(), 'lxml')
+            links = {}
+            div = soup.find_all('div', class_='site-nav-events')
+            raw_a = div[0].find_all('a')
+            for a in raw_a:
+                links[a.text] = a.get('href')
+            for _, link in links.items():
+                tasks.append(asyncio.create_task(self.__get_url(session, link)))
+            await asyncio.gather(*tasks)
+            events_links = []
+            for raw in self.async_url_data:
+                soup_curr = BeautifulSoup(raw, 'lxml')
+                name = soup_curr.find('title').text.split('.')[0]
+                raw_div = soup_curr.find('div', class_='feed-container')
+                article = raw_div.find_all('article', class_='post post-rect')
+                for art in article:
+                    h2s = art.find_all('h2', class_='post-title')
                     for raw_h2 in h2s:
                         a = raw_h2.find('a')
                         descr = a.text.replace('\n', '')
                         events_links.append(f"{descr}\n{a.get('href')}\n")
-                    resp[i] = random.choice(events_links)
-                resp['res'] = 'OK'
-                return resp
+                    resp[name] = random.choice(events_links)
+            resp['res'] = 'OK'
+            return resp
 
     def _get_events(self) -> dict:
         """
