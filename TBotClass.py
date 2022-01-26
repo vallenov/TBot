@@ -310,7 +310,7 @@ class TBotClass:
         resp[1] = random.choice(aff_list)
         return resp
 
-    async def __get_url(self, session, url):
+    async def __get_url(self, session, url) -> None:
         async with session.get(url) as res:
             data = await res.text()
             if res.status == 200:
@@ -319,12 +319,13 @@ class TBotClass:
                 logger.error(f'Get unsuccessful ({url})')
             self.async_url_data.append(data)
 
-    async def _async_events(self):
+    async def _async_events(self) -> dict:
         """
         Get events from internet (async)
         :param:
         :return: events digest
         """
+        logger.info('get_events')
         self.async_url_data = []
         tasks = []
         resp = {}
