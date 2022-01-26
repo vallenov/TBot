@@ -341,8 +341,8 @@ class TBotClass:
             for _, link in links.items():
                 tasks.append(asyncio.create_task(self.__get_url(session, link)))
             await asyncio.gather(*tasks)
-            events_links = []
             for raw in self.async_url_data:
+                events_links = []
                 soup_curr = BeautifulSoup(raw, 'lxml')
                 name = soup_curr.find('title').text.split('.')[0]
                 raw_div = soup_curr.find('div', class_='feed-container')
@@ -353,7 +353,7 @@ class TBotClass:
                         a = raw_h2.find('a')
                         descr = a.text.replace('\n', '')
                         events_links.append(f"{descr}\n{a.get('href')}\n")
-                    resp[name] = random.choice(events_links)
+                resp[name] = random.choice(events_links)
             resp['res'] = 'OK'
             return resp
 
@@ -374,8 +374,8 @@ class TBotClass:
         raw_a = div[0].find_all('a')
         for a in raw_a:
             links[a.text] = a.get('href')
-        events_links = []
         for name, link in links.items():
+            events_links = []
             name = name.replace('\n', '')
             raw_data = TBotClass._site_to_lxml(link)
             h2s = raw_data.find_all('h2', class_='post-title')
