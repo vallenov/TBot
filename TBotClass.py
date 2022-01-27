@@ -109,6 +109,9 @@ class TBotClass:
             elif form_text == 'food':
                 resp['res'] = self.__dict_to_str(self._get_restaurant(), ' ')
                 return resp
+            elif form_text.startswith('sleep'):
+                resp['res'] = self.__dict_to_str(self._sleep(form_text), '')
+                return resp
             else:
                 resp['is_help'] = 1
                 resp['res'] = 'Hello! My name is DevInfoBot\nMy functions'
@@ -118,8 +121,12 @@ class TBotClass:
     def __dict_to_str(di: dict, delimiter: str = ' = ') -> str:
         fin_str = ''
         if di.get('res').upper() == 'ERROR':
+            descr = di.get('descr', None)
+            if descr is not None:
+                logger.error(f'Description: {descr}')
             return 'Something is wrong'
         for key, value in di.items():
+            print(key, value)
             if isinstance(key, int):
                 fin_str += f'{value}\n'
             elif key.lower() == 'res':
@@ -202,6 +209,25 @@ class TBotClass:
             '''
             resp[inf[1].text] = inf[4].text
         resp['res'] = 'OK'
+        return resp
+
+    @check_permission
+    def _sleep(self, text):
+        resp = {}
+        command = text.split(' ')
+        resp['res'] = 'OK'
+        if len(command) > 1:
+            try:
+                stime = int(command[1])
+            except TypeError:
+                resp['res'] = 'ERROR'
+                resp['descr'] = 'Sleep time is not correct!'
+                return resp
+            else:
+                time.sleep(stime)
+        else:
+            time.sleep(60)
+        resp[1] = 'Awake'
         return resp
 
     def _get_weather(self) -> dict:
