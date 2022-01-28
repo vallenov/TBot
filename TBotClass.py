@@ -113,6 +113,9 @@ class TBotClass:
             elif form_text.startswith('sleep'):
                 resp['res'] = self.__dict_to_str(self._sleep(form_text), '')
                 return resp
+            elif form_text.startswith('poesy'):
+                resp['res'] = self.__dict_to_str(self._get_poesy(), '')
+                return resp
             else:
                 resp['is_help'] = 1
                 resp['res'] = 'Hello! My name is DevInfoBot\nMy functions'
@@ -189,8 +192,14 @@ class TBotClass:
         """
         logger.info('get_exchange')
         resp = {}
+        if self.config.has_option('URL', 'exchange_url'):
+            exchange_url = self.config['URL']['exchange_url']
+        else:
+            resp['res'] = 'ERROR'
+            resp['descr'] = "I can't do this yet😔"
+            return resp
         ex = ['USD', 'EUR']
-        soup = TBotClass._site_to_lxml(self.config['URL']['exchange_url'])
+        soup = TBotClass._site_to_lxml(exchange_url)
         if soup is None:
             resp['res'] = 'ERROR'
             return resp
@@ -239,7 +248,13 @@ class TBotClass:
         """
         logger.info('get_weather')
         resp = {}
-        soup = TBotClass._site_to_lxml(self.config['URL']['weather_url'])
+        if self.config.has_option('URL', 'weather_url'):
+            weather_url = self.config['URL']['weather_url']
+        else:
+            resp['res'] = 'ERROR'
+            resp['descr'] = "I can't do this yet😔"
+            return resp
+        soup = TBotClass._site_to_lxml(weather_url)
         if soup is None:
             resp['res'] = 'ERROR'
             return resp
@@ -261,7 +276,13 @@ class TBotClass:
         """
         logger.info('get_quote')
         resp = {}
-        soup = TBotClass._site_to_lxml(self.config['URL']['quote_url'])
+        if self.config.has_option('URL', 'quote_url'):
+            quote_url = self.config['URL']['quote_url']
+        else:
+            resp['res'] = 'ERROR'
+            resp['descr'] = "I can't do this yet😔"
+            return resp
+        soup = TBotClass._site_to_lxml(quote_url)
         if soup is None:
             resp['res'] = 'ERROR'
             return resp
@@ -281,7 +302,13 @@ class TBotClass:
         """
         logger.info('get_wish')
         resp = {}
-        soup = TBotClass._site_to_lxml(self.config['URL']['wish_url'])
+        if self.config.has_option('URL', 'wish_url'):
+            wish_url = self.config['URL']['wish_url']
+        else:
+            resp['res'] = 'ERROR'
+            resp['descr'] = "I can't do this yet😔"
+            return resp
+        soup = TBotClass._site_to_lxml(wish_url)
         if soup is None:
             resp['res'] = 'ERROR'
             return resp
@@ -299,7 +326,13 @@ class TBotClass:
         """
         logger.info('get_news')
         resp = {}
-        soup = TBotClass._site_to_lxml(self.config['URL']['news_url'])
+        if self.config.has_option('URL', 'news_url'):
+            news_url = self.config['URL']['news_url']
+        else:
+            resp['res'] = 'ERROR'
+            resp['descr'] = "I can't do this yet😔"
+            return resp
+        soup = TBotClass._site_to_lxml(news_url)
         if soup is None:
             resp['res'] = 'ERROR'
             return resp
@@ -322,7 +355,13 @@ class TBotClass:
         """
         logger.info('get_affirmationx')
         resp = {}
-        soup = TBotClass._site_to_lxml(self.config['URL']['affirmation_url'])
+        if self.config.has_option('URL', 'affirmation_url'):
+            affirmation_url = self.config['URL']['affirmation_url']
+        else:
+            resp['res'] = 'ERROR'
+            resp['descr'] = "I can't do this yet😔"
+            return resp
+        soup = TBotClass._site_to_lxml(affirmation_url)
         if soup is None:
             resp['res'] = 'ERROR'
             return resp
@@ -356,8 +395,14 @@ class TBotClass:
         self.async_url_data = []
         tasks = []
         resp = {}
+        if self.config.has_option('URL', 'events_url'):
+            events_url = self.config['URL']['events_url']
+        else:
+            resp['res'] = 'ERROR'
+            resp['descr'] = "I can't do this yet😔"
+            return resp
         async with aiohttp.ClientSession() as session:
-            tasks.append(asyncio.create_task(self.__get_url(session, self.config['URL']['events_url'])))
+            tasks.append(asyncio.create_task(self.__get_url(session, events_url)))
             await asyncio.gather(*tasks)
             tasks = []
             soup = BeautifulSoup(self.async_url_data.pop(), 'lxml')
@@ -393,7 +438,13 @@ class TBotClass:
         """
         logger.info('get_events')
         resp = {}
-        soup = TBotClass._site_to_lxml(self.config['URL']['events_url'])
+        if self.config.has_option('URL', 'events_url'):
+            events_url = self.config['URL']['events_url']
+        else:
+            resp['res'] = 'ERROR'
+            resp['descr'] = "I can't do this yet😔"
+            return resp
+        soup = TBotClass._site_to_lxml(events_url)
         if soup is None:
             resp['res'] = 'ERROR'
             return resp
@@ -423,7 +474,13 @@ class TBotClass:
         """
         logger.info('get_restaurant')
         resp = {}
-        soup = TBotClass._site_to_lxml(self.config['URL']['restaurant_url'] + '/msk/catalog/restaurants/all/')
+        if self.config.has_option('URL', 'restaurant_url'):
+            restaurant_url = self.config['URL']['restaurant_url']
+        else:
+            resp['res'] = 'ERROR'
+            resp['descr'] = "I can't do this yet😔"
+            return resp
+        soup = TBotClass._site_to_lxml(restaurant_url + '/msk/catalog/restaurants/all/')
         if soup is None:
             resp['res'] = 'ERROR'
             return resp
@@ -453,4 +510,50 @@ class TBotClass:
         final_restaurant[2] = self.config['URL']['restaurant_url'] + restaurant.get('href')
         final_restaurant['res'] = 'OK'
         return final_restaurant
+
+    def _get_poesy(self) -> dict:
+        """
+        Get respoesy from internet
+        :param:
+        :return: poesy string
+        """
+        logger.info('get_poesy')
+        resp = {}
+        if self.config.has_option('URL', 'poesy_url'):
+            poesy_url = self.config['URL']['poesy_url']
+        else:
+            resp['res'] = 'ERROR'
+            resp['descr'] = "I can't do this yet😔"
+            return resp
+        soup = TBotClass._site_to_lxml(poesy_url)
+        if soup is None:
+            resp['res'] = 'ERROR'
+            return resp
+
+        div_raw = soup.find('div', class_='_2uPBE')
+        a_raw = div_raw.find_all('a', class_='GmJ5E')
+        count = int(a_raw[-1].text)
+        rand = random.randint(1, count)
+        if rand > 1:
+            soup = TBotClass._site_to_lxml(self.config['URL']['poesy_url'] + f'?page={rand}')
+        poems_raw = soup.find_all('div', class_='_2VELq')
+        rand_poem_raw = random.choice(poems_raw)
+        href = rand_poem_raw.find('a', class_='_2A3Np').get('href')
+        link = '/'.join(self.config['URL']['poesy_url'].split('/')[:-3]) + href
+
+        soup = TBotClass._site_to_lxml(link)
+
+        div_raw = soup.find('div', class_='_1MTBU _3RpDE _47J4f _3IEeu')
+        author = div_raw.find('div', class_='_14JnI').text
+        name = div_raw.find('div', class_='_2jzeL').text
+        strings_raw = div_raw.find('div', class_='_3P9bi')
+        raw_p = strings_raw.find('p', class_='')
+        p = raw_p.decode()
+        p = p.replace('<p class="">', '')
+        p = p.replace('</p>', '')
+        p = p.replace('<br/>', '\n')
+        resp['res'] = 'Ok'
+        resp[author] = f'\n\n{name}\n\n{p}'
+        return resp
+
 
