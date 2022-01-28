@@ -26,6 +26,7 @@ def check_permission(func):
         if not TBotClass.permission:
             logger.error('Permission denied')
             resp['res'] = "ERROR"
+            resp['descr'] = 'Permission denied'
             res = resp
         else:
             res = func(*args, **kwargs)
@@ -124,9 +125,9 @@ class TBotClass:
             descr = di.get('descr', None)
             if descr is not None:
                 logger.error(f'Description: {descr}')
+                return descr
             return 'Something is wrong'
         for key, value in di.items():
-            print(key, value)
             if isinstance(key, int):
                 fin_str += f'{value}\n'
             elif key.lower() == 'res':
@@ -219,7 +220,7 @@ class TBotClass:
         if len(command) > 1:
             try:
                 stime = int(command[1])
-            except TypeError:
+            except ValueError:
                 resp['res'] = 'ERROR'
                 resp['descr'] = 'Sleep time is not correct!'
                 return resp
