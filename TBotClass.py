@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 import configparser
 import logging
 import traceback
-import time
+import datetime
 import asyncio
 import aiohttp
 
@@ -36,10 +36,10 @@ def check_permission(func):
 
 def benchmark(func):
     def wrap(*args, **kwargs):
-        start = time.time()
+        start = datetime.datetime.now()
         res = func(*args, **kwargs)
-        duration = time.time() - start
-        logger.info(f'Duration: {duration:.3} sec')
+        duration = datetime.datetime.now() - start
+        logger.info(f'Duration: {duration.seconds}.{str(duration.microseconds)[:3]} sec')
         return res
     return wrap
 
@@ -109,9 +109,6 @@ class TBotClass:
                 return resp
             elif form_text == 'food':
                 resp['res'] = self.__dict_to_str(self._get_restaurant(), ' ')
-                return resp
-            elif form_text.startswith('sleep'):
-                resp['res'] = self.__dict_to_str(self._sleep(form_text), '')
                 return resp
             elif form_text.startswith('poesy'):
                 resp['res'] = self.__dict_to_str(self._get_poesy(), '')
@@ -219,25 +216,6 @@ class TBotClass:
             '''
             resp[inf[1].text] = inf[4].text
         resp['res'] = 'OK'
-        return resp
-
-    @check_permission
-    def _sleep(self, text):
-        resp = {}
-        command = text.split(' ')
-        resp['res'] = 'OK'
-        if len(command) > 1:
-            try:
-                stime = int(command[1])
-            except ValueError:
-                resp['res'] = 'ERROR'
-                resp['descr'] = 'Sleep time is not correct!'
-                return resp
-            else:
-                time.sleep(stime)
-        else:
-            time.sleep(60)
-        resp[1] = 'Awake'
         return resp
 
     def _get_weather(self) -> dict:

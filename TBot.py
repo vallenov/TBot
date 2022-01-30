@@ -7,6 +7,7 @@ import os
 import string
 import random
 import datetime
+import requests
 
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
@@ -21,6 +22,13 @@ def tbot():
     token = config['MAIN']['token']
     bot = telebot.TeleBot(token)
     tb = TBotClass()
+    content_types = ['audio', 'photo', 'voice', 'video', 'document', 'text', 'location', 'contact', 'sticker']
+
+    conversation_logger = logging.getLogger('conversation')
+    conversation_logger.setLevel(logging.INFO)
+    conv_handler = logging.FileHandler('text/run_conv.log')
+    conv_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    conversation_logger.addHandler(conv_handler)
 
     def gen_markup():
         markup = InlineKeyboardMarkup()
@@ -42,27 +50,32 @@ def tbot():
         replace = tb.replace(call.message)
         #bot.answer_callback_query(call.id, replace)
         current_try = 0
-        save_response(f'{str(call.message.chat)} Callback: {call.message.text}')
+        conversation_logger.info(f'Request: ' 
+                                 f'ID - {call.message.chat.id}, ' 
+                                 f'Login - {call.message.chat.username}, '
+                                 f'FirstName - {call.message.chat.first_name}, '
+                                 f'Callback - {call.message.text}, '
+                                 f'RAW - {call.message.chat}')
         while current_try < MAX_TRY:
             current_try += 1
             try:
                 bot.send_message(call.message.json['chat']['id'], replace['res'])
             except Exception as _ex:
-                logger.exception(f'Unrecognized exception: {_ex}')
+                logger.exception(f'Unrecognized exception: {traceback.format_exc()}')
+                send_dev_message({'subject': 'TBot EXCEPTION', 'text': f'{traceback.format_exc()}'})
             else:
-                save_response(replace['res'])
-                logger.info('Send successful')
+                conversation_logger.info('Response: ' + replace['res'].replace('\n', ' '))
                 break
 
     @bot.message_handler(commands=['start'])
     def start_message(message):
         bot.send_message(message.chat.id, 'Welcome, my friend!')
 
-    @bot.message_handler(func=lambda message: True, content_types=['audio', 'photo', 'voice', 'video', 'document',
-                                                                   'text', 'location', 'contact', 'sticker'])
+    @bot.message_handler(func=lambda message: True, content_types=content_types)
     def send_text(message):
         current_try = 0
         save_file(message)
+        is_send = False
         while current_try < MAX_TRY:
             current_try += 1
             replace = tb.replace(message)
@@ -72,24 +85,14 @@ def tbot():
                 else:
                     bot.send_message(message.chat.id, replace['res'])
             except Exception as _ex:
-                logger.exception(f'Unrecognized exception: {_ex}')
+                logger.exception(f'Unrecognized exception: {traceback.format_exc()}')
+                if not is_send:
+                    send_dev_message({'subject': 'TBot EXCEPTION', 'text': f'{traceback.format_exc()}'})
+                    is_send = True
             else:
-                save_response(replace['res'])
+                conversation_logger.info('Response: ' + replace['res'].replace('\n', ' '))
                 logger.info('Send successful')
                 break
-
-    def save_response(text: str) -> None:
-        """
-        Save bot response text to the file
-        :param text: text to save
-        :return:
-        """
-        curdir = os.curdir
-        file_name = os.path.join(curdir, 'text', f'{now_time()[:10]}.txt')
-        with open(file_name, 'a') as file:
-            text = text.replace('\n', ' ')
-            file.write(f"{datetime.datetime.now()} {text}\n")
-        os.chown(file_name, 1000, 1000)
 
     def save_file(message) -> None:
         """
@@ -101,8 +104,13 @@ def tbot():
         file_extention = None
         curdir = os.curdir
         if message.content_type == 'text':
-            file_extention = '.txt'
-            file_info = message.json
+            conversation_logger.info(f'Response: '
+                                     f'ID - {message.chat.id}, '
+                                     f'Login - {message.chat.username}, '
+                                     f'FirstName - {message.chat.first_name}, '
+                                     f'Text - {message.text}, '
+                                     f'RAW - {message.chat}')
+            return
         if message.content_type == 'photo':
             file_extention = '.jpg'
             file_info = bot.get_file(message.photo[-1].file_id)
@@ -118,17 +126,10 @@ def tbot():
         if not os.path.exists(os.path.join(curdir, message.content_type)):
             os.mkdir(os.path.join(curdir, message.content_type))
             os.chown(os.path.join(curdir, message.content_type), 1000, 1000)
-        if file_extention == '.txt':
-            write_type = 'a'
-            file_name = os.path.join(curdir, message.content_type, f'{now_time()[:10]}{file_extention}')
-            downloaded_info = str(file_info).replace('\n', ' ')
-            downloaded_info = f"{datetime.datetime.now()} {downloaded_info}\n"
-        else:
-            write_type = 'wb'
-            file_name = os.path.join(curdir, message.content_type,
-                                     f'{now_time()}{_get_hash_name()}{file_extention}')
-            downloaded_info = bot.download_file(file_info.file_path)
-        with open(file_name, write_type) as new_file:
+        file_name = os.path.join(curdir, message.content_type,
+                                 f'{now_time()}{_get_hash_name()}{file_extention}')
+        downloaded_info = bot.download_file(file_info.file_path)
+        with open(file_name, 'wb') as new_file:
             new_file.write(downloaded_info)
         os.chown(file_name, 1000, 1000)
 
@@ -149,6 +150,24 @@ def tbot():
         for _ in range(15):
             name += random.choice(simbols)
         return name
+
+    def send_dev_message(data: dict):
+        """
+        Отправка сообщения админу
+
+        """
+        data.update({'to': config.get('MAIL', 'address')})
+        current_try = 0
+        while current_try < MAX_TRY:
+            current_try += 1
+            try:
+                requests.post(config.get('MAIL', 'message_server_address'), data=data, headers={'Connection': 'close'})
+            except Exception as _ex:
+                logger.exception(_ex)
+            else:
+                logger.info('Send successful')
+                break
+        logger.error('Max try exceeded')
 
     try:
         bot.infinity_polling(none_stop=True)
