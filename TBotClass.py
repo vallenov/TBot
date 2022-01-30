@@ -536,7 +536,8 @@ class TBotClass:
         rand = random.randint(1, count)
         if rand > 1:
             soup = TBotClass._site_to_lxml(self.config['URL']['poesy_url'] + f'?page={rand}')
-        poems_raw = soup.find_all('div', class_='_2VELq')
+        poems_raw = soup.find('div', class_='_2VELq')
+        poems_raw = poems_raw.find_all('div', class_='_1jGw_')
         rand_poem_raw = random.choice(poems_raw)
         href = rand_poem_raw.find('a', class_='_2A3Np').get('href')
         link = '/'.join(self.config['URL']['poesy_url'].split('/')[:-3]) + href
@@ -547,13 +548,21 @@ class TBotClass:
         author = div_raw.find('div', class_='_14JnI').text
         name = div_raw.find('div', class_='_2jzeL').text
         strings_raw = div_raw.find('div', class_='_3P9bi')
-        raw_p = strings_raw.find('p', class_='')
-        p = raw_p.decode()
-        p = p.replace('<p class="">', '')
-        p = p.replace('</p>', '')
-        p = p.replace('<br/>', '\n')
-        resp['res'] = 'Ok'
-        resp[author] = f'\n\n{name}\n\n{p}'
+        year = ''
+        year_raw = strings_raw.find('div')
+        if year_raw:
+            year = f'\n\n{year_raw.text}'
+        raw_p = strings_raw.find_all('p', class_='')
+        quatrains = []
+        for p in raw_p:
+            quatrain = p.decode()
+            quatrain = quatrain.replace('<p class="">', '')
+            quatrain = quatrain.replace('</p>', '')
+            quatrain = quatrain.replace('<br/>', '\n')
+            quatrains.append(quatrain)
+        poem = '\n\n'.join(quatrains)
+        resp['res'] = 'OK'
+        resp[author] = f'\n\n{name}\n\n{poem}{year}'
         return resp
 
 
