@@ -39,7 +39,8 @@ def benchmark(func):
         start = datetime.datetime.now()
         res = func(*args, **kwargs)
         duration = datetime.datetime.now() - start
-        logger.info(f'Duration: {duration.seconds}.{str(duration.microseconds)[:3]} sec')
+        dur = float(str(duration.seconds) + '.' + str(duration.microseconds)[:3])
+        logger.info(f'Duration: {dur} sec')
         return res
     return wrap
 
@@ -318,7 +319,7 @@ class TBotClass:
         for n in news:
             news_time = n.find('span', class_='elem-info__date')
             text = n.find('span', class_='share')
-            if time and text:
+            if news_time and text:
                 resp[news_time.text] = text.get('data-title')
             if len(resp) == count:
                 break
