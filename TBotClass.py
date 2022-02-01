@@ -116,7 +116,12 @@ class TBotClass:
                 resp['res'] = self.__dict_to_str(self.internet_loader.get_restaurant(), ' ')
                 return resp
             elif form_text == 'poem':
-                resp['res'] = self.__dict_to_str(self.file_loader.get_poem(), '\n')
+                while True:
+                    poem_resp = self.file_loader.get_poem()
+                    if poem_resp.get('len'):
+                        break
+                resp['len'] = poem_resp.get('len') or None
+                resp['res'] = self.__dict_to_str(poem_resp, '\n')
                 #resp['res'] = self.__dict_to_str(self.internet_loader.get_poem(), '')
                 return resp
             else:
@@ -136,7 +141,7 @@ class TBotClass:
         for key, value in di.items():
             if isinstance(key, int):
                 fin_str += f'{value}\n'
-            elif key.lower() == 'res':
+            elif key.lower() == 'res' or key.lower() == 'len':
                 continue
             else:
                 fin_str += f'{key}{delimiter}{value}\n'
@@ -561,6 +566,10 @@ class InternetLoader(Loader):
         for p in raw_p:
             quatrain = p.decode()
             quatrain = quatrain.replace('<p class="">', '')
+            quatrain = quatrain.replace('<strong>', '\t')
+            quatrain = quatrain.replace('</strong>', '')
+            quatrain = quatrain.replace('<em>', '')
+            quatrain = quatrain.replace('</em>', '')
             quatrain = quatrain.replace('</p>', '')
             quatrain = quatrain.replace('<br/>', '\n')
             quatrains.append(quatrain)
@@ -597,7 +606,15 @@ class FileLoader(Loader):
                 poem.append(list(val.values())[random_poem])
             print(poem)
             resp['res'] = 'OK'
-            resp[poem[0]] = '\n' + '\n\n'.join(poem[1:])
+            text = '\n' + '\n\n'.join(poem[1:])
+            text = text.replace('<strong>', '\t')
+            text = text.replace('</strong>', '')
+            text = text.replace('<em>', '')
+            text = text.replace('</em>', '')
+            resp[poem[0]] = text
+            if len(resp[poem[0]]) > 4000:
+                resp['len'] = len(resp[poem[0]])
+            print(len(resp[poem[0]]))
         else:
             logger.error('File poems.xlsx not found')
             resp['res'] = 'ERROR'

@@ -8,12 +8,15 @@ import string
 import random
 import datetime
 import requests
+from requests import exceptions
+import math
 
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from TBotClass import TBotClass
 
 MAX_TRY = 15
+MAX_LEN = 4000
 
 
 def tbot():
@@ -44,28 +47,37 @@ def tbot():
                    InlineKeyboardButton("🪶 Poem/Стих", callback_data="poem"))
         return markup
 
+    def safe_send(chat_id: int, replace: str, reply_markup=None):
+        is_send = False
+        current_try = 0
+        while current_try < MAX_TRY:
+            current_try += 1
+            try:
+                bot.send_message(chat_id, replace, reply_markup=reply_markup)
+            except ConnectionResetError:
+                logger.exception(f'ConnectionResetError exception: {traceback.format_exc()}')
+            except Exception as _ex:
+                logger.exception(f'Unrecognized exception: {traceback.format_exc()}')
+                if not is_send:
+                    send_dev_message({'subject': 'TBot EXCEPTION', 'text': f'{traceback.format_exc()}'})
+                    is_send = True
+            else:
+                conversation_logger.info('Response: ' + replace.replace('\n', ' '))
+                logger.info('Send successful')
+                break
+
     @bot.callback_query_handler(func=lambda call: True)
     def callback_query(call):
         call.message.text = call.data
         replace = tb.replace(call.message)
         #bot.answer_callback_query(call.id, replace)
-        current_try = 0
         conversation_logger.info(f'Request: ' 
                                  f'ID - {call.message.chat.id}, ' 
                                  f'Login - {call.message.chat.username}, '
                                  f'FirstName - {call.message.chat.first_name}, '
                                  f'Callback - {call.message.text}, '
                                  f'RAW - {call.message.chat}')
-        while current_try < MAX_TRY:
-            current_try += 1
-            try:
-                bot.send_message(call.message.json['chat']['id'], replace['res'])
-            except Exception as _ex:
-                logger.exception(f'Unrecognized exception: {traceback.format_exc()}')
-                send_dev_message({'subject': 'TBot EXCEPTION', 'text': f'{traceback.format_exc()}'})
-            else:
-                conversation_logger.info('Response: ' + replace['res'].replace('\n', ' '))
-                break
+        safe_send(call.message.json['chat']['id'], replace['res'])
 
     @bot.message_handler(commands=['start'])
     def start_message(message):
@@ -73,26 +85,23 @@ def tbot():
 
     @bot.message_handler(func=lambda message: True, content_types=content_types)
     def send_text(message):
-        current_try = 0
         save_file(message)
-        is_send = False
-        while current_try < MAX_TRY:
-            current_try += 1
-            replace = tb.replace(message)
-            try:
-                if replace.get('is_help', 0):
-                    bot.send_message(message.chat.id, replace['res'], reply_markup=gen_markup())
-                else:
-                    bot.send_message(message.chat.id, replace['res'])
-            except Exception as _ex:
-                logger.exception(f'Unrecognized exception: {traceback.format_exc()}')
-                if not is_send:
-                    send_dev_message({'subject': 'TBot EXCEPTION', 'text': f'{traceback.format_exc()}'})
-                    is_send = True
+        replace = tb.replace(message)
+        if replace.get('is_help', 0):
+            safe_send(message.chat.id, replace['res'], reply_markup=gen_markup())
+        else:
+            if replace.get('len', False):
+                print('LONG MSG!')
+                cnt_message = math.ceil(replace['len'] / MAX_LEN)
+                start = 0
+                for cnt in range(cnt_message):
+                    if start + MAX_LEN >= replace['len']:
+                        safe_send(message.chat.id, replace['res'][start:])
+                    else:
+                        safe_send(message.chat.id, replace['res'][start:start+MAX_LEN])
+                    start += MAX_LEN
             else:
-                conversation_logger.info('Response: ' + replace['res'].replace('\n', ' '))
-                logger.info('Send successful')
-                break
+                safe_send(message.chat.id, replace['res'])
 
     def save_file(message) -> None:
         """
