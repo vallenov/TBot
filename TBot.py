@@ -41,7 +41,7 @@ def tbot():
                    InlineKeyboardButton("🧘‍♀️Affirmation/Аффирмация", callback_data="affirmation"),
                    InlineKeyboardButton("🎭 Events/Мероприятия", callback_data="events"),
                    InlineKeyboardButton("🍲 Food/Еда", callback_data="food"),
-                   InlineKeyboardButton("🪶 Poesy/Поэзия", callback_data="poesy"))
+                   InlineKeyboardButton("🪶 Poem/Стих", callback_data="poem"))
         return markup
 
     @bot.callback_query_handler(func=lambda call: True)

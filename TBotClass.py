@@ -1,3 +1,4 @@
+import os.path
 import random
 import requests
 from bs4 import BeautifulSoup
@@ -7,6 +8,7 @@ import traceback
 import datetime
 import asyncio
 import aiohttp
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 handler = logging.FileHandler('run.log')
@@ -51,6 +53,8 @@ class TBotClass:
     def __init__(self):
         logger.info('TBotClass init')
         self.__get_config()
+        self.internet_loader = InternetLoader('ILoader')
+        self.file_loader = FileLoader('FLoader')
 
     def __del__(self):
         logger.error(f'Traceback: {traceback.format_exc()}')
@@ -81,38 +85,39 @@ class TBotClass:
             resp['status'] = 'OK'
             form_text = message.text.lower().strip()
             if form_text == 'ex':
-                resp['res'] = self.__dict_to_str(self._get_exchange())
+                resp['res'] = self.__dict_to_str(self.internet_loader.get_exchange())
                 return resp
             elif form_text == 'weather':
-                resp['res'] = self.__dict_to_str(self._get_weather())
+                resp['res'] = self.__dict_to_str(self.internet_loader.get_weather())
                 return resp
             elif form_text == 'quote':
-                resp['res'] = self.__dict_to_str(self._get_quote(), '\n')
+                resp['res'] = self.__dict_to_str(self.internet_loader.get_quote(), '\n')
                 return resp
             elif form_text == 'wish':
-                resp['res'] = self.__dict_to_str(self._get_wish())
+                resp['res'] = self.__dict_to_str(self.internet_loader.get_wish())
                 return resp
             elif form_text.startswith('news'):
                 text_split = form_text.split()
                 if len(text_split) > 1:
-                    resp['res'] = self.__dict_to_str(self._get_news(int(text_split[1])), '\n')
+                    resp['res'] = self.__dict_to_str(self.internet_loader.get_news(int(text_split[1])), '\n')
                 else:
-                    resp['res'] = self.__dict_to_str(self._get_news(), '\n')
+                    resp['res'] = self.__dict_to_str(self.internet_loader.get_news(), '\n')
                 return resp
             elif form_text == 'affirmation':
-                resp['res'] = self.__dict_to_str(self._get_affirmation())
+                resp['res'] = self.__dict_to_str(self.internet_loader.get_affirmation())
                 return resp
             # elif form_text == 'events':
             #     resp['res'] = self.__dict_to_str(self._get_events(), '\n')
             #     return resp
             elif form_text == 'events':
-                resp['res'] = self.__dict_to_str(asyncio.run(self._async_events()), '\n')
+                resp['res'] = self.__dict_to_str(asyncio.run(self.internet_loader.async_events()), '\n')
                 return resp
             elif form_text == 'food':
-                resp['res'] = self.__dict_to_str(self._get_restaurant(), ' ')
+                resp['res'] = self.__dict_to_str(self.internet_loader.get_restaurant(), ' ')
                 return resp
-            elif form_text.startswith('poesy'):
-                resp['res'] = self.__dict_to_str(self._get_poesy(), '')
+            elif form_text == 'poem':
+                resp['res'] = self.__dict_to_str(self.file_loader.get_poem(), '\n')
+                #resp['res'] = self.__dict_to_str(self.internet_loader.get_poem(), '')
                 return resp
             else:
                 resp['is_help'] = 1
@@ -136,23 +141,6 @@ class TBotClass:
             else:
                 fin_str += f'{key}{delimiter}{value}\n'
         return fin_str
-
-    @staticmethod
-    def _site_to_lxml(url: str) -> BeautifulSoup or None:
-        """
-        Get site and convert it to the lxml
-
-        :param url: https://site.com/
-        :return: BeautifulSoup object
-        """
-        try:
-            soup = BeautifulSoup(requests.get(url).text, 'lxml')
-        except Exception as _ex:
-            logger.exception(f'Exception in {__name__}:\n{_ex}')
-            return None
-        else:
-            logger.info(f'Get successful ({url})')
-        return soup
 
     def __get_help(self, dev: bool) -> dict:
         """
@@ -182,7 +170,44 @@ class TBotClass:
         self.config = configparser.ConfigParser()
         self.config.read('TBot.ini', encoding='windows-1251')
 
-    def _get_exchange(self) -> dict:
+
+class Loader:
+    loaders = []
+
+    def __init__(self, name):
+        self.name = name
+        Loader.loaders.append(self.name)
+        self.__get_config()
+
+    def __get_config(self):
+        self.config = configparser.ConfigParser()
+        self.config.read('TBot.ini', encoding='windows-1251')
+
+    @staticmethod
+    def get_loaders():
+        return Loader.loaders
+
+
+class InternetLoader(Loader):
+
+    @staticmethod
+    def _site_to_lxml(url: str) -> BeautifulSoup or None:
+        """
+        Get site and convert it to the lxml
+
+        :param url: https://site.com/
+        :return: BeautifulSoup object
+        """
+        try:
+            soup = BeautifulSoup(requests.get(url).text, 'lxml')
+        except Exception as _ex:
+            logger.exception(f'Exception in {__name__}:\n{_ex}')
+            return None
+        else:
+            logger.info(f'Get successful ({url})')
+        return soup
+
+    def get_exchange(self) -> dict:
         """
         Get exchange from internet
         :param:
@@ -197,7 +222,7 @@ class TBotClass:
             resp['descr'] = "I can't do this yet😔"
             return resp
         ex = ['USD', 'EUR']
-        soup = TBotClass._site_to_lxml(exchange_url)
+        soup = InternetLoader._site_to_lxml(exchange_url)
         if soup is None:
             resp['res'] = 'ERROR'
             return resp
@@ -219,7 +244,7 @@ class TBotClass:
         resp['res'] = 'OK'
         return resp
 
-    def _get_weather(self) -> dict:
+    def get_weather(self) -> dict:
         """
         Get weather from internet
         :param:
@@ -233,7 +258,7 @@ class TBotClass:
             resp['res'] = 'ERROR'
             resp['descr'] = "I can't do this yet😔"
             return resp
-        soup = TBotClass._site_to_lxml(weather_url)
+        soup = InternetLoader._site_to_lxml(weather_url)
         if soup is None:
             resp['res'] = 'ERROR'
             return resp
@@ -247,7 +272,7 @@ class TBotClass:
         resp['res'] = 'OK'
         return resp
 
-    def _get_quote(self) -> dict:
+    def get_quote(self) -> dict:
         """
         Get quote from internet
         :param:
@@ -261,7 +286,7 @@ class TBotClass:
             resp['res'] = 'ERROR'
             resp['descr'] = "I can't do this yet😔"
             return resp
-        soup = TBotClass._site_to_lxml(quote_url)
+        soup = InternetLoader._site_to_lxml(quote_url)
         if soup is None:
             resp['res'] = 'ERROR'
             return resp
@@ -273,7 +298,7 @@ class TBotClass:
         random_key = random.choice(list(resp.keys()))
         return {'res': 'OK', random_key: resp[random_key]}
 
-    def _get_wish(self) -> dict:
+    def get_wish(self) -> dict:
         """
         Get wish from internet
         :param:
@@ -287,7 +312,7 @@ class TBotClass:
             resp['res'] = 'ERROR'
             resp['descr'] = "I can't do this yet😔"
             return resp
-        soup = TBotClass._site_to_lxml(wish_url)
+        soup = InternetLoader._site_to_lxml(wish_url)
         if soup is None:
             resp['res'] = 'ERROR'
             return resp
@@ -297,7 +322,7 @@ class TBotClass:
         resp[1] = random.choice(wish_list).text
         return resp
 
-    def _get_news(self, count: int = 5) -> dict:
+    def get_news(self, count: int = 5) -> dict:
         """
         Get news from internet
         :param:
@@ -311,7 +336,7 @@ class TBotClass:
             resp['res'] = 'ERROR'
             resp['descr'] = "I can't do this yet😔"
             return resp
-        soup = TBotClass._site_to_lxml(news_url)
+        soup = InternetLoader._site_to_lxml(news_url)
         if soup is None:
             resp['res'] = 'ERROR'
             return resp
@@ -326,7 +351,7 @@ class TBotClass:
         resp['res'] = 'OK'
         return resp
 
-    def _get_affirmation(self) -> dict:
+    def get_affirmation(self) -> dict:
         """
         Get affirmation from internet
         :param:
@@ -340,7 +365,7 @@ class TBotClass:
             resp['res'] = 'ERROR'
             resp['descr'] = "I can't do this yet😔"
             return resp
-        soup = TBotClass._site_to_lxml(affirmation_url)
+        soup = InternetLoader._site_to_lxml(affirmation_url)
         if soup is None:
             resp['res'] = 'ERROR'
             return resp
@@ -355,7 +380,7 @@ class TBotClass:
         resp[1] = random.choice(aff_list)
         return resp
 
-    async def __get_url(self, session, url) -> None:
+    async def _get_url(self, session, url) -> None:
         async with session.get(url) as res:
             data = await res.text()
             if res.status == 200:
@@ -364,7 +389,7 @@ class TBotClass:
                 logger.error(f'Get unsuccessful ({url})')
             self.async_url_data.append(data)
 
-    async def _async_events(self) -> dict:
+    async def async_events(self) -> dict:
         """
         Get events from internet (async)
         :param:
@@ -381,7 +406,7 @@ class TBotClass:
             resp['descr'] = "I can't do this yet😔"
             return resp
         async with aiohttp.ClientSession() as session:
-            tasks.append(asyncio.create_task(self.__get_url(session, events_url)))
+            tasks.append(asyncio.create_task(self._get_url(session, events_url)))
             await asyncio.gather(*tasks)
             tasks = []
             soup = BeautifulSoup(self.async_url_data.pop(), 'lxml')
@@ -391,7 +416,7 @@ class TBotClass:
             for a in raw_a:
                 links[a.text] = a.get('href')
             for _, link in links.items():
-                tasks.append(asyncio.create_task(self.__get_url(session, link)))
+                tasks.append(asyncio.create_task(self._get_url(session, link)))
             await asyncio.gather(*tasks)
             for raw in self.async_url_data:
                 events_links = []
@@ -409,7 +434,7 @@ class TBotClass:
             resp['res'] = 'OK'
             return resp
 
-    def _get_events(self) -> dict:
+    def get_events(self) -> dict:
         """
         Get events from internet
         :param:
@@ -423,7 +448,7 @@ class TBotClass:
             resp['res'] = 'ERROR'
             resp['descr'] = "I can't do this yet😔"
             return resp
-        soup = TBotClass._site_to_lxml(events_url)
+        soup = InternetLoader._site_to_lxml(events_url)
         if soup is None:
             resp['res'] = 'ERROR'
             return resp
@@ -435,7 +460,7 @@ class TBotClass:
         for name, link in links.items():
             events_links = []
             name = name.replace('\n', '')
-            raw_data = TBotClass._site_to_lxml(link)
+            raw_data = InternetLoader._site_to_lxml(link)
             h2s = raw_data.find_all('h2', class_='post-title')
             for raw_h2 in h2s:
                 a = raw_h2.find('a')
@@ -445,7 +470,7 @@ class TBotClass:
         resp['res'] = 'OK'
         return resp
 
-    def _get_restaurant(self) -> dict:
+    def get_restaurant(self) -> dict:
         """
         Get restaurant from internet
         :param:
@@ -459,7 +484,7 @@ class TBotClass:
             resp['res'] = 'ERROR'
             resp['descr'] = "I can't do this yet😔"
             return resp
-        soup = TBotClass._site_to_lxml(restaurant_url + '/msk/catalog/restaurants/all/')
+        soup = InternetLoader._site_to_lxml(restaurant_url + '/msk/catalog/restaurants/all/')
         if soup is None:
             resp['res'] = 'ERROR'
             return resp
@@ -468,12 +493,12 @@ class TBotClass:
         page_count = int(a_raw.get('data-nav-page-count'))
         rand_page = random.choice(range(1, page_count+1))
         if rand_page > 1:
-            soup = TBotClass._site_to_lxml(self.config['URL']['restaurant_url']
+            soup = InternetLoader._site_to_lxml(self.config['URL']['restaurant_url']
                                            + '/msk/catalog/restaurants/all/'
                                            + f'?page={rand_page}')
         names = soup.find_all('a', class_='name')
         restaurant = random.choice(names)
-        soup = TBotClass._site_to_lxml(self.config['URL']['restaurant_url'] + restaurant.get('href'))
+        soup = InternetLoader._site_to_lxml(self.config['URL']['restaurant_url'] + restaurant.get('href'))
         div_raw = soup.find('div', class_='props one-line-props')
         final_restaurant = dict()
         final_restaurant[1] = restaurant.text
@@ -490,7 +515,7 @@ class TBotClass:
         final_restaurant['res'] = 'OK'
         return final_restaurant
 
-    def _get_poesy(self) -> dict:
+    def get_poem(self) -> dict:
         """
         Get respoesy from internet
         :param:
@@ -504,7 +529,7 @@ class TBotClass:
             resp['res'] = 'ERROR'
             resp['descr'] = "I can't do this yet😔"
             return resp
-        soup = TBotClass._site_to_lxml(poesy_url)
+        soup = InternetLoader._site_to_lxml(poesy_url)
         if soup is None:
             resp['res'] = 'ERROR'
             return resp
@@ -514,14 +539,14 @@ class TBotClass:
         count = int(a_raw[-1].text)
         rand = random.randint(1, count)
         if rand > 1:
-            soup = TBotClass._site_to_lxml(self.config['URL']['poesy_url'] + f'?page={rand}')
+            soup = InternetLoader._site_to_lxml(self.config['URL']['poesy_url'] + f'?page={rand}')
         poems_raw = soup.find('div', class_='_2VELq')
         poems_raw = poems_raw.find_all('div', class_='_1jGw_')
         rand_poem_raw = random.choice(poems_raw)
         href = rand_poem_raw.find('a', class_='_2A3Np').get('href')
         link = '/'.join(self.config['URL']['poesy_url'].split('/')[:-3]) + href
 
-        soup = TBotClass._site_to_lxml(link)
+        soup = InternetLoader._site_to_lxml(link)
 
         div_raw = soup.find('div', class_='_1MTBU _3RpDE _47J4f _3IEeu')
         author = div_raw.find('div', class_='_14JnI').text
@@ -545,3 +570,36 @@ class TBotClass:
         return resp
 
 
+class FileLoader(Loader):
+    def __init__(self, name):
+        super().__init__(name)
+        self.files_list = ['poems.xlsx']
+        self._check_file_db()
+
+    def _check_file_db(self):
+        self.fife_db = {}
+        for file in self.files_list:
+            file_path = os.path.join('file_db', file)
+            if os.path.exists(file_path):
+                self.fife_db[file] = file_path
+
+    def get_poem(self) -> dict:
+        resp = {}
+        file_path = self.fife_db.get('poems.xlsx', False)
+        if file_path:
+            file_raw = pd.read_excel(file_path)
+            print(file_path)
+            file = pd.DataFrame(file_raw, columns=['Author', 'Name', 'Poem'])
+            dict_file = file.to_dict()
+            poem = []
+            random_poem = random.choice(range(len(dict_file['Poem'].values())))
+            for key, val in dict_file.items():
+                poem.append(list(val.values())[random_poem])
+            print(poem)
+            resp['res'] = 'OK'
+            resp[poem[0]] = '\n' + '\n\n'.join(poem[1:])
+        else:
+            logger.error('File poems.xlsx not found')
+            resp['res'] = 'ERROR'
+            resp['descr'] = 'ERROR "FL". Please, contact the administrator'
+        return resp

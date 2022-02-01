@@ -3,3 +3,7 @@ pyTelegramBotApi==3.6.6
 bs4
 lxml
 requests
+asyncio
+aiohttp
+pandas
+openpyxl
