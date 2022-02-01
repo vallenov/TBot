@@ -116,12 +116,7 @@ class TBotClass:
                 resp['res'] = self.__dict_to_str(self.internet_loader.get_restaurant(), ' ')
                 return resp
             elif form_text == 'poem':
-                while True:
-                    poem_resp = self.file_loader.get_poem()
-                    if poem_resp.get('len'):
-                        break
-                resp['len'] = poem_resp.get('len') or None
-                resp['res'] = self.__dict_to_str(poem_resp, '\n')
+                resp['res'] = self.__dict_to_str(self.file_loader.get_poem(), '\n')
                 #resp['res'] = self.__dict_to_str(self.internet_loader.get_poem(), '')
                 return resp
             else:
@@ -611,10 +606,8 @@ class FileLoader(Loader):
             text = text.replace('</strong>', '')
             text = text.replace('<em>', '')
             text = text.replace('</em>', '')
+            print(len(text))
             resp[poem[0]] = text
-            if len(resp[poem[0]]) > 4000:
-                resp['len'] = len(resp[poem[0]])
-            print(len(resp[poem[0]]))
         else:
             logger.error('File poems.xlsx not found')
             resp['res'] = 'ERROR'

@@ -77,7 +77,14 @@ def tbot():
                                  f'FirstName - {call.message.chat.first_name}, '
                                  f'Callback - {call.message.text}, '
                                  f'RAW - {call.message.chat}')
-        safe_send(call.message.json['chat']['id'], replace['res'])
+        cnt_message = math.ceil(len(replace['res']) / MAX_LEN)
+        start = 0
+        for cnt in range(cnt_message):
+            if start + MAX_LEN >= len(replace['res']):
+                safe_send(call.message.json['chat']['id'], replace['res'][start:])
+            else:
+                safe_send(call.message.json['chat']['id'], replace['res'][start:start + MAX_LEN])
+            start += MAX_LEN
 
     @bot.message_handler(commands=['start'])
     def start_message(message):
@@ -90,18 +97,14 @@ def tbot():
         if replace.get('is_help', 0):
             safe_send(message.chat.id, replace['res'], reply_markup=gen_markup())
         else:
-            if replace.get('len', False):
-                print('LONG MSG!')
-                cnt_message = math.ceil(replace['len'] / MAX_LEN)
-                start = 0
-                for cnt in range(cnt_message):
-                    if start + MAX_LEN >= replace['len']:
-                        safe_send(message.chat.id, replace['res'][start:])
-                    else:
-                        safe_send(message.chat.id, replace['res'][start:start+MAX_LEN])
-                    start += MAX_LEN
-            else:
-                safe_send(message.chat.id, replace['res'])
+            cnt_message = math.ceil(len(replace['res']) / MAX_LEN)
+            start = 0
+            for cnt in range(cnt_message):
+                if start + MAX_LEN >= len(replace['res']):
+                    safe_send(message.chat.id, replace['res'][start:])
+                else:
+                    safe_send(message.chat.id, replace['res'][start:start+MAX_LEN])
+                start += MAX_LEN
 
     def save_file(message) -> None:
         """
