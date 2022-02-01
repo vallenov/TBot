@@ -213,7 +213,7 @@ class InternetLoader(Loader):
         :param:
         :return: string like {'USD': '73,6059', 'EUR':'83,1158'}
         """
-        logger.info('get_exchange')
+        logger.info('get_exchange (InternetLoader)')
         resp = {}
         if self.config.has_option('URL', 'exchange_url'):
             exchange_url = self.config['URL']['exchange_url']
@@ -250,7 +250,7 @@ class InternetLoader(Loader):
         :param:
         :return: dict like {'Сегодня': '10°/15°', 'ср 12': '11°/18°'}
         """
-        logger.info('get_weather')
+        logger.info('get_weather (InternetLoader)')
         resp = {}
         if self.config.has_option('URL', 'weather_url'):
             weather_url = self.config['URL']['weather_url']
@@ -278,7 +278,7 @@ class InternetLoader(Loader):
         :param:
         :return: dict like {'quote1': 'author1', 'quote2: 'author2'}
         """
-        logger.info('get_quote')
+        logger.info('get_quote (InternetLoader)')
         resp = {}
         if self.config.has_option('URL', 'quote_url'):
             quote_url = self.config['URL']['quote_url']
@@ -304,7 +304,7 @@ class InternetLoader(Loader):
         :param:
         :return: wish string
         """
-        logger.info('get_wish')
+        logger.info('get_wish (InternetLoader)')
         resp = {}
         if self.config.has_option('URL', 'wish_url'):
             wish_url = self.config['URL']['wish_url']
@@ -328,7 +328,7 @@ class InternetLoader(Loader):
         :param:
         :return: wish string
         """
-        logger.info('get_news')
+        logger.info('get_news (InternetLoader)')
         resp = {}
         if self.config.has_option('URL', 'news_url'):
             news_url = self.config['URL']['news_url']
@@ -357,7 +357,7 @@ class InternetLoader(Loader):
         :param:
         :return: affirmation string
         """
-        logger.info('get_affirmationx')
+        logger.info('get_affirmationx (InternetLoader)')
         resp = {}
         if self.config.has_option('URL', 'affirmation_url'):
             affirmation_url = self.config['URL']['affirmation_url']
@@ -395,7 +395,7 @@ class InternetLoader(Loader):
         :param:
         :return: events digest
         """
-        logger.info('get_events')
+        logger.info('get_events (InternetLoader)')
         self.async_url_data = []
         tasks = []
         resp = {}
@@ -440,7 +440,7 @@ class InternetLoader(Loader):
         :param:
         :return: events digest
         """
-        logger.info('get_events')
+        logger.info('get_events (InternetLoader)')
         resp = {}
         if self.config.has_option('URL', 'events_url'):
             events_url = self.config['URL']['events_url']
@@ -476,7 +476,7 @@ class InternetLoader(Loader):
         :param:
         :return: restaurant string
         """
-        logger.info('get_restaurant')
+        logger.info('get_restaurant (InternetLoader)')
         resp = {}
         if self.config.has_option('URL', 'restaurant_url'):
             restaurant_url = self.config['URL']['restaurant_url']
@@ -521,7 +521,7 @@ class InternetLoader(Loader):
         :param:
         :return: poesy string
         """
-        logger.info('get_poesy')
+        logger.info('get_poesy (InternetLoader)')
         resp = {}
         if self.config.has_option('URL', 'poesy_url'):
             poesy_url = self.config['URL']['poesy_url']
@@ -586,28 +586,39 @@ class FileLoader(Loader):
             file_path = os.path.join('file_db', file)
             if os.path.exists(file_path):
                 self.fife_db[file] = file_path
+                self.poems = self._load_poems()
 
-    def get_poem(self) -> dict:
-        resp = {}
+    def _load_poems(self) -> list:
         file_path = self.fife_db.get('poems.xlsx', False)
         if file_path:
             file_raw = pd.read_excel(file_path)
-            print(file_path)
             file = pd.DataFrame(file_raw, columns=['Author', 'Name', 'Poem'])
             dict_file = file.to_dict()
-            poem = []
-            random_poem = random.choice(range(len(dict_file['Poem'].values())))
-            for key, val in dict_file.items():
-                poem.append(list(val.values())[random_poem])
-            print(poem)
+            poems = []
+            for author, name, text in zip(dict_file['Author'].values(),
+                                          dict_file['Name'].values(),
+                                          dict_file['Poem'].values()):
+                text = text.replace('<strong>', '\t')
+                text = text.replace('</strong>', '')
+                text = text.replace('<em>', '')
+                text = text.replace('</em>', '')
+                poem = dict()
+                poem[author] = f'\n{name}\n\n{text}'
+                poems.append(poem)
+            return poems
+
+    def get_poem(self) -> dict:
+        """
+        Get respoesy from file
+        :param:
+        :return: poesy string
+        """
+        logger.info('get_poesy (FileLoader)')
+        resp = {}
+        if self.poems:
+            random_poem = random.choice(self.poems)
+            resp.update(random_poem)
             resp['res'] = 'OK'
-            text = '\n' + '\n\n'.join(poem[1:])
-            text = text.replace('<strong>', '\t')
-            text = text.replace('</strong>', '')
-            text = text.replace('<em>', '')
-            text = text.replace('</em>', '')
-            print(len(text))
-            resp[poem[0]] = text
         else:
             logger.error('File poems.xlsx not found')
             resp['res'] = 'ERROR'
