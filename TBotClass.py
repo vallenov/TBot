@@ -598,13 +598,17 @@ class FileLoader(Loader):
             for author, name, text in zip(dict_file['Author'].values(),
                                           dict_file['Name'].values(),
                                           dict_file['Poem'].values()):
-                text = text.replace('<strong>', '\t')
-                text = text.replace('</strong>', '')
-                text = text.replace('<em>', '')
-                text = text.replace('</em>', '')
+                try:
+                    text = text.replace('<strong>', '\t')
+                    text = text.replace('</strong>', '')
+                    text = text.replace('<em>', '')
+                    text = text.replace('</em>', '')
+                except AttributeError:
+                    continue
                 poem = dict()
                 poem[author] = f'\n{name}\n\n{text}'
                 poems.append(poem)
+            logger.info(f'{file_path} download. len = {len(poems)}')
             return poems
 
     def get_poem(self) -> dict:
