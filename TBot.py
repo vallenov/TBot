@@ -11,6 +11,7 @@ import requests
 import urllib3.exceptions
 from requests import exceptions
 import math
+from mysql.connector import connect, Error
 
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
@@ -25,7 +26,6 @@ def tbot():
     config.read('TBot.ini', encoding='windows-1251')
     token = config['MAIN']['token']
     bot = telebot.TeleBot(token)
-    tb = TBotClass()
     content_types = ['audio', 'photo', 'voice', 'video', 'document', 'text', 'location', 'contact', 'sticker']
 
     conversation_logger = logging.getLogger('conversation')
@@ -33,6 +33,8 @@ def tbot():
     conv_handler = logging.FileHandler('text/run_conv.log')
     conv_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
     conversation_logger.addHandler(conv_handler)
+
+    tb = TBotClass()
 
     def gen_markup():
         markup = InlineKeyboardMarkup()

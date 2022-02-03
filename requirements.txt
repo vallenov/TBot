@@ -7,3 +7,4 @@ asyncio
 aiohttp
 pandas
 openpyxl
+mysql-connector-python
