@@ -2,6 +2,8 @@ import random
 import logging
 import requests
 from bs4 import BeautifulSoup
+import asyncio
+import aiohttp
 
 from loaders.loader import Loader
 
