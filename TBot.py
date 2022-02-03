@@ -8,6 +8,7 @@ import string
 import random
 import datetime
 import requests
+import urllib3.exceptions
 from requests import exceptions
 import math
 
@@ -56,6 +57,10 @@ def tbot():
                 bot.send_message(chat_id, replace, reply_markup=reply_markup)
             except ConnectionResetError:
                 logger.exception(f'ConnectionResetError exception: {traceback.format_exc()}')
+            except requests.exceptions.ConnectionError:
+                logger.exception(f'requests.exceptions.ConnectionError exception: {traceback.format_exc()}')
+            except urllib3.exceptions.ProtocolError:
+                logger.exception(f'urllib3.exceptions.ProtocolError exception: {traceback.format_exc()}')
             except Exception as _ex:
                 logger.exception(f'Unrecognized exception: {traceback.format_exc()}')
                 if not is_send:
