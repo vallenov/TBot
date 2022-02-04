@@ -55,7 +55,7 @@ class FileLoader(Loader):
         :param:
         :return: poesy string
         """
-        logger.info('get_poesy (FileLoader)')
+        logger.info('get_poesy')
         resp = {}
         if self.poems:
             random_poem = random.choice(self.poems)

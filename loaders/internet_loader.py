@@ -39,7 +39,7 @@ class InternetLoader(Loader):
         :param:
         :return: string like {'USD': '73,6059', 'EUR':'83,1158'}
         """
-        logger.info('get_exchange (InternetLoader)')
+        logger.info('get_exchange')
         resp = {}
         if self.config.has_option('URL', 'exchange_url'):
             exchange_url = self.config['URL']['exchange_url']
@@ -76,7 +76,7 @@ class InternetLoader(Loader):
         :param:
         :return: dict like {'Сегодня': '10°/15°', 'ср 12': '11°/18°'}
         """
-        logger.info('get_weather (InternetLoader)')
+        logger.info('get_weather')
         resp = {}
         if self.config.has_option('URL', 'weather_url'):
             weather_url = self.config['URL']['weather_url']
@@ -104,7 +104,7 @@ class InternetLoader(Loader):
         :param:
         :return: dict like {'quote1': 'author1', 'quote2: 'author2'}
         """
-        logger.info('get_quote (InternetLoader)')
+        logger.info('get_quote')
         resp = {}
         if self.config.has_option('URL', 'quote_url'):
             quote_url = self.config['URL']['quote_url']
@@ -130,7 +130,7 @@ class InternetLoader(Loader):
         :param:
         :return: wish string
         """
-        logger.info('get_wish (InternetLoader)')
+        logger.info('get_wish')
         resp = {}
         if self.config.has_option('URL', 'wish_url'):
             wish_url = self.config['URL']['wish_url']
@@ -154,7 +154,7 @@ class InternetLoader(Loader):
         :param:
         :return: wish string
         """
-        logger.info('get_news (InternetLoader)')
+        logger.info('get_news')
         resp = {}
         if self.config.has_option('URL', 'news_url'):
             news_url = self.config['URL']['news_url']
@@ -183,7 +183,7 @@ class InternetLoader(Loader):
         :param:
         :return: affirmation string
         """
-        logger.info('get_affirmationx (InternetLoader)')
+        logger.info('get_affirmationx')
         resp = {}
         if self.config.has_option('URL', 'affirmation_url'):
             affirmation_url = self.config['URL']['affirmation_url']
@@ -221,7 +221,7 @@ class InternetLoader(Loader):
         :param:
         :return: events digest
         """
-        logger.info('get_events (InternetLoader)')
+        logger.info('get_events')
         self.async_url_data = []
         tasks = []
         resp = {}
@@ -266,7 +266,7 @@ class InternetLoader(Loader):
         :param:
         :return: events digest
         """
-        logger.info('get_events (InternetLoader)')
+        logger.info('get_events')
         resp = {}
         if self.config.has_option('URL', 'events_url'):
             events_url = self.config['URL']['events_url']
@@ -302,7 +302,7 @@ class InternetLoader(Loader):
         :param:
         :return: restaurant string
         """
-        logger.info('get_restaurant (InternetLoader)')
+        logger.info('get_restaurant')
         resp = {}
         if self.config.has_option('URL', 'restaurant_url'):
             restaurant_url = self.config['URL']['restaurant_url']
@@ -347,7 +347,7 @@ class InternetLoader(Loader):
         :param:
         :return: poesy string
         """
-        logger.info('get_poesy (InternetLoader)')
+        logger.info('get_poesy')
         resp = {}
         if self.config.has_option('URL', 'poesy_url'):
             poesy_url = self.config['URL']['poesy_url']
@@ -405,7 +405,7 @@ class InternetLoader(Loader):
         :param:
         :return: poesy string
         """
-        logger.info('get_poesy (InternetLoader)')
+        logger.info('get_phone_number_info')
         resp = {}
         if self.config.has_option('URL', 'kodi_url'):
             kodi_url = self.config['URL']['kodi_url']
