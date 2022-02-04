@@ -398,3 +398,38 @@ class InternetLoader(Loader):
         resp['res'] = 'OK'
         resp[author] = f'\n\n{name}\n\n{poem}{year}'
         return resp
+
+    def get_phone_number_info(self, number) -> dict:
+        """
+        Get phone number info from internet
+        :param:
+        :return: poesy string
+        """
+        logger.info('get_poesy (InternetLoader)')
+        resp = {}
+        if self.config.has_option('URL', 'kodi_url'):
+            kodi_url = self.config['URL']['kodi_url']
+        else:
+            resp['res'] = 'ERROR'
+            resp['descr'] = "I can't do this yet😔"
+            return resp
+        headers = {'Connection': 'close'}
+        res = requests.post(kodi_url, data={'number': number}, headers=headers)
+        if 'Ошибка: Номер не найден' in res.text:
+            resp['res'] = 'ERROR'
+            resp['descr'] = 'Number not found/Номер не найден'
+            return resp
+        soup = BeautifulSoup(res.text, 'lxml')
+        div_raw = soup.find('div', class_='content__in')
+        table = div_raw.find('table', class_='teltr tel-mobile')
+        tr_raw = table.find_all('tr', class_='')
+        td_raw = tr_raw[-1].find_all('td')
+        resp['Страна'] = td_raw[0].find('strong').text
+        operator_info = td_raw[1].find('strong').text
+        resp['Регион'] = operator_info.split('[')[1].replace(']', '').replace(',', '')
+        resp['Изначальный оператор'] = operator_info.split(' ')[0]
+        p_raw = div_raw.find('p', style='')
+        span_raw = p_raw.find_all('span')
+        resp['Текущий оператор'] = span_raw[-1].text
+        resp['res'] = 'OK'
+        return resp

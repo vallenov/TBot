@@ -118,6 +118,10 @@ class TBotClass:
                 resp['res'] = self.__dict_to_str(self.file_loader.get_poem(), '\n')
                 #resp['res'] = self.__dict_to_str(self.internet_loader.get_poem(), '')
                 return resp
+            elif TBotClass._is_phone_number(form_text) is not None:
+                phone_number = TBotClass._is_phone_number(form_text)
+                resp['res'] = self.__dict_to_str(self.internet_loader.get_phone_number_info(phone_number), ': ')
+                return resp
             else:
                 resp['is_help'] = 1
                 resp['res'] = 'Hello! My name is DevInfoBot\nMy functions'
@@ -168,3 +172,32 @@ class TBotClass:
     def __get_config(self):
         self.config = configparser.ConfigParser()
         self.config.read('TBot.ini', encoding='windows-1251')
+
+    @staticmethod
+    def _is_phone_number(number: str) -> str or None:
+        print(f'Check {number}')
+        resp = {}
+        if len(number) < 10 or len(number) > 18:
+            print('Is not phone number')
+            return None
+        allowed_simbols = '0123456789+()- '
+        for num in number:
+            if num not in allowed_simbols:
+                print('Is not phone number')
+                return None
+        raw_num = number
+        raw_num = raw_num.strip()
+        raw_num = raw_num.replace(' ', '')
+        raw_num = raw_num.replace('+', '')
+        raw_num = raw_num.replace('(', '')
+        raw_num = raw_num.replace(')', '')
+        raw_num = raw_num.replace('-', '')
+        if len(raw_num) < 11:
+            raw_num = '8' + raw_num
+        if raw_num.startswith('7'):
+            raw_num = '8' + raw_num[1:]
+        if not raw_num.startswith('89'):
+            resp['res'] = 'ERROR'
+            resp['descr'] = 'Number format is not valid'
+            return None
+        return raw_num
