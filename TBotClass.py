@@ -96,11 +96,7 @@ class TBotClass:
                 resp['res'] = self.__dict_to_str(self.internet_loader.get_wish())
                 return resp
             elif form_text.startswith('news'):
-                text_split = form_text.split()
-                if len(text_split) > 1:
-                    resp['res'] = self.__dict_to_str(self.internet_loader.get_news(int(text_split[1])), '\n')
-                else:
-                    resp['res'] = self.__dict_to_str(self.internet_loader.get_news(), '\n')
+                resp['res'] = self.__dict_to_str(self.internet_loader.get_news(form_text), '\n')
                 return resp
             elif form_text == 'affirmation':
                 resp['res'] = self.__dict_to_str(self.internet_loader.get_affirmation())

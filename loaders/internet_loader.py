@@ -1,5 +1,7 @@
 import random
 import logging
+import traceback
+
 import requests
 from bs4 import BeautifulSoup
 import asyncio
@@ -148,7 +150,7 @@ class InternetLoader(Loader):
         resp[1] = random.choice(wish_list).text
         return resp
 
-    def get_news(self, count: int = 5) -> dict:
+    def get_news(self, text: str) -> dict:
         """
         Get news from internet
         :param:
@@ -156,6 +158,15 @@ class InternetLoader(Loader):
         """
         logger.info('get_news')
         resp = {}
+        count = 5
+        lst = text.split(' ')
+        if len(lst) > 1:
+            try:
+                count = int(lst[1])
+            except ValueError:
+                resp['res'] = 'ERROR'
+                resp['descr'] = "Count of news is not number"
+                return resp
         if self.config.has_option('URL', 'news_url'):
             news_url = self.config['URL']['news_url']
         else:
