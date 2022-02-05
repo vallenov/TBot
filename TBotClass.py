@@ -50,7 +50,7 @@ class TBotClass:
 
     def __init__(self):
         logger.info('TBotClass init')
-        self.__get_config()
+        #self._get_config()
         self.internet_loader = InternetLoader('ILoader')
         self.file_loader = FileLoader('FLoader')
         #self.db_loader = DBLoader('DBLoader')
@@ -68,6 +68,7 @@ class TBotClass:
         """
         resp = {}
         trust_ids = []
+        self._get_config()
         if ',' in self.config['MAIN']['trust_ids'].split(','):
             trust_ids = list(map(lambda x: int(x), self.config['MAIN']['trust_ids'].split(',')))
         else:
@@ -174,7 +175,7 @@ class TBotClass:
         docs_str['res'] = 'OK'
         return docs_str
 
-    def __get_config(self):
+    def _get_config(self):
         self.config = configparser.ConfigParser()
         self.config.read('TBot.ini', encoding='windows-1251')
 

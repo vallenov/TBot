@@ -9,9 +9,7 @@ import random
 import datetime
 import requests
 import urllib3.exceptions
-from requests import exceptions
 import math
-from mysql.connector import connect, Error
 
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
@@ -53,25 +51,32 @@ def tbot():
     def safe_send(chat_id: int, replace: str, reply_markup=None):
         is_send = False
         current_try = 0
-        while current_try < MAX_TRY:
-            current_try += 1
-            try:
-                bot.send_message(chat_id, replace, reply_markup=reply_markup)
-            except ConnectionResetError:
-                logger.exception(f'ConnectionResetError exception: {traceback.format_exc()}')
-            except requests.exceptions.ConnectionError:
-                logger.exception(f'requests.exceptions.ConnectionError exception: {traceback.format_exc()}')
-            except urllib3.exceptions.ProtocolError:
-                logger.exception(f'urllib3.exceptions.ProtocolError exception: {traceback.format_exc()}')
-            except Exception as _ex:
-                logger.exception(f'Unrecognized exception: {traceback.format_exc()}')
-                if not is_send:
-                    send_dev_message({'subject': 'TBot EXCEPTION', 'text': f'{traceback.format_exc()}'})
-                    is_send = True
-            else:
-                conversation_logger.info('Response: ' + replace.replace('\n', ' '))
-                logger.info('Send successful')
-                break
+        cnt_message = math.ceil(len(replace) / MAX_LEN)
+        start = 0
+        for cnt in range(cnt_message):
+            while current_try < MAX_TRY:
+                current_try += 1
+                try:
+                    if start + MAX_LEN >= len(replace):
+                        bot.send_message(chat_id, replace[start:], reply_markup=reply_markup)
+                    else:
+                        bot.send_message(chat_id, replace[start:start+MAX_LEN], reply_markup=reply_markup)
+                    start += MAX_LEN
+                except ConnectionResetError:
+                    logger.exception(f'ConnectionResetError exception: {traceback.format_exc()}')
+                except requests.exceptions.ConnectionError:
+                    logger.exception(f'requests.exceptions.ConnectionError exception: {traceback.format_exc()}')
+                except urllib3.exceptions.ProtocolError:
+                    logger.exception(f'urllib3.exceptions.ProtocolError exception: {traceback.format_exc()}')
+                except Exception as _ex:
+                    logger.exception(f'Unrecognized exception: {traceback.format_exc()}')
+                    if not is_send:
+                        send_dev_message({'subject': 'TBot EXCEPTION', 'text': f'{traceback.format_exc()}'})
+                        is_send = True
+                else:
+                    conversation_logger.info('Response: ' + replace.replace('\n', ' '))
+                    logger.info('Send successful')
+                    break
 
     @bot.callback_query_handler(func=lambda call: True)
     def callback_query(call):
@@ -84,14 +89,7 @@ def tbot():
                                  f'FirstName - {call.message.chat.first_name}, '
                                  f'Callback - {call.message.text}, '
                                  f'RAW - {call.message.chat}')
-        cnt_message = math.ceil(len(replace['res']) / MAX_LEN)
-        start = 0
-        for cnt in range(cnt_message):
-            if start + MAX_LEN >= len(replace['res']):
-                safe_send(call.message.json['chat']['id'], replace['res'][start:])
-            else:
-                safe_send(call.message.json['chat']['id'], replace['res'][start:start + MAX_LEN])
-            start += MAX_LEN
+        safe_send(call.message.json['chat']['id'], replace['res'])
 
     @bot.message_handler(commands=['start'])
     def start_message(message):
@@ -104,14 +102,7 @@ def tbot():
         if replace.get('is_help', 0):
             safe_send(message.chat.id, replace['res'], reply_markup=gen_markup())
         else:
-            cnt_message = math.ceil(len(replace['res']) / MAX_LEN)
-            start = 0
-            for cnt in range(cnt_message):
-                if start + MAX_LEN >= len(replace['res']):
-                    safe_send(message.chat.id, replace['res'][start:])
-                else:
-                    safe_send(message.chat.id, replace['res'][start:start+MAX_LEN])
-                start += MAX_LEN
+            safe_send(message.chat.id, replace['res'])
 
     def save_file(message) -> None:
         """
@@ -173,7 +164,7 @@ def tbot():
     def send_dev_message(data: dict):
         """
         Отправка сообщения админу
-
+        :param data: {'to': name or email, 'subject': 'subject' (unnecessary), 'text': 'text'}
         """
         data.update({'to': config.get('MAIL', 'address')})
         current_try = 0
