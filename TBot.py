@@ -39,7 +39,7 @@ def tbot():
     def gen_markup():
         markup = InlineKeyboardMarkup()
         markup.row_width = 1
-        markup.add(InlineKeyboardButton("💵 Exchange/Курс валют", callback_data="ex"),
+        markup.add(InlineKeyboardButton("💵 Exchange/Курс валют", callback_data="exchange"),
                    InlineKeyboardButton("⛅️Weather/Погода", callback_data="weather"),
                    InlineKeyboardButton("💭 Quote/Цитата", callback_data="quote"),
                    InlineKeyboardButton("🤗 Wish/Пожелание", callback_data="wish"),

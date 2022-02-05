@@ -44,25 +44,47 @@ class FileLoader(Loader):
                 except AttributeError:
                     continue
                 poem = dict()
-                poem[author] = f'\n{name}\n\n{text}'
+                poem['author'] = author
+                poem['name'] = name
+                poem['text'] = text
                 poems.append(poem)
             logger.info(f'{file_path} download. len = {len(poems)}')
             return poems
 
-    def get_poem(self) -> dict:
+    def get_poem(self, text: str) -> dict:
         """
         Get respoesy from file
         :param:
         :return: poesy string
         """
         logger.info('get_poesy')
+        lst = text.split()
         resp = {}
+        random_poem = {}
         if self.poems:
-            random_poem = random.choice(self.poems)
-            resp.update(random_poem)
-            resp['res'] = 'OK'
+            if len(lst) == 1:
+                random_poem = random.choice(self.poems)
+                resp['res'] = 'OK'
+            else:
+                author_name = ' '.join(lst[1:])
+                authors_poems_list = []
+                for poem in self.poems:
+                    if author_name.lower() in poem['author'].lower():
+                        authors_poems_list.append(poem)
+                if authors_poems_list:
+                    random_poem = random.choice(authors_poems_list)
+                else:
+                    resp['res'] = 'ERROR'
+                    resp['descr'] = 'Author not found'
+                    return resp
+                resp['res'] = 'OK'
         else:
             logger.error('File poems.xlsx not found')
             resp['res'] = 'ERROR'
             resp['descr'] = 'ERROR "FL". Please, contact the administrator'
+        author = random_poem['author']
+        name = random_poem['name']
+        text = random_poem['text']
+        str_poem = f"{author}\n\n{name}\n\n{text}"
+        resp.update({1: str_poem})
         return resp

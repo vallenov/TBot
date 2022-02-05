@@ -53,7 +53,7 @@ class TBotClass:
         self.__get_config()
         self.internet_loader = InternetLoader('ILoader')
         self.file_loader = FileLoader('FLoader')
-        self.db_loader = DBLoader('DBLoader')
+        #self.db_loader = DBLoader('DBLoader')
 
     def __del__(self):
         logger.error(f'Traceback: {traceback.format_exc()}')
@@ -83,35 +83,35 @@ class TBotClass:
         if message.content_type == 'text':
             resp['status'] = 'OK'
             form_text = message.text.lower().strip()
-            if form_text == 'ex':
+            if form_text == 'exchange' or form_text == 'валюта':
                 resp['res'] = self.__dict_to_str(self.internet_loader.get_exchange())
                 return resp
-            elif form_text == 'weather':
+            elif form_text == 'weather' or form_text == 'погода':
                 resp['res'] = self.__dict_to_str(self.internet_loader.get_weather())
                 return resp
-            elif form_text == 'quote':
+            elif form_text == 'quote' or form_text == 'цитата':
                 resp['res'] = self.__dict_to_str(self.internet_loader.get_quote(), '\n')
                 return resp
-            elif form_text == 'wish':
+            elif form_text == 'wish' or form_text == 'пожелание':
                 resp['res'] = self.__dict_to_str(self.internet_loader.get_wish())
                 return resp
-            elif form_text.startswith('news'):
+            elif form_text.startswith('news') or form_text.startswith('новости'):
                 resp['res'] = self.__dict_to_str(self.internet_loader.get_news(form_text), '\n')
                 return resp
-            elif form_text == 'affirmation':
+            elif form_text == 'affirmation' or form_text == 'аффирмация':
                 resp['res'] = self.__dict_to_str(self.internet_loader.get_affirmation())
                 return resp
             # elif form_text == 'events':
             #     resp['res'] = self.__dict_to_str(self._get_events(), '\n')
             #     return resp
-            elif form_text == 'events':
+            elif form_text == 'events' or form_text == 'мероприятия':
                 resp['res'] = self.__dict_to_str(asyncio.run(self.internet_loader.async_events()), '\n')
                 return resp
-            elif form_text == 'food':
+            elif form_text == 'food' or form_text == 'еда':
                 resp['res'] = self.__dict_to_str(self.internet_loader.get_restaurant(), ' ')
                 return resp
-            elif form_text == 'poem':
-                resp['res'] = self.__dict_to_str(self.file_loader.get_poem(), '\n')
+            elif form_text.startswith('poem') or form_text.startswith('стих'):
+                resp['res'] = self.__dict_to_str(self.file_loader.get_poem(form_text), '\n')
                 #resp['res'] = self.__dict_to_str(self.internet_loader.get_poem(), '')
                 return resp
             elif TBotClass._is_phone_number(form_text) is not None:
@@ -120,7 +120,11 @@ class TBotClass:
                 return resp
             else:
                 resp['is_help'] = 1
-                resp['res'] = 'Hello! My name is DevInfoBot\nMy functions'
+                resp['res'] = str(f'Hello! My name is DevInfoBot\n'
+                                  f'You may read "news" and "poem" with parameter\n'
+                                  f'News "count of news"\n'
+                                  f'Poem "author name"\n'
+                                  f'Or use the next buttons without parameters\n')
                 return resp
 
     @staticmethod
@@ -171,15 +175,12 @@ class TBotClass:
 
     @staticmethod
     def _is_phone_number(number: str) -> str or None:
-        print(f'Check {number}')
         resp = {}
         if len(number) < 10 or len(number) > 18:
-            print('Is not phone number')
             return None
         allowed_simbols = '0123456789+()- '
         for num in number:
             if num not in allowed_simbols:
-                print('Is not phone number')
                 return None
         raw_num = number
         raw_num = raw_num.strip()
