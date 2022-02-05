@@ -120,8 +120,13 @@ class TBotClass:
                 return resp
             else:
                 resp['is_help'] = 1
-                resp['res'] = str(f'Hello! My name is DevInfoBot\n'
-                                  f'You may read "news" and "poem" with parameter\n'
+                resp['res'] = str(f'Привет! Меня зовут DevInfoBot\n'
+                                  f'Ты можешь написать "новости" и "стих" с параметром\n'
+                                  f'Новости "количество новостей"\n'
+                                  f'Стих "имя автора"\n'
+                                  f'Или используй следующие кнопки без параметров\n\n'
+                                  f'Hello! My name is DevInfoBot\n'
+                                  f'You may write "news" and "poem" with parameter\n'
                                   f'News "count of news"\n'
                                   f'Poem "author name"\n'
                                   f'Or use the next buttons without parameters\n')
