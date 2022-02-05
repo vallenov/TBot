@@ -4,6 +4,8 @@ import traceback
 import datetime
 import asyncio
 
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+
 from loaders.internet_loader import InternetLoader
 from loaders.file_loader import FileLoader
 from loaders.db_loader import DBLoader
@@ -120,7 +122,7 @@ class TBotClass:
                 resp['res'] = self.__dict_to_str(self.internet_loader.get_phone_number_info(phone_number), ': ')
                 return resp
             else:
-                resp['is_help'] = 1
+                resp['markup'] = TBotClass._gen_markup()
                 resp['res'] = str(f'Привет! Меня зовут DevInfoBot\n'
                                   f'Ты можешь написать "новости" и "стих" с параметром\n'
                                   f'Новости "количество новостей"\n'
@@ -132,6 +134,21 @@ class TBotClass:
                                   f'Poem "author name"\n'
                                   f'Or use the next buttons without parameters\n')
                 return resp
+
+    @staticmethod
+    def _gen_markup():
+        markup = InlineKeyboardMarkup()
+        markup.row_width = 1
+        markup.add(InlineKeyboardButton("💵 Exchange/Курс валют", callback_data="exchange"),
+                   InlineKeyboardButton("⛅️Weather/Погода", callback_data="weather"),
+                   InlineKeyboardButton("💭 Quote/Цитата", callback_data="quote"),
+                   InlineKeyboardButton("🤗 Wish/Пожелание", callback_data="wish"),
+                   InlineKeyboardButton("📰 News/Новости", callback_data="news"),
+                   InlineKeyboardButton("🧘‍♀️Affirmation/Аффирмация", callback_data="affirmation"),
+                   InlineKeyboardButton("🎭 Events/Мероприятия", callback_data="events"),
+                   InlineKeyboardButton("🍲 Food/Еда", callback_data="food"),
+                   InlineKeyboardButton("🪶 Poem/Стих", callback_data="poem"))
+        return markup
 
     @staticmethod
     def __dict_to_str(di: dict, delimiter: str = ' = ') -> str:

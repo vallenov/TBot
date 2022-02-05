@@ -11,8 +11,6 @@ import requests
 import urllib3.exceptions
 import math
 
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
-
 from TBotClass import TBotClass
 
 MAX_TRY = 15
@@ -33,20 +31,6 @@ def tbot():
     conversation_logger.addHandler(conv_handler)
 
     tb = TBotClass()
-
-    def gen_markup():
-        markup = InlineKeyboardMarkup()
-        markup.row_width = 1
-        markup.add(InlineKeyboardButton("💵 Exchange/Курс валют", callback_data="exchange"),
-                   InlineKeyboardButton("⛅️Weather/Погода", callback_data="weather"),
-                   InlineKeyboardButton("💭 Quote/Цитата", callback_data="quote"),
-                   InlineKeyboardButton("🤗 Wish/Пожелание", callback_data="wish"),
-                   InlineKeyboardButton("📰 News/Новости", callback_data="news"),
-                   InlineKeyboardButton("🧘‍♀️Affirmation/Аффирмация", callback_data="affirmation"),
-                   InlineKeyboardButton("🎭 Events/Мероприятия", callback_data="events"),
-                   InlineKeyboardButton("🍲 Food/Еда", callback_data="food"),
-                   InlineKeyboardButton("🪶 Poem/Стих", callback_data="poem"))
-        return markup
 
     def safe_send(chat_id: int, replace: str, reply_markup=None):
         is_send = False
@@ -99,10 +83,7 @@ def tbot():
     def send_text(message):
         save_file(message)
         replace = tb.replace(message)
-        if replace.get('is_help', 0):
-            safe_send(message.chat.id, replace['res'], reply_markup=gen_markup())
-        else:
-            safe_send(message.chat.id, replace['res'])
+        safe_send(message.chat.id, replace['res'], reply_markup=replace.get('markup', None))
 
     def save_file(message) -> None:
         """
