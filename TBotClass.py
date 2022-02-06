@@ -125,6 +125,7 @@ class TBotClass:
                 resp['res'] = self.__dict_to_str(self.internet_loader.get_phone_number_info(phone_number), ': ')
                 return resp
             else:
+                logger.info('get help message')
                 resp['markup'] = TBotClass._gen_markup()
                 resp['res'] = str(f'Привет! Меня зовут InfoBot\n'
                                   f'Ты можешь написать "новости", "стих" и "фильм" с параметром\n'
