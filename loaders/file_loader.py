@@ -67,7 +67,6 @@ class FileLoader(Loader):
                 resp['res'] = 'OK'
             else:
                 search_string = ' '.join(lst[1:])
-                print(search_string)
                 authors_poems_list = []
                 for poem in self.poems:
                     if search_string.lower() in poem['author'].lower() or search_string.lower() in poem['name'].lower():
