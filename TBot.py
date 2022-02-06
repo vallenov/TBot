@@ -16,6 +16,8 @@ from TBotClass import TBotClass
 MAX_TRY = 15
 MAX_LEN = 4000
 
+DOWNLOADS = 'downloads'
+
 
 def tbot():
     config = configparser.ConfigParser()
@@ -26,7 +28,10 @@ def tbot():
 
     conversation_logger = logging.getLogger('conversation')
     conversation_logger.setLevel(logging.INFO)
-    conv_handler = logging.FileHandler('text/run_conv.log')
+    if not os.path.exists(os.path.join(DOWNLOADS, 'text')):
+        os.mkdir(os.path.join(DOWNLOADS, 'text'))
+        os.chown(os.path.join(DOWNLOADS, 'text'), 1000, 1000)
+    conv_handler = logging.FileHandler(os.path.join(DOWNLOADS, 'text', 'run_conv.log'))
     conv_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
     conversation_logger.addHandler(conv_handler)
 
@@ -83,7 +88,8 @@ def tbot():
     def send_text(message):
         save_file(message)
         replace = tb.replace(message)
-        safe_send(message.chat.id, replace['res'], reply_markup=replace.get('markup', None))
+        if replace:
+            safe_send(message.chat.id, replace['res'], reply_markup=replace.get('markup', None))
 
     def save_file(message) -> None:
         """
@@ -114,10 +120,13 @@ def tbot():
         if message.content_type == 'video':
             file_extention = '.mp4'
             file_info = bot.get_file(message.video.file_id)
-        if not os.path.exists(os.path.join(curdir, message.content_type)):
-            os.mkdir(os.path.join(curdir, message.content_type))
-            os.chown(os.path.join(curdir, message.content_type), 1000, 1000)
-        file_name = os.path.join(curdir, message.content_type,
+        if not os.path.exists(os.path.join(curdir, DOWNLOADS)):
+            os.mkdir(DOWNLOADS)
+            os.chown(os.path.join(curdir, DOWNLOADS), 1000, 1000)
+        if not os.path.exists(os.path.join(curdir, DOWNLOADS, message.content_type)):
+            os.mkdir(os.path.join(curdir, DOWNLOADS, message.content_type))
+            os.chown(os.path.join(curdir, DOWNLOADS, message.content_type), 1000, 1000)
+        file_name = os.path.join(curdir, DOWNLOADS, message.content_type,
                                  f'{now_time()}{_get_hash_name()}{file_extention}')
         downloaded_info = bot.download_file(file_info.file_path)
         with open(file_name, 'wb') as new_file:
