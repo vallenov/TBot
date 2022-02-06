@@ -66,10 +66,11 @@ class FileLoader(Loader):
                 random_poem = random.choice(self.poems)
                 resp['res'] = 'OK'
             else:
-                author_name = ' '.join(lst[1:])
+                search_string = ' '.join(lst[1:])
+                print(search_string)
                 authors_poems_list = []
                 for poem in self.poems:
-                    if author_name.lower() in poem['author'].lower():
+                    if search_string.lower() in poem['author'].lower() or search_string.lower() in poem['name'].lower():
                         authors_poems_list.append(poem)
                 if authors_poems_list:
                     random_poem = random.choice(authors_poems_list)
