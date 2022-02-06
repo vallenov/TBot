@@ -76,7 +76,7 @@ class FileLoader(Loader):
                     random_poem = random.choice(authors_poems_list)
                 else:
                     resp['res'] = 'ERROR'
-                    resp['descr'] = 'Author not found'
+                    resp['descr'] = 'Poem not found'
                     return resp
                 resp['res'] = 'OK'
         else:
