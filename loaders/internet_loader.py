@@ -1,8 +1,7 @@
 import datetime
 import random
 import logging
-import traceback
-
+import string
 import requests
 from bs4 import BeautifulSoup
 import asyncio
@@ -496,8 +495,19 @@ class InternetLoader(Loader):
         movie_soup = InternetLoader._site_to_lxml(random_movie_url + str(random_page_number))
         movie_div_raw = movie_soup.find('div', class_='search_results search_results_last')
         div_elements = movie_div_raw.find_all('div', class_='element')
-        random_movie_raw = random.choice(div_elements)
-        p_raw = random_movie_raw.find('p', class_='name')
+        is_cyrillic = False
+        try_count = 0
+        simbols = string.ascii_lowercase + string.ascii_uppercase
+        while is_cyrillic is not True:
+            random_movie_raw = random.choice(div_elements)
+            p_raw = random_movie_raw.find('p', class_='name')
+            if p_raw.text[0] not in simbols:
+                is_cyrillic = True
+            try_count += 1
+            if try_count > per_page:
+                resp['res'] = 'ERROR'
+                resp['descr'] = f'Movies by {year} is not found'
+                return resp
         movie_id = p_raw.find('a').get('href')
         movie_url = '/'.join(random_movie_url.split('/')[:3])
         resp['res'] = 'OK'
