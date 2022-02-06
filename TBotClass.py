@@ -117,6 +117,9 @@ class TBotClass:
                 resp['res'] = self.__dict_to_str(self.file_loader.get_poem(form_text), '\n')
                 #resp['res'] = self.__dict_to_str(self.internet_loader.get_poem(), '')
                 return resp
+            elif form_text.startswith('movie') or form_text.startswith('фильм'):
+                resp['res'] = self.__dict_to_str(self.internet_loader.get_random_movie(form_text), ' ')
+                return resp
             elif TBotClass._is_phone_number(form_text) is not None:
                 phone_number = TBotClass._is_phone_number(form_text)
                 resp['res'] = self.__dict_to_str(self.internet_loader.get_phone_number_info(phone_number), ': ')
@@ -124,14 +127,16 @@ class TBotClass:
             else:
                 resp['markup'] = TBotClass._gen_markup()
                 resp['res'] = str(f'Привет! Меня зовут DevInfoBot\n'
-                                  f'Ты можешь написать "новости" и "стих" с параметром\n'
+                                  f'Ты можешь написать "новости", "стих" и "фильм" с параметром\n'
                                   f'Новости "количество новостей"\n'
                                   f'Стих "имя автора"\n'
+                                  f'Фильм "год выпуска"\n'
                                   f'Или используй следующие кнопки без параметров\n\n'
                                   f'Hello! My name is DevInfoBot\n'
-                                  f'You may write "news" and "poem" with parameter\n'
+                                  f'You may write "news", "poem" and "movie" with parameter\n'
                                   f'News "count of news"\n'
                                   f'Poem "author name"\n'
+                                  f'Movie "release year"\n'
                                   f'Or use the next buttons without parameters\n')
                 return resp
 
@@ -147,7 +152,8 @@ class TBotClass:
                    InlineKeyboardButton("🧘‍♀️Affirmation/Аффирмация", callback_data="affirmation"),
                    InlineKeyboardButton("🎭 Events/Мероприятия", callback_data="events"),
                    InlineKeyboardButton("🍲 Food/Еда", callback_data="food"),
-                   InlineKeyboardButton("🪶 Poem/Стих", callback_data="poem"))
+                   InlineKeyboardButton("🪶 Poem/Стих", callback_data="poem"),
+                   InlineKeyboardButton("🎞 Movie/Фильм", callback_data="movie"))
         return markup
 
     @staticmethod

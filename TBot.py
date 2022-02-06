@@ -28,6 +28,9 @@ def tbot():
 
     conversation_logger = logging.getLogger('conversation')
     conversation_logger.setLevel(logging.INFO)
+    if not os.path.exists(os.path.join(DOWNLOADS)):
+        os.mkdir(os.path.join(DOWNLOADS))
+        os.chown(os.path.join(DOWNLOADS), 1000, 1000)
     if not os.path.exists(os.path.join(DOWNLOADS, 'text')):
         os.mkdir(os.path.join(DOWNLOADS, 'text'))
         os.chown(os.path.join(DOWNLOADS, 'text'), 1000, 1000)

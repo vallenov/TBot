@@ -1,7 +1,7 @@
+import datetime
 import random
 import logging
-import traceback
-
+import string
 import requests
 from bs4 import BeautifulSoup
 import asyncio
@@ -443,4 +443,74 @@ class InternetLoader(Loader):
         span_raw = p_raw.find_all('span')
         resp['Текущий оператор'] = span_raw[-1].text
         resp['res'] = 'OK'
+        return resp
+
+    def get_random_movie(self, text: str) -> dict:
+        """
+        Get random movie from internet
+        :param:
+        :return: random movie string
+        """
+        logger.info('get_random_movie')
+        resp = {}
+        year = datetime.datetime.now().year
+        command = text.split(' ')
+        if len(command) > 1:
+            try:
+                year = int(command[1])
+            except ValueError as e:
+                resp['res'] = 'ERROR'
+                resp['descr'] = 'Format of data is not valid'
+                return resp
+            else:
+                if year < 1890 or year > 2022:
+                    resp['res'] = 'ERROR'
+                    resp['descr'] = f'Year may be from 1890 to {datetime.datetime.now().year}'
+                    return resp
+        if self.config.has_option('URL', 'random_movie_url'):
+            random_movie_url = self.config['URL']['random_movie_url'].format(year, year)
+        else:
+            resp['res'] = 'ERROR'
+            resp['descr'] = "I can't do this yet😔"
+            return resp
+        soup = InternetLoader._site_to_lxml(random_movie_url)
+        result_top = soup.find('div', class_='search_results_top')
+        span_raw = result_top.find('span')
+        is_result = int(span_raw.text.split(' ')[-1])
+        if not is_result:
+            resp['res'] = 'ERROR'
+            resp['descr'] = f'Movies by {year} is not found'
+            return resp
+        if soup is None:
+            resp['res'] = 'ERROR'
+            return resp
+        div_raw = soup.find('div', class_='search_results search_results_last')
+        div_nav = div_raw.find('div', class_='navigator')
+        from_to = div_nav.find('div', class_='pagesFromTo').text.split(' ')[0].split('—')
+        per_page = int(from_to[1]) - int(from_to[0]) - 1
+        page_count = int(div_nav.find('div', class_='pagesFromTo').text.split(' ')[-1]) // per_page
+        random_page_number = 1
+        if page_count > 1:
+            random_page_number = str(random.choice(range(1, page_count)))
+        movie_soup = InternetLoader._site_to_lxml(random_movie_url + str(random_page_number))
+        movie_div_raw = movie_soup.find('div', class_='search_results search_results_last')
+        div_elements = movie_div_raw.find_all('div', class_='element')
+        is_cyrillic = False
+        try_count = 0
+        simbols = string.ascii_lowercase + string.ascii_uppercase
+        while is_cyrillic is not True:
+            random_movie_raw = random.choice(div_elements)
+            p_raw = random_movie_raw.find('p', class_='name')
+            if p_raw.text[0] not in simbols:
+                is_cyrillic = True
+            try_count += 1
+            if try_count > per_page:
+                resp['res'] = 'ERROR'
+                resp['descr'] = f'Movies by {year} is not found'
+                return resp
+        movie_id = p_raw.find('a').get('href')
+        movie_url = '/'.join(random_movie_url.split('/')[:3])
+        resp['res'] = 'OK'
+        resp[0] = f'Случайный фильм {year} года'
+        resp[1] = movie_url+movie_id
         return resp
