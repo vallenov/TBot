@@ -126,13 +126,13 @@ class TBotClass:
                 return resp
             else:
                 resp['markup'] = TBotClass._gen_markup()
-                resp['res'] = str(f'Привет! Меня зовут DevInfoBot\n'
+                resp['res'] = str(f'Привет! Меня зовут InfoBot\n'
                                   f'Ты можешь написать "новости", "стих" и "фильм" с параметром\n'
                                   f'Новости "количество новостей"\n'
                                   f'Стих "имя автора"\n'
                                   f'Фильм "год выпуска"\n'
                                   f'Или используй следующие кнопки без параметров\n\n'
-                                  f'Hello! My name is DevInfoBot\n'
+                                  f'Hello! My name is InfoBot\n'
                                   f'You may write "news", "poem" and "movie" with parameter\n'
                                   f'News "count of news"\n'
                                   f'Poem "author name"\n'
