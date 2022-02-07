@@ -30,7 +30,7 @@ def check_permission(needed_level: str = 'regular'):
         def wrap(self, *args, **kwargs):
             logger.info(f'check permission')
             user_permission = Loader.user_privileges.get(kwargs['chat_id'], Privileges.test)
-            logger.info(f'User permission: {user_permission}, needed permission = {pr_dict[needed_level]}')
+            logger.info(f'User permission: {user_permission}, needed permission: {pr_dict[needed_level]}')
             resp = {}
             if user_permission < pr_dict[needed_level]:
                 logger.info('Access denied')
