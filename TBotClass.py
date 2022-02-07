@@ -145,7 +145,11 @@ class TBotClass:
                 resp['res'] = self.__dict_to_str(self.internet_loader.get_phone_number_info(phone_number), ': ')
                 return resp
             else:
-                return self._get_help(chat_id=chat_id)
+                resp = self._get_help(chat_id=chat_id)
+                descr = resp.get('descr')
+                if descr is not None:
+                    resp['res'] = descr
+                return resp
 
     @staticmethod
     def _gen_markup():
