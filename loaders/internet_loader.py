@@ -7,7 +7,8 @@ from bs4 import BeautifulSoup
 import asyncio
 import aiohttp
 
-from loaders.loader import Loader
+from loaders.loader import Loader, check_permission
+#from loaders.loader import
 
 logger = logging.getLogger(__name__)
 handler = logging.FileHandler('run.log')
@@ -35,7 +36,8 @@ class InternetLoader(Loader):
             logger.info(f'Get successful ({url})')
         return soup
 
-    def get_exchange(self) -> dict:
+    @check_permission()
+    def get_exchange(self, **kwargs) -> dict:
         """
         Get exchange from internet
         :param:

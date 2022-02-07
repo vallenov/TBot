@@ -6,6 +6,7 @@ import asyncio
 
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
+from loaders.loader import Loader, check_permission
 from loaders.internet_loader import InternetLoader
 from loaders.file_loader import FileLoader
 from loaders.db_loader import DBLoader
@@ -17,23 +18,39 @@ handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s -
 logger.addHandler(handler)
 
 
-def check_permission(func):
-    """
-    Check permission before execute func
-    :param func: input func
-    :return: wrapped func
-    """
-    def wrap(*args, **kwargs):
-        resp = {}
-        if not TBotClass.permission:
-            logger.error('Permission denied')
-            resp['res'] = "ERROR"
-            resp['descr'] = 'Permission denied'
-            res = resp
-        else:
-            res = func(*args, **kwargs)
-        return res
-    return wrap
+# def check_permission(needed_level: str = 'regular'):
+#     def decorator(func):
+#         def wrap(self, *args, **kwargs):
+#             print(kwargs)
+#             user_permission = self.db_loader.user_privileges[kwargs['chat_id']]
+#             print(f'usr rer = {user_permission}, needed = {pr_dict[needed_level]}')
+#             if user_permission < pr_dict[needed_level]:
+#                 print('DENIED!!!')
+#                 return
+#             else:
+#                 print('ALLOWED!!!')
+#             res = func(self, *args, **kwargs)
+#             return res
+#         return wrap
+#     return decorator
+
+
+# def check_permission(func):
+#     """
+#     Check permission before execute func
+#     :param func: input func
+#     :return: wrapped func
+#     """
+#     def wrap(*args, **kwargs):
+#         resp = {}
+#         if not TBotClass.permission:
+#             logger.error('Permission denied')
+#             resp['res'] = "ERROR"
+#             resp['descr'] = 'Permission denied'
+#         else:
+#             resp = func(*args, **kwargs)
+#         return resp
+#     return wrap
 
 
 def benchmark(func):
@@ -55,7 +72,7 @@ class TBotClass:
         #self._get_config()
         self.internet_loader = InternetLoader('ILoader')
         self.file_loader = FileLoader('FLoader')
-        #self.db_loader = DBLoader('DBLoader')
+        self.db_loader = DBLoader('DBLoader')
 
     def __del__(self):
         logger.error(f'Traceback: {traceback.format_exc()}')
@@ -71,23 +88,26 @@ class TBotClass:
         resp = {}
         trust_ids = []
         self._get_config()
-        if ',' in self.config['MAIN']['trust_ids'].split(','):
-            trust_ids = list(map(lambda x: int(x), self.config['MAIN']['trust_ids'].split(',')))
-        else:
-            trust_ids.append(int(self.config['MAIN']['trust_ids']))
-        if message.json['chat']['id'] == int(self.config['MAIN']['root_id']):
-            TBotClass.permission = True
-        elif message.json['chat']['id'] in trust_ids:
-            TBotClass.permission = False
-        else:
-            resp['status'] = 'ERROR'
-            resp['res'] = 'Permission denied'
-            return resp
+        chat_id = message.json['chat']['id']
+        #permission = Loader.user_privileges.get(chat_id, Privileges.untrusted)
+        #print(permission)
+        # if ',' in self.config['MAIN']['trust_ids'].split(','):
+        #     trust_ids = list(map(lambda x: int(x), self.config['MAIN']['trust_ids'].split(',')))
+        # else:
+        #     trust_ids.append(int(self.config['MAIN']['trust_ids']))
+        # if message.json['chat']['id'] == int(self.config['MAIN']['root_id']):
+        #     TBotClass.permission = True
+        # elif message.json['chat']['id'] in trust_ids:
+        #     TBotClass.permission = False
+        # else:
+        #     resp['status'] = 'ERROR'
+        #     resp['res'] = 'Permission denied'
+        #     return resp
         if message.content_type == 'text':
             resp['status'] = 'OK'
             form_text = message.text.lower().strip()
             if form_text == 'exchange' or form_text == 'валюта':
-                resp['res'] = self.__dict_to_str(self.internet_loader.get_exchange())
+                resp['res'] = self.__dict_to_str(self.internet_loader.get_exchange(chat_id=chat_id))
                 return resp
             elif form_text == 'weather' or form_text == 'погода':
                 resp['res'] = self.__dict_to_str(self.internet_loader.get_weather())
@@ -125,21 +145,7 @@ class TBotClass:
                 resp['res'] = self.__dict_to_str(self.internet_loader.get_phone_number_info(phone_number), ': ')
                 return resp
             else:
-                logger.info('get help message')
-                resp['markup'] = TBotClass._gen_markup()
-                resp['res'] = str(f'Привет! Меня зовут InfoBot\n'
-                                  f'Ты можешь написать "новости", "стих" и "фильм" с параметром\n'
-                                  f'Новости "количество новостей"\n'
-                                  f'Стих "имя автора"\n'
-                                  f'Фильм "год выпуска"\n'
-                                  f'Или используй следующие кнопки без параметров\n\n'
-                                  f'Hello! My name is InfoBot\n'
-                                  f'You may write "news", "poem" and "movie" with parameter\n'
-                                  f'News "count of news"\n'
-                                  f'Poem "author name"\n'
-                                  f'Movie "release year"\n'
-                                  f'Or use the next buttons without parameters\n')
-                return resp
+                return self._get_help(chat_id=chat_id)
 
     @staticmethod
     def _gen_markup():
@@ -175,29 +181,29 @@ class TBotClass:
                 fin_str += f'{key}{delimiter}{value}\n'
         return fin_str
 
-    def __get_help(self, dev: bool) -> dict:
+    @check_permission()
+    def _get_help(self, **kwargs) -> dict:
         """
         Get bot function
         :param dev: change view of help
         :return: {'func': 'description', ...}
         """
         logger.info('get_help')
-        docs_str = {}
-        if dev:
-            docs = list(filter(lambda x: '__' not in x and x.startswith('_'), dir(self)))
-            for doc in docs:
-                if str(eval(f'self.{doc}.__doc__')) is not None:
-                    docs_str[doc] = str(eval(f'self.{doc}.__doc__')).split('\n')[1].strip()
-        else:
-            docs_str['ex'] = 'Получить курс доллара и евро'
-            docs_str['weather'] = 'Получить прогноз погоды'
-            docs_str['quote'] = 'Получить цитату'
-            docs_str['wish'] = 'Получить пожелание на день'
-            docs_str['news'] = 'Получить последние новости (после news можно указать число новостей)'
-            docs_str['affirmation'] = 'Получить аффирмацию'
-            docs_str['events'] = 'Получить мероприятия'
-        docs_str['res'] = 'OK'
-        return docs_str
+        resp = {}
+        resp['markup'] = TBotClass._gen_markup()
+        resp['res'] = str(f'Привет! Меня зовут InfoBot\n'
+                          f'Ты можешь написать "новости", "стих" и "фильм" с параметром\n'
+                          f'Новости "количество новостей"\n'
+                          f'Стих "имя автора"\n'
+                          f'Фильм "год выпуска"\n'
+                          f'Или используй следующие кнопки без параметров\n\n'
+                          f'Hello! My name is InfoBot\n'
+                          f'You may write "news", "poem" and "movie" with parameter\n'
+                          f'News "count of news"\n'
+                          f'Poem "author name"\n'
+                          f'Movie "release year"\n'
+                          f'Or use the next buttons without parameters\n')
+        return resp
 
     def _get_config(self):
         self.config = configparser.ConfigParser()

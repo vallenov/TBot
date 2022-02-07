@@ -15,6 +15,7 @@ class DBLoader(Loader):
 
     def __init__(self, name):
         super().__init__(name)
+        self.db_name = 'TBot'
         try:
             logger.info(f'Try to connect to DB')
             self.connection = connect(
@@ -25,4 +26,16 @@ class DBLoader(Loader):
             logger.exception(f'Connection error {e}\nTraceback: {traceback.format_exc()}')
         else:
             logger.info(f'Connection to DB success')
+            self.user_privileges = {}
+        self._get_privileges()
 
+    def _get_privileges(self):
+        with self.connection.cursor() as cursor:
+            query = f'select chat_id, value from ' \
+                    f'{self.db_name}.users u ' \
+                    f'join {self.db_name}.lib_privileges p ' \
+                    f'on u.privileges_id = p.p_id;'
+            cursor.execute(query)
+            Loader.user_privileges = {}
+            for cur in cursor:
+                Loader.user_privileges[cur[0]] = cur[1]
