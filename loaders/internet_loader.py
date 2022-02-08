@@ -74,7 +74,8 @@ class InternetLoader(Loader):
         resp['res'] = 'OK'
         return resp
 
-    def get_weather(self) -> dict:
+    @check_permission()
+    def get_weather(self, **kwargs) -> dict:
         """
         Get weather from internet
         :param:
@@ -102,7 +103,8 @@ class InternetLoader(Loader):
         resp['res'] = 'OK'
         return resp
 
-    def get_quote(self) -> dict:
+    @check_permission()
+    def get_quote(self, **kwargs) -> dict:
         """
         Get quote from internet
         :param:
@@ -128,7 +130,8 @@ class InternetLoader(Loader):
         random_key = random.choice(list(resp.keys()))
         return {'res': 'OK', random_key: resp[random_key]}
 
-    def get_wish(self) -> dict:
+    @check_permission()
+    def get_wish(self, **kwargs) -> dict:
         """
         Get wish from internet
         :param:
@@ -152,7 +155,8 @@ class InternetLoader(Loader):
         resp[1] = random.choice(wish_list).text
         return resp
 
-    def get_news(self, text: str) -> dict:
+    @check_permission()
+    def get_news(self, text: str, **kwargs) -> dict:
         """
         Get news from internet
         :param:
@@ -190,7 +194,8 @@ class InternetLoader(Loader):
         resp['res'] = 'OK'
         return resp
 
-    def get_affirmation(self) -> dict:
+    @check_permission()
+    def get_affirmation(self, **kwargs) -> dict:
         """
         Get affirmation from internet
         :param:
@@ -228,7 +233,8 @@ class InternetLoader(Loader):
                 logger.error(f'Get unsuccessful ({url})')
             self.async_url_data.append(data)
 
-    async def async_events(self) -> dict:
+    @check_permission()
+    async def async_events(self, **kwargs) -> dict:
         """
         Get events from internet (async)
         :param:
@@ -273,7 +279,8 @@ class InternetLoader(Loader):
             resp['res'] = 'OK'
             return resp
 
-    def get_events(self) -> dict:
+    @check_permission()
+    def get_events(self, **kwargs) -> dict:
         """
         Get events from internet
         :param:
@@ -309,7 +316,8 @@ class InternetLoader(Loader):
         resp['res'] = 'OK'
         return resp
 
-    def get_restaurant(self) -> dict:
+    @check_permission()
+    def get_restaurant(self, **kwargs) -> dict:
         """
         Get restaurant from internet
         :param:
@@ -354,7 +362,8 @@ class InternetLoader(Loader):
         final_restaurant['res'] = 'OK'
         return final_restaurant
 
-    def get_poem(self) -> dict:
+    @check_permission()
+    def get_poem(self, **kwargs) -> dict:
         """
         Get respoesy from internet
         :param:
@@ -412,7 +421,8 @@ class InternetLoader(Loader):
         resp[author] = f'\n\n{name}\n\n{poem}{year}'
         return resp
 
-    def get_phone_number_info(self, number) -> dict:
+    @check_permission()
+    def get_phone_number_info(self, number, **kwargs) -> dict:
         """
         Get phone number info from internet
         :param:
@@ -447,7 +457,8 @@ class InternetLoader(Loader):
         resp['res'] = 'OK'
         return resp
 
-    def get_random_movie(self, text: str) -> dict:
+    @check_permission()
+    def get_random_movie(self, text: str, **kwargs) -> dict:
         """
         Get random movie from internet
         :param:

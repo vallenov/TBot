@@ -57,6 +57,7 @@ def check_permission(needed_level: str = 'regular'):
 
 class Loader:
     loaders = []
+    user_privileges = {}
 
     def __init__(self, name):
         self.name = name
@@ -70,3 +71,10 @@ class Loader:
     @staticmethod
     def get_loaders():
         return Loader.loaders
+
+    @staticmethod
+    def error_resp(error_text: str):
+        resp = {}
+        resp['res'] = 'ERROR'
+        resp['descr'] = error_text
+        return resp

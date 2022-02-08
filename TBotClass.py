@@ -89,6 +89,8 @@ class TBotClass:
         trust_ids = []
         self._get_config()
         chat_id = message.json['chat']['id']
+        #self.db_loader.get_privileges()
+        print(Loader.user_privileges)
         #permission = Loader.user_privileges.get(chat_id, Privileges.untrusted)
         #print(permission)
         # if ',' in self.config['MAIN']['trust_ids'].split(','):
@@ -108,48 +110,41 @@ class TBotClass:
             form_text = message.text.lower().strip()
             if form_text == 'exchange' or form_text == 'валюта':
                 resp['res'] = self.__dict_to_str(self.internet_loader.get_exchange(chat_id=chat_id))
-                return resp
             elif form_text == 'weather' or form_text == 'погода':
-                resp['res'] = self.__dict_to_str(self.internet_loader.get_weather())
-                return resp
+                resp['res'] = self.__dict_to_str(self.internet_loader.get_weather(chat_id=chat_id))
             elif form_text == 'quote' or form_text == 'цитата':
-                resp['res'] = self.__dict_to_str(self.internet_loader.get_quote(), '\n')
-                return resp
+                resp['res'] = self.__dict_to_str(self.internet_loader.get_quote(chat_id=chat_id), '\n')
             elif form_text == 'wish' or form_text == 'пожелание':
-                resp['res'] = self.__dict_to_str(self.internet_loader.get_wish())
-                return resp
+                resp['res'] = self.__dict_to_str(self.internet_loader.get_wish(chat_id=chat_id))
             elif form_text.startswith('news') or form_text.startswith('новости'):
-                resp['res'] = self.__dict_to_str(self.internet_loader.get_news(form_text), '\n')
-                return resp
+                resp['res'] = self.__dict_to_str(self.internet_loader.get_news(form_text, chat_id=chat_id), '\n')
             elif form_text == 'affirmation' or form_text == 'аффирмация':
-                resp['res'] = self.__dict_to_str(self.internet_loader.get_affirmation())
-                return resp
+                resp['res'] = self.__dict_to_str(self.internet_loader.get_affirmation(chat_id=chat_id))
             # elif form_text == 'events':
             #     resp['res'] = self.__dict_to_str(self._get_events(), '\n')
             #     return resp
             elif form_text == 'events' or form_text == 'мероприятия':
-                resp['res'] = self.__dict_to_str(asyncio.run(self.internet_loader.async_events()), '\n')
-                return resp
+                resp['res'] = self.__dict_to_str(asyncio.run(self.internet_loader.async_events(chat_id=chat_id)), '\n')
             elif form_text == 'food' or form_text == 'еда':
-                resp['res'] = self.__dict_to_str(self.internet_loader.get_restaurant(), ' ')
-                return resp
+                resp['res'] = self.__dict_to_str(self.internet_loader.get_restaurant(chat_id=chat_id), ' ')
             elif form_text.startswith('poem') or form_text.startswith('стих'):
-                resp['res'] = self.__dict_to_str(self.file_loader.get_poem(form_text), '\n')
+                resp['res'] = self.__dict_to_str(self.file_loader.get_poem(form_text, chat_id=chat_id), '\n')
                 #resp['res'] = self.__dict_to_str(self.internet_loader.get_poem(), '')
-                return resp
             elif form_text.startswith('movie') or form_text.startswith('фильм'):
-                resp['res'] = self.__dict_to_str(self.internet_loader.get_random_movie(form_text), ' ')
-                return resp
+                resp['res'] = self.__dict_to_str(self.internet_loader.get_random_movie(form_text, chat_id=chat_id), ' ')
+            elif form_text.startswith('update') or form_text.startswith('обновить'):
+                resp['res'] = self.__dict_to_str(self.db_loader.update_user(form_text, chat_id=chat_id), ' ')
             elif TBotClass._is_phone_number(form_text) is not None:
                 phone_number = TBotClass._is_phone_number(form_text)
-                resp['res'] = self.__dict_to_str(self.internet_loader.get_phone_number_info(phone_number), ': ')
-                return resp
+                resp['res'] = self.__dict_to_str(
+                    self.internet_loader.get_phone_number_info(phone_number, chat_id=chat_id), ': '
+                )
             else:
                 resp = self._get_help(chat_id=chat_id)
                 descr = resp.get('descr')
                 if descr is not None:
                     resp['res'] = descr
-                return resp
+            return resp
 
     @staticmethod
     def _gen_markup():
