@@ -27,8 +27,19 @@ logger.addHandler(handler)
 
 def check_permission(needed_level: str = 'regular'):
     def decorator(func):
+        """
+        Decorator, which check user permission
+        Each function with this decorator need consist "**kwargs" in its attributions and receive the parameter
+        "check_id" when called
+        @check permission(needed_level='level') ('untrusted', 'test', 'regular', 'trusted', 'root')
+        function(self, **kwargs)
+        :param func: input function
+        :return: wrapped function
+        """
         def wrap(self, *args, **kwargs):
             logger.info(f'check permission')
+            if needed_level not in pr_dict.keys():
+                logger.error(f'{needed_level} is not permission level name')
             user_permission = Loader.user_privileges.get(kwargs['chat_id'], Privileges.test)
             logger.info(f'User permission: {user_permission}, needed permission: {pr_dict[needed_level]}')
             resp = {}
