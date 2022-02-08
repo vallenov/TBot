@@ -86,7 +86,6 @@ class TBotClass:
         :return: replace string
         """
         resp = {}
-        trust_ids = []
         self._get_config()
         chat_id = str(message.json['chat']['id'])
         if chat_id not in Loader.user_privileges.keys():# and int(self.config['MAIN']['PROD']):
@@ -96,22 +95,6 @@ class TBotClass:
                                     privileges=Loader.privileges_levels['regular'],
                                     login=login,
                                     first_name=first_name)
-        # else:
-        #     Loader.user_privileges[chat_id] = Loader.privileges_levels['regular']
-        #permission = Loader.user_privileges.get(chat_id, Privileges.untrusted)
-        #print(permission)
-        # if ',' in self.config['MAIN']['trust_ids'].split(','):
-        #     trust_ids = list(map(lambda x: int(x), self.config['MAIN']['trust_ids'].split(',')))
-        # else:
-        #     trust_ids.append(int(self.config['MAIN']['trust_ids']))
-        # if message.json['chat']['id'] == int(self.config['MAIN']['root_id']):
-        #     TBotClass.permission = True
-        # elif message.json['chat']['id'] in trust_ids:
-        #     TBotClass.permission = False
-        # else:
-        #     resp['status'] = 'ERROR'
-        #     resp['res'] = 'Permission denied'
-        #     return resp
         if message.content_type == 'text':
             resp['status'] = 'OK'
             form_text = message.text.lower().strip()
