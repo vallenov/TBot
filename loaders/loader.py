@@ -1,14 +1,6 @@
 import configparser
 import logging
 
-pr_dict = {
-    'untrusted': 10,
-    'test': 20,
-    'regular': 30,
-    'trusted': 40,
-    'root': 50
-}
-
 
 class Privileges:
     untrusted = 10
@@ -38,12 +30,13 @@ def check_permission(needed_level: str = 'regular'):
         """
         def wrap(self, *args, **kwargs):
             logger.info(f'check permission')
-            if needed_level not in pr_dict.keys():
+            if needed_level not in Loader.privileges_levels.keys():
                 logger.error(f'{needed_level} is not permission level name')
             user_permission = Loader.user_privileges.get(kwargs['chat_id'], Privileges.test)
-            logger.info(f'User permission: {user_permission}, needed permission: {pr_dict[needed_level]}')
+            logger.info(f'User permission: {user_permission}, '
+                        f'needed permission: {Loader.privileges_levels[needed_level]}')
             resp = {}
-            if user_permission < pr_dict[needed_level]:
+            if user_permission < Loader.privileges_levels[needed_level]:
                 logger.info('Access denied')
                 resp['res'] = 'ERROR'
                 resp['descr'] = 'Permission denied'
@@ -58,6 +51,14 @@ def check_permission(needed_level: str = 'regular'):
 class Loader:
     loaders = []
     user_privileges = {}
+
+    privileges_levels = {
+        'untrusted': 10,
+        'test': 20,
+        'regular': 30,
+        'trusted': 40,
+        'root': 50
+    }
 
     def __init__(self, name):
         self.name = name

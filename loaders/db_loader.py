@@ -40,7 +40,7 @@ class DBLoader(Loader):
             cursor.execute(query)
             #Loader.user_privileges = {}
             for cur in cursor:
-                print(cur[0], cur[1])
+                print(cur[0], type(cur[0]), cur[1], type(cur[1]))
                 Loader.user_privileges[cur[0]] = cur[1]
             print('Pr change', Loader.user_privileges)
 
@@ -57,43 +57,44 @@ class DBLoader(Loader):
             else:
                 return p_id
 
+    def add_user(self, user_id: int, privileges: int, login: str, first_name: str):
+        print(user_id, privileges, login, first_name)
+        login_db = 'NULL' if login is None else f"'{login}'"
+        first_name_db = 'NULL' if login is None else f"'{first_name}'"
+        user_id_db = f"'{user_id}'"
+        with self.connection.cursor() as cursor:
+            p_id = self.get_p_id(privileges)
+            query = f'insert into {self.db_name}.users ' \
+                    f'(login, first_name, chat_id, privileges_id) ' \
+                    f'values ' \
+                    f"({login_db}, {first_name_db}, {user_id_db}, {p_id})"
+            cursor.execute(query)
+            self.connection.commit()
+            logger.info(f'User {user_id} added')
+            Loader.user_privileges[user_id] = privileges
+            return True
+
     @check_permission(needed_level='root')
     def update_user(self, text: str, **kwargs):
         resp = {}
         lst = text.split()
-        user_id = None
-        privileges = None
-        login = None
-        first_name = None
-        if len(lst) < 3 or len(lst) > 5:
+        if len(lst) != 3:
             logger.error(f'Not valid data')
             return Loader.error_resp(f'Not valid data')
-        elif len(lst) == 3:
-            user_id = int(lst[1])
-            privileges = int(lst[2])
         else:
-            user_id = int(lst[1])
+            user_id = lst[1]
+            if user_id not in Loader.user_privileges.keys():
+                return Loader.error_resp('User not found')
+            user_id_db = f"'{user_id}'"
             privileges = int(lst[2])
-            login = lst[3]
-            first_name = lst[4]
-        #user_id: int, privileges: int, login: str = None, first_name: str = None
         with self.connection.cursor() as cursor:
             p_id = self.get_p_id(privileges)
-            if user_id not in Loader.user_privileges.keys():
-                if login is None:
-                    logger.error(f'Empty login')
-                    return Loader.error_resp(f'Empty login')
-                query = f'insert into {self.db_name}.users ' \
-                        f'(login, first_name, chat_id, privileges_id) ' \
-                        f'values ' \
-                        f'({login}, {first_name}, {user_id}, {p_id})'
-                resp[0] = f'User {user_id} added'
-            else:
-                query = f'update {self.db_name}.users ' \
-                        f'set privileges_id = {p_id} ' \
-                        f'where chat_id = {user_id} '
-                resp[0] = f'User {user_id} updated'
+            query = f'update {self.db_name}.users ' \
+                    f'set privileges_id = {p_id} ' \
+                    f'where chat_id = {user_id_db} '
+            resp[0] = f'User {user_id} updated'
             cursor.execute(query)
             self.connection.commit()
+        Loader.user_privileges[user_id] = privileges
         resp['res'] = 'OK'
         return resp
