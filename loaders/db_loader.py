@@ -57,7 +57,7 @@ class DBLoader(Loader):
             else:
                 return p_id
 
-    def add_user(self, user_id: int, privileges: int, login: str, first_name: str):
+    def add_user(self, user_id: str, privileges: int, login: str, first_name: str):
         print(user_id, privileges, login, first_name)
         login_db = 'NULL' if login is None else f"'{login}'"
         first_name_db = 'NULL' if login is None else f"'{first_name}'"
