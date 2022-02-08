@@ -66,7 +66,7 @@ class DBLoader(Loader):
 
     def add_user(self, user_id: str, privileges: int, login: str, first_name: str):
         login_db = 'NULL' if login is None else f"'{login}'"
-        first_name_db = 'NULL' if login is None else f"'{first_name}'"
+        first_name_db = 'NULL' if first_name is None else f"'{first_name}'"
         user_id_db = f"'{user_id}'"
         if int(self.config['MAIN']['PROD']):
             with self.connection.cursor() as cursor:
