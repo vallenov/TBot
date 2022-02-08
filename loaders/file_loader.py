@@ -75,9 +75,7 @@ class FileLoader(Loader):
                 if authors_poems_list:
                     random_poem = random.choice(authors_poems_list)
                 else:
-                    resp['res'] = 'ERROR'
-                    resp['descr'] = 'Poem not found'
-                    return resp
+                    return Loader.error_resp('Poem not found')
                 resp['res'] = 'OK'
         else:
             logger.error('File poems.xlsx not found')
