@@ -18,41 +18,6 @@ handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s -
 logger.addHandler(handler)
 
 
-# def check_permission(needed_level: str = 'regular'):
-#     def decorator(func):
-#         def wrap(self, *args, **kwargs):
-#             print(kwargs)
-#             user_permission = self.db_loader.user_privileges[kwargs['chat_id']]
-#             print(f'usr rer = {user_permission}, needed = {pr_dict[needed_level]}')
-#             if user_permission < pr_dict[needed_level]:
-#                 print('DENIED!!!')
-#                 return
-#             else:
-#                 print('ALLOWED!!!')
-#             res = func(self, *args, **kwargs)
-#             return res
-#         return wrap
-#     return decorator
-
-
-# def check_permission(func):
-#     """
-#     Check permission before execute func
-#     :param func: input func
-#     :return: wrapped func
-#     """
-#     def wrap(*args, **kwargs):
-#         resp = {}
-#         if not TBotClass.permission:
-#             logger.error('Permission denied')
-#             resp['res'] = "ERROR"
-#             resp['descr'] = 'Permission denied'
-#         else:
-#             resp = func(*args, **kwargs)
-#         return resp
-#     return wrap
-
-
 def benchmark(func):
     def wrap(*args, **kwargs):
         start = datetime.datetime.now()
