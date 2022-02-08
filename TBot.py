@@ -63,7 +63,7 @@ def tbot():
                 except Exception as _ex:
                     logger.exception(f'Unrecognized exception: {traceback.format_exc()}')
                     if not is_send:
-                        send_dev_message({'subject': 'TBot EXCEPTION', 'text': f'{traceback.format_exc()}'})
+                        tb.send_dev_message({'subject': 'TBot EXCEPTION', 'text': f'{traceback.format_exc()}'})
                         is_send = True
                 else:
                     conversation_logger.info('Response: ' + replace.replace('\n', ' '))
@@ -153,24 +153,6 @@ def tbot():
         for _ in range(15):
             name += random.choice(simbols)
         return name
-
-    def send_dev_message(data: dict):
-        """
-        Отправка сообщения админу
-        :param data: {'to': name or email, 'subject': 'subject' (unnecessary), 'text': 'text'}
-        """
-        data.update({'to': config.get('MAIL', 'address')})
-        current_try = 0
-        while current_try < MAX_TRY:
-            current_try += 1
-            try:
-                requests.post(config.get('MAIL', 'message_server_address'), data=data, headers={'Connection': 'close'})
-            except Exception as _ex:
-                logger.exception(_ex)
-            else:
-                logger.info('Send successful')
-                break
-        logger.error('Max try exceeded')
 
     try:
         bot.infinity_polling(none_stop=True)

@@ -3,6 +3,7 @@ import logging
 import traceback
 import datetime
 import asyncio
+import requests
 
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
@@ -10,6 +11,8 @@ from loaders.loader import Loader, check_permission
 from loaders.internet_loader import InternetLoader
 from loaders.file_loader import FileLoader
 from loaders.db_loader import DBLoader
+
+MAX_TRY = 15
 
 logger = logging.getLogger(__name__)
 handler = logging.FileHandler('run.log')
@@ -60,6 +63,10 @@ class TBotClass:
                                     privileges=Loader.privileges_levels['regular'],
                                     login=login,
                                     first_name=first_name)
+            send_data = dict()
+            send_data['subject'] = 'TBot NEW USER'
+            send_data['text'] = f'New user added. Chat_id: {chat_id}, login: {login}, first_name: {first_name}'
+            self.send_dev_message(send_data)
         if message.content_type == 'text':
             resp['status'] = 'OK'
             form_text = message.text.lower().strip()
@@ -188,3 +195,21 @@ class TBotClass:
             resp['descr'] = 'Number format is not valid'
             return None
         return raw_num
+
+    def send_dev_message(self, data: dict):
+        """
+        Отправка сообщения админу
+        :param data: {'to': name or email, 'subject': 'subject' (unnecessary), 'text': 'text'}
+        """
+        data.update({'to': self.config.get('MAIL', 'address')})
+        current_try = 0
+        while current_try < MAX_TRY:
+            current_try += 1
+            try:
+                requests.post(self.config.get('MAIL', 'message_server_address'), data=data, headers={'Connection': 'close'})
+            except Exception as _ex:
+                logger.exception(_ex)
+            else:
+                logger.info('Send successful')
+                break
+        logger.error('Max try exceeded')
