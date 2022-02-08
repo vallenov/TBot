@@ -53,7 +53,7 @@ class TBotClass:
         resp = {}
         self._get_config()
         chat_id = str(message.json['chat']['id'])
-        if chat_id not in Loader.user_privileges.keys():# and int(self.config['MAIN']['PROD']):
+        if chat_id not in Loader.user_privileges.keys():
             login = message.json['chat'].get('username', None)
             first_name = message.json['chat'].get('first_name', None)
             self.db_loader.add_user(user_id=chat_id,
