@@ -89,13 +89,15 @@ class TBotClass:
         trust_ids = []
         self._get_config()
         chat_id = str(message.json['chat']['id'])
-        if chat_id not in Loader.user_privileges.keys():
+        if chat_id not in Loader.user_privileges.keys():# and int(self.config['MAIN']['PROD']):
             login = message.json['chat'].get('username', None)
             first_name = message.json['chat'].get('first_name', None)
             self.db_loader.add_user(user_id=chat_id,
                                     privileges=Loader.privileges_levels['regular'],
                                     login=login,
                                     first_name=first_name)
+        # else:
+        #     Loader.user_privileges[chat_id] = Loader.privileges_levels['regular']
         #permission = Loader.user_privileges.get(chat_id, Privileges.untrusted)
         #print(permission)
         # if ',' in self.config['MAIN']['trust_ids'].split(','):
