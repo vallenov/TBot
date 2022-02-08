@@ -7,7 +7,8 @@ from bs4 import BeautifulSoup
 import asyncio
 import aiohttp
 
-from loaders.loader import Loader
+from loaders.loader import Loader, check_permission
+#from loaders.loader import
 
 logger = logging.getLogger(__name__)
 handler = logging.FileHandler('run.log')
@@ -27,7 +28,12 @@ class InternetLoader(Loader):
         :return: BeautifulSoup object
         """
         try:
-            soup = BeautifulSoup(requests.get(url).text, 'lxml')
+            resp = requests.get(url)
+            if resp.status_code == 200:
+                soup = BeautifulSoup(resp.text, 'lxml')
+            else:
+                logger.error(f'Status of response: {resp.status_code}')
+                return None
         except Exception as _ex:
             logger.exception(f'Exception in {__name__}:\n{_ex}')
             return None
@@ -35,7 +41,8 @@ class InternetLoader(Loader):
             logger.info(f'Get successful ({url})')
         return soup
 
-    def get_exchange(self) -> dict:
+    @check_permission()
+    def get_exchange(self, **kwargs) -> dict:
         """
         Get exchange from internet
         :param:
@@ -46,14 +53,12 @@ class InternetLoader(Loader):
         if self.config.has_option('URL', 'exchange_url'):
             exchange_url = self.config['URL']['exchange_url']
         else:
-            resp['res'] = 'ERROR'
-            resp['descr'] = "I can't do this yet😔"
-            return resp
+            return Loader.error_resp("I can't do this yet😔")
         ex = ['USD', 'EUR']
         soup = InternetLoader._site_to_lxml(exchange_url)
         if soup is None:
-            resp['res'] = 'ERROR'
-            return resp
+            logger.error('Empty soup data')
+            return Loader.error_resp("Empty soup data")
         parse = soup.find_all('tr')
         for item in parse[1:]:
             inf = item.find_all('td')
@@ -72,7 +77,8 @@ class InternetLoader(Loader):
         resp['res'] = 'OK'
         return resp
 
-    def get_weather(self) -> dict:
+    @check_permission()
+    def get_weather(self, **kwargs) -> dict:
         """
         Get weather from internet
         :param:
@@ -83,13 +89,11 @@ class InternetLoader(Loader):
         if self.config.has_option('URL', 'weather_url'):
             weather_url = self.config['URL']['weather_url']
         else:
-            resp['res'] = 'ERROR'
-            resp['descr'] = "I can't do this yet😔"
-            return resp
+            return Loader.error_resp("I can't do this yet😔")
         soup = InternetLoader._site_to_lxml(weather_url)
         if soup is None:
-            resp['res'] = 'ERROR'
-            return resp
+            logger.error('Empty soup data')
+            return Loader.error_resp("Empty soup data")
         parse = soup.find_all('div', class_='DetailsSummary--DetailsSummary--2HluQ DetailsSummary--fadeOnOpen--vFCc_')
         for i in parse:
             h2 = i.find('h2')
@@ -100,7 +104,8 @@ class InternetLoader(Loader):
         resp['res'] = 'OK'
         return resp
 
-    def get_quote(self) -> dict:
+    @check_permission()
+    def get_quote(self, **kwargs) -> dict:
         """
         Get quote from internet
         :param:
@@ -111,13 +116,11 @@ class InternetLoader(Loader):
         if self.config.has_option('URL', 'quote_url'):
             quote_url = self.config['URL']['quote_url']
         else:
-            resp['res'] = 'ERROR'
-            resp['descr'] = "I can't do this yet😔"
-            return resp
+            return Loader.error_resp("I can't do this yet😔")
         soup = InternetLoader._site_to_lxml(quote_url)
         if soup is None:
-            resp['res'] = 'ERROR'
-            return resp
+            logger.error('Empty soup data')
+            return Loader.error_resp("Empty soup data")
         quotes = soup.find_all('div', class_='quote')
         for quote in quotes:
             author = quote.find('a')
@@ -126,7 +129,8 @@ class InternetLoader(Loader):
         random_key = random.choice(list(resp.keys()))
         return {'res': 'OK', random_key: resp[random_key]}
 
-    def get_wish(self) -> dict:
+    @check_permission()
+    def get_wish(self, **kwargs) -> dict:
         """
         Get wish from internet
         :param:
@@ -137,20 +141,19 @@ class InternetLoader(Loader):
         if self.config.has_option('URL', 'wish_url'):
             wish_url = self.config['URL']['wish_url']
         else:
-            resp['res'] = 'ERROR'
-            resp['descr'] = "I can't do this yet😔"
-            return resp
+            return Loader.error_resp("I can't do this yet😔")
         soup = InternetLoader._site_to_lxml(wish_url)
         if soup is None:
-            resp['res'] = 'ERROR'
-            return resp
+            logger.error(f'Empty soup data')
+            return Loader.error_resp("Something wrong")
         wishes = soup.find_all('ol')
         wish_list = wishes[0].find_all('li')
         resp['res'] = 'OK'
         resp[1] = random.choice(wish_list).text
         return resp
 
-    def get_news(self, text: str) -> dict:
+    @check_permission()
+    def get_news(self, text: str, **kwargs) -> dict:
         """
         Get news from internet
         :param:
@@ -164,19 +167,15 @@ class InternetLoader(Loader):
             try:
                 count = int(lst[1])
             except ValueError:
-                resp['res'] = 'ERROR'
-                resp['descr'] = "Count of news is not number"
-                return resp
+                return Loader.error_resp('Count of news is not number')
         if self.config.has_option('URL', 'news_url'):
             news_url = self.config['URL']['news_url']
         else:
-            resp['res'] = 'ERROR'
-            resp['descr'] = "I can't do this yet😔"
-            return resp
+            return Loader.error_resp("I can't do this yet😔")
         soup = InternetLoader._site_to_lxml(news_url)
         if soup is None:
-            resp['res'] = 'ERROR'
-            return resp
+            logger.error(f'Empty soup data')
+            return Loader.error_resp("Something wrong")
         news = soup.find_all('div', class_='cell-list__item-info')
         for n in news:
             news_time = n.find('span', class_='elem-info__date')
@@ -188,7 +187,8 @@ class InternetLoader(Loader):
         resp['res'] = 'OK'
         return resp
 
-    def get_affirmation(self) -> dict:
+    @check_permission()
+    def get_affirmation(self, **kwargs) -> dict:
         """
         Get affirmation from internet
         :param:
@@ -199,13 +199,11 @@ class InternetLoader(Loader):
         if self.config.has_option('URL', 'affirmation_url'):
             affirmation_url = self.config['URL']['affirmation_url']
         else:
-            resp['res'] = 'ERROR'
-            resp['descr'] = "I can't do this yet😔"
-            return resp
+            return Loader.error_resp("I can't do this yet😔")
         soup = InternetLoader._site_to_lxml(affirmation_url)
         if soup is None:
-            resp['res'] = 'ERROR'
-            return resp
+            logger.error(f'Empty soup data')
+            return Loader.error_resp("Something wrong")
         aff_list = []
         ul = soup.find_all('ul')
         for u in ul:
@@ -226,7 +224,8 @@ class InternetLoader(Loader):
                 logger.error(f'Get unsuccessful ({url})')
             self.async_url_data.append(data)
 
-    async def async_events(self) -> dict:
+    @check_permission()
+    async def async_events(self, **kwargs) -> dict:
         """
         Get events from internet (async)
         :param:
@@ -239,9 +238,7 @@ class InternetLoader(Loader):
         if self.config.has_option('URL', 'events_url'):
             events_url = self.config['URL']['events_url']
         else:
-            resp['res'] = 'ERROR'
-            resp['descr'] = "I can't do this yet😔"
-            return resp
+            return Loader.error_resp("I can't do this yet😔")
         async with aiohttp.ClientSession() as session:
             tasks.append(asyncio.create_task(self._get_url(session, events_url)))
             await asyncio.gather(*tasks)
@@ -271,7 +268,8 @@ class InternetLoader(Loader):
             resp['res'] = 'OK'
             return resp
 
-    def get_events(self) -> dict:
+    @check_permission()
+    def get_events(self, **kwargs) -> dict:
         """
         Get events from internet
         :param:
@@ -282,13 +280,11 @@ class InternetLoader(Loader):
         if self.config.has_option('URL', 'events_url'):
             events_url = self.config['URL']['events_url']
         else:
-            resp['res'] = 'ERROR'
-            resp['descr'] = "I can't do this yet😔"
-            return resp
+            return Loader.error_resp("I can't do this yet😔")
         soup = InternetLoader._site_to_lxml(events_url)
         if soup is None:
-            resp['res'] = 'ERROR'
-            return resp
+            logger.error(f'Empty soup data')
+            return Loader.error_resp("Something wrong")
         links = {}
         div = soup.find_all('div', class_='site-nav-events')
         raw_a = div[0].find_all('a')
@@ -307,7 +303,8 @@ class InternetLoader(Loader):
         resp['res'] = 'OK'
         return resp
 
-    def get_restaurant(self) -> dict:
+    @check_permission()
+    def get_restaurant(self, **kwargs) -> dict:
         """
         Get restaurant from internet
         :param:
@@ -318,13 +315,11 @@ class InternetLoader(Loader):
         if self.config.has_option('URL', 'restaurant_url'):
             restaurant_url = self.config['URL']['restaurant_url']
         else:
-            resp['res'] = 'ERROR'
-            resp['descr'] = "I can't do this yet😔"
-            return resp
+            return Loader.error_resp("I can't do this yet😔")
         soup = InternetLoader._site_to_lxml(restaurant_url + '/msk/catalog/restaurants/all/')
         if soup is None:
-            resp['res'] = 'ERROR'
-            return resp
+            logger.error(f'Empty soup data')
+            return Loader.error_resp("Something wrong")
         div_nav_raw = soup.find('div', class_='pagination-wrapper')
         a_raw = div_nav_raw.find('a')
         page_count = int(a_raw.get('data-nav-page-count'))
@@ -352,7 +347,8 @@ class InternetLoader(Loader):
         final_restaurant['res'] = 'OK'
         return final_restaurant
 
-    def get_poem(self) -> dict:
+    @check_permission()
+    def get_poem(self, **kwargs) -> dict:
         """
         Get respoesy from internet
         :param:
@@ -363,14 +359,11 @@ class InternetLoader(Loader):
         if self.config.has_option('URL', 'poesy_url'):
             poesy_url = self.config['URL']['poesy_url']
         else:
-            resp['res'] = 'ERROR'
-            resp['descr'] = "I can't do this yet😔"
-            return resp
+            return Loader.error_resp("I can't do this yet😔")
         soup = InternetLoader._site_to_lxml(poesy_url)
         if soup is None:
-            resp['res'] = 'ERROR'
-            return resp
-
+            logger.error(f'Empty soup data')
+            return Loader.error_resp("Something wrong")
         div_raw = soup.find('div', class_='_2uPBE')
         a_raw = div_raw.find_all('a', class_='GmJ5E')
         count = int(a_raw[-1].text)
@@ -410,7 +403,8 @@ class InternetLoader(Loader):
         resp[author] = f'\n\n{name}\n\n{poem}{year}'
         return resp
 
-    def get_phone_number_info(self, number) -> dict:
+    @check_permission()
+    def get_phone_number_info(self, number, **kwargs) -> dict:
         """
         Get phone number info from internet
         :param:
@@ -421,15 +415,11 @@ class InternetLoader(Loader):
         if self.config.has_option('URL', 'kodi_url'):
             kodi_url = self.config['URL']['kodi_url']
         else:
-            resp['res'] = 'ERROR'
-            resp['descr'] = "I can't do this yet😔"
-            return resp
+            return Loader.error_resp("I can't do this yet😔")
         headers = {'Connection': 'close'}
         res = requests.post(kodi_url, data={'number': number}, headers=headers)
         if 'Ошибка: Номер не найден' in res.text:
-            resp['res'] = 'ERROR'
-            resp['descr'] = 'Number not found/Номер не найден'
-            return resp
+            return Loader.error_resp('Number not found/Номер не найден')
         soup = BeautifulSoup(res.text, 'lxml')
         div_raw = soup.find('div', class_='content__in')
         table = div_raw.find('table', class_='teltr tel-mobile')
@@ -445,7 +435,8 @@ class InternetLoader(Loader):
         resp['res'] = 'OK'
         return resp
 
-    def get_random_movie(self, text: str) -> dict:
+    @check_permission()
+    def get_random_movie(self, text: str, **kwargs) -> dict:
         """
         Get random movie from internet
         :param:
@@ -459,31 +450,23 @@ class InternetLoader(Loader):
             try:
                 year = int(command[1])
             except ValueError as e:
-                resp['res'] = 'ERROR'
-                resp['descr'] = 'Format of data is not valid'
-                return resp
+                return Loader.error_resp('Format of data is not valid')
             else:
                 if year < 1890 or year > 2022:
-                    resp['res'] = 'ERROR'
-                    resp['descr'] = f'Year may be from 1890 to {datetime.datetime.now().year}'
-                    return resp
+                    return Loader.error_resp(f'Year may be from 1890 to {datetime.datetime.now().year}')
         if self.config.has_option('URL', 'random_movie_url'):
             random_movie_url = self.config['URL']['random_movie_url'].format(year, year)
         else:
-            resp['res'] = 'ERROR'
-            resp['descr'] = "I can't do this yet😔"
-            return resp
+            return Loader.error_resp("I can't do this yet😔")
         soup = InternetLoader._site_to_lxml(random_movie_url)
         result_top = soup.find('div', class_='search_results_top')
         span_raw = result_top.find('span')
         is_result = int(span_raw.text.split(' ')[-1])
         if not is_result:
-            resp['res'] = 'ERROR'
-            resp['descr'] = f'Movies by {year} is not found'
-            return resp
+            return Loader.error_resp(f'Movies by {year} is not found')
         if soup is None:
-            resp['res'] = 'ERROR'
-            return resp
+            logger.error(f'Empty soup data')
+            return Loader.error_resp("Something wrong")
         div_raw = soup.find('div', class_='search_results search_results_last')
         div_nav = div_raw.find('div', class_='navigator')
         from_to = div_nav.find('div', class_='pagesFromTo').text.split(' ')[0].split('—')
@@ -505,9 +488,7 @@ class InternetLoader(Loader):
                 is_cyrillic = True
             try_count += 1
             if try_count > per_page:
-                resp['res'] = 'ERROR'
-                resp['descr'] = f'Movies by {year} is not found'
-                return resp
+                return Loader.error_resp(f'Movies by {year} is not found')
         movie_id = p_raw.find('a').get('href')
         movie_url = '/'.join(random_movie_url.split('/')[:3])
         resp['res'] = 'OK'

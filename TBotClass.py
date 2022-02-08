@@ -6,6 +6,7 @@ import asyncio
 
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
+from loaders.loader import Loader, check_permission
 from loaders.internet_loader import InternetLoader
 from loaders.file_loader import FileLoader
 from loaders.db_loader import DBLoader
@@ -15,25 +16,6 @@ handler = logging.FileHandler('run.log')
 handler.setLevel(logging.INFO)
 handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 logger.addHandler(handler)
-
-
-def check_permission(func):
-    """
-    Check permission before execute func
-    :param func: input func
-    :return: wrapped func
-    """
-    def wrap(*args, **kwargs):
-        resp = {}
-        if not TBotClass.permission:
-            logger.error('Permission denied')
-            resp['res'] = "ERROR"
-            resp['descr'] = 'Permission denied'
-            res = resp
-        else:
-            res = func(*args, **kwargs)
-        return res
-    return wrap
 
 
 def benchmark(func):
@@ -55,7 +37,7 @@ class TBotClass:
         #self._get_config()
         self.internet_loader = InternetLoader('ILoader')
         self.file_loader = FileLoader('FLoader')
-        #self.db_loader = DBLoader('DBLoader')
+        self.db_loader = DBLoader('DBLoader')
 
     def __del__(self):
         logger.error(f'Traceback: {traceback.format_exc()}')
@@ -69,77 +51,55 @@ class TBotClass:
         :return: replace string
         """
         resp = {}
-        trust_ids = []
         self._get_config()
-        if ',' in self.config['MAIN']['trust_ids'].split(','):
-            trust_ids = list(map(lambda x: int(x), self.config['MAIN']['trust_ids'].split(',')))
-        else:
-            trust_ids.append(int(self.config['MAIN']['trust_ids']))
-        if message.json['chat']['id'] == int(self.config['MAIN']['root_id']):
-            TBotClass.permission = True
-        elif message.json['chat']['id'] in trust_ids:
-            TBotClass.permission = False
-        else:
-            resp['status'] = 'ERROR'
-            resp['res'] = 'Permission denied'
-            return resp
+        chat_id = str(message.json['chat']['id'])
+        if chat_id not in Loader.user_privileges.keys():# and int(self.config['MAIN']['PROD']):
+            login = message.json['chat'].get('username', None)
+            first_name = message.json['chat'].get('first_name', None)
+            self.db_loader.add_user(user_id=chat_id,
+                                    privileges=Loader.privileges_levels['regular'],
+                                    login=login,
+                                    first_name=first_name)
         if message.content_type == 'text':
             resp['status'] = 'OK'
             form_text = message.text.lower().strip()
             if form_text == 'exchange' or form_text == 'валюта':
-                resp['res'] = self.__dict_to_str(self.internet_loader.get_exchange())
-                return resp
+                resp['res'] = self.__dict_to_str(self.internet_loader.get_exchange(chat_id=chat_id))
             elif form_text == 'weather' or form_text == 'погода':
-                resp['res'] = self.__dict_to_str(self.internet_loader.get_weather())
-                return resp
+                resp['res'] = self.__dict_to_str(self.internet_loader.get_weather(chat_id=chat_id))
             elif form_text == 'quote' or form_text == 'цитата':
-                resp['res'] = self.__dict_to_str(self.internet_loader.get_quote(), '\n')
-                return resp
+                resp['res'] = self.__dict_to_str(self.internet_loader.get_quote(chat_id=chat_id), '\n')
             elif form_text == 'wish' or form_text == 'пожелание':
-                resp['res'] = self.__dict_to_str(self.internet_loader.get_wish())
-                return resp
+                resp['res'] = self.__dict_to_str(self.internet_loader.get_wish(chat_id=chat_id))
             elif form_text.startswith('news') or form_text.startswith('новости'):
-                resp['res'] = self.__dict_to_str(self.internet_loader.get_news(form_text), '\n')
-                return resp
+                resp['res'] = self.__dict_to_str(self.internet_loader.get_news(form_text, chat_id=chat_id), '\n')
             elif form_text == 'affirmation' or form_text == 'аффирмация':
-                resp['res'] = self.__dict_to_str(self.internet_loader.get_affirmation())
-                return resp
+                resp['res'] = self.__dict_to_str(self.internet_loader.get_affirmation(chat_id=chat_id))
             # elif form_text == 'events':
             #     resp['res'] = self.__dict_to_str(self._get_events(), '\n')
             #     return resp
             elif form_text == 'events' or form_text == 'мероприятия':
-                resp['res'] = self.__dict_to_str(asyncio.run(self.internet_loader.async_events()), '\n')
-                return resp
+                resp['res'] = self.__dict_to_str(asyncio.run(self.internet_loader.async_events(chat_id=chat_id)), '\n')
             elif form_text == 'food' or form_text == 'еда':
-                resp['res'] = self.__dict_to_str(self.internet_loader.get_restaurant(), ' ')
-                return resp
+                resp['res'] = self.__dict_to_str(self.internet_loader.get_restaurant(chat_id=chat_id), ' ')
             elif form_text.startswith('poem') or form_text.startswith('стих'):
-                resp['res'] = self.__dict_to_str(self.file_loader.get_poem(form_text), '\n')
+                resp['res'] = self.__dict_to_str(self.file_loader.get_poem(form_text, chat_id=chat_id), '\n')
                 #resp['res'] = self.__dict_to_str(self.internet_loader.get_poem(), '')
-                return resp
             elif form_text.startswith('movie') or form_text.startswith('фильм'):
-                resp['res'] = self.__dict_to_str(self.internet_loader.get_random_movie(form_text), ' ')
-                return resp
+                resp['res'] = self.__dict_to_str(self.internet_loader.get_random_movie(form_text, chat_id=chat_id), ' ')
+            elif form_text.startswith('update') or form_text.startswith('обновить'):
+                resp['res'] = self.__dict_to_str(self.db_loader.update_user(form_text, chat_id=chat_id), ' ')
             elif TBotClass._is_phone_number(form_text) is not None:
                 phone_number = TBotClass._is_phone_number(form_text)
-                resp['res'] = self.__dict_to_str(self.internet_loader.get_phone_number_info(phone_number), ': ')
-                return resp
+                resp['res'] = self.__dict_to_str(
+                    self.internet_loader.get_phone_number_info(phone_number, chat_id=chat_id), ': '
+                )
             else:
-                logger.info('get help message')
-                resp['markup'] = TBotClass._gen_markup()
-                resp['res'] = str(f'Привет! Меня зовут InfoBot\n'
-                                  f'Ты можешь написать "новости", "стих" и "фильм" с параметром\n'
-                                  f'Новости "количество новостей"\n'
-                                  f'Стих "имя автора"\n'
-                                  f'Фильм "год выпуска"\n'
-                                  f'Или используй следующие кнопки без параметров\n\n'
-                                  f'Hello! My name is InfoBot\n'
-                                  f'You may write "news", "poem" and "movie" with parameter\n'
-                                  f'News "count of news"\n'
-                                  f'Poem "author name"\n'
-                                  f'Movie "release year"\n'
-                                  f'Or use the next buttons without parameters\n')
-                return resp
+                resp = self._get_help(chat_id=chat_id)
+                descr = resp.get('descr')
+                if descr is not None:
+                    resp['res'] = descr
+            return resp
 
     @staticmethod
     def _gen_markup():
@@ -175,29 +135,29 @@ class TBotClass:
                 fin_str += f'{key}{delimiter}{value}\n'
         return fin_str
 
-    def __get_help(self, dev: bool) -> dict:
+    @check_permission()
+    def _get_help(self, **kwargs) -> dict:
         """
         Get bot function
         :param dev: change view of help
         :return: {'func': 'description', ...}
         """
         logger.info('get_help')
-        docs_str = {}
-        if dev:
-            docs = list(filter(lambda x: '__' not in x and x.startswith('_'), dir(self)))
-            for doc in docs:
-                if str(eval(f'self.{doc}.__doc__')) is not None:
-                    docs_str[doc] = str(eval(f'self.{doc}.__doc__')).split('\n')[1].strip()
-        else:
-            docs_str['ex'] = 'Получить курс доллара и евро'
-            docs_str['weather'] = 'Получить прогноз погоды'
-            docs_str['quote'] = 'Получить цитату'
-            docs_str['wish'] = 'Получить пожелание на день'
-            docs_str['news'] = 'Получить последние новости (после news можно указать число новостей)'
-            docs_str['affirmation'] = 'Получить аффирмацию'
-            docs_str['events'] = 'Получить мероприятия'
-        docs_str['res'] = 'OK'
-        return docs_str
+        resp = {}
+        resp['markup'] = TBotClass._gen_markup()
+        resp['res'] = str(f'Привет! Меня зовут InfoBot\n'
+                          f'Ты можешь написать "новости", "стих" и "фильм" с параметром\n'
+                          f'Новости "количество новостей"\n'
+                          f'Стих "имя автора"\n'
+                          f'Фильм "год выпуска"\n'
+                          f'Или используй следующие кнопки без параметров\n\n'
+                          f'Hello! My name is InfoBot\n'
+                          f'You may write "news", "poem" and "movie" with parameter\n'
+                          f'News "count of news"\n'
+                          f'Poem "author name"\n'
+                          f'Movie "release year"\n'
+                          f'Or use the next buttons without parameters\n')
+        return resp
 
     def _get_config(self):
         self.config = configparser.ConfigParser()

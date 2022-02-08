@@ -3,7 +3,7 @@ import random
 import os
 import pandas as pd
 
-from loaders.loader import Loader
+from loaders.loader import Loader, check_permission
 
 logger = logging.getLogger(__name__)
 handler = logging.FileHandler('run.log')
@@ -51,7 +51,8 @@ class FileLoader(Loader):
             logger.info(f'{file_path} download. len = {len(poems)}')
             return poems
 
-    def get_poem(self, text: str) -> dict:
+    @check_permission()
+    def get_poem(self, text: str, **kwargs) -> dict:
         """
         Get respoesy from file
         :param:
@@ -74,9 +75,7 @@ class FileLoader(Loader):
                 if authors_poems_list:
                     random_poem = random.choice(authors_poems_list)
                 else:
-                    resp['res'] = 'ERROR'
-                    resp['descr'] = 'Poem not found'
-                    return resp
+                    return Loader.error_resp('Poem not found')
                 resp['res'] = 'OK'
         else:
             logger.error('File poems.xlsx not found')
