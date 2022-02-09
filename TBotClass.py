@@ -118,25 +118,24 @@ class TBotClass:
     def _gen_markup(privileges: int):
         markup = InlineKeyboardMarkup()
         markup.row_width = 1
-        if Loader.privileges_levels['untrusted'] <= privileges < Loader.privileges_levels['test']:
+        if Loader.privileges_levels['untrusted'] <= privileges:
             pass
-        if Loader.privileges_levels['test'] <= privileges < Loader.privileges_levels['regular']:
+        if Loader.privileges_levels['test'] <= privileges:
             pass
-        if Loader.privileges_levels['regular'] <= privileges < Loader.privileges_levels['trusted']:
+        if Loader.privileges_levels['regular'] <= privileges:
+            markup.add(InlineKeyboardButton("💵 Exchange/Курс валют", callback_data="exchange"),
+                       InlineKeyboardButton("⛅️Weather/Погода", callback_data="weather"),
+                       InlineKeyboardButton("💭 Quote/Цитата", callback_data="quote"),
+                       InlineKeyboardButton("🤗 Wish/Пожелание", callback_data="wish"),
+                       InlineKeyboardButton("📰 News/Новости", callback_data="news"),
+                       InlineKeyboardButton("🧘‍♀️Affirmation/Аффирмация", callback_data="affirmation"),
+                       InlineKeyboardButton("🎭 Events/Мероприятия", callback_data="events"),
+                       InlineKeyboardButton("🍲 Food/Еда", callback_data="food"),
+                       InlineKeyboardButton("🪶 Poem/Стих", callback_data="poem"),
+                       InlineKeyboardButton("🎞 Movie/Фильм", callback_data="movie"))
+        if Loader.privileges_levels['trusted'] <= privileges:
             pass
-        markup.add(InlineKeyboardButton("💵 Exchange/Курс валют", callback_data="exchange"),
-                   InlineKeyboardButton("⛅️Weather/Погода", callback_data="weather"),
-                   InlineKeyboardButton("💭 Quote/Цитата", callback_data="quote"),
-                   InlineKeyboardButton("🤗 Wish/Пожелание", callback_data="wish"),
-                   InlineKeyboardButton("📰 News/Новости", callback_data="news"),
-                   InlineKeyboardButton("🧘‍♀️Affirmation/Аффирмация", callback_data="affirmation"),
-                   InlineKeyboardButton("🎭 Events/Мероприятия", callback_data="events"),
-                   InlineKeyboardButton("🍲 Food/Еда", callback_data="food"),
-                   InlineKeyboardButton("🪶 Poem/Стих", callback_data="poem"),
-                   InlineKeyboardButton("🎞 Movie/Фильм", callback_data="movie"))
-        if Loader.privileges_levels['trusted'] <= privileges < Loader.privileges_levels['root']:
-            pass
-        if privileges >= Loader.privileges_levels['root']:
+        if Loader.privileges_levels['root'] <= privileges:
             markup.add(InlineKeyboardButton("👥 Users/Пользователи", callback_data="users"))
         return markup
 
