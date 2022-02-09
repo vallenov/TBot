@@ -72,6 +72,7 @@ class DBLoader(Loader):
                 return p_id
 
     def add_user(self, user_id: str, privileges: int, login: str, first_name: str):
+        logger.info(f'Adding new user {user_id}')
         login_db = 'NULL' if login is None else f"'{login}'"
         first_name_db = 'NULL' if first_name is None else f"'{first_name}'"
         user_id_db = f"'{user_id}'"
@@ -103,8 +104,10 @@ class DBLoader(Loader):
                 return Loader.error_resp('User not found')
             user_id_db = f"'{user_id}'"
             privileges = int(lst[2])
+        logger.info(f'Updating user {user_id}')
         if int(self.config['MAIN']['PROD']):
             with self.connection.cursor() as cursor:
+                logger.info(f'Updating DB')
                 p_id = self.get_p_id(privileges)
                 query = f'update {self.db_name}.users ' \
                         f'set privileges_id = {p_id} ' \
@@ -112,6 +115,7 @@ class DBLoader(Loader):
                 resp[0] = f'User {user_id} updated'
                 cursor.execute(query)
                 self.connection.commit()
+        logger.info(f'Updating memory')
         Loader.users[user_id]['value'] = privileges
         logger.info(f'User {user_id} updated')
         resp['res'] = 'OK'
