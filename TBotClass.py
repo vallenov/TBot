@@ -56,7 +56,7 @@ class TBotClass:
         resp = {}
         self._get_config()
         chat_id = str(message.json['chat']['id'])
-        if chat_id not in Loader.user_privileges.keys():
+        if chat_id not in Loader.users.keys():
             login = message.json['chat'].get('username', None)
             first_name = message.json['chat'].get('first_name', None)
             self.db_loader.add_user(user_id=chat_id,
@@ -96,6 +96,8 @@ class TBotClass:
                 resp['res'] = self.__dict_to_str(self.internet_loader.get_random_movie(form_text, chat_id=chat_id), ' ')
             elif form_text.startswith('update') or form_text.startswith('обновить'):
                 resp['res'] = self.__dict_to_str(self.db_loader.update_user(form_text, chat_id=chat_id), ' ')
+            elif form_text == 'users' or form_text == 'пользователи':
+                resp['res'] = self.__dict_to_str(self.db_loader.show_users(chat_id=chat_id), ' ')
             elif TBotClass._is_phone_number(form_text) is not None:
                 phone_number = TBotClass._is_phone_number(form_text)
                 resp['res'] = self.__dict_to_str(
@@ -157,12 +159,14 @@ class TBotClass:
                           f'Новости "количество новостей"\n'
                           f'Стих "имя автора"\n'
                           f'Фильм "год выпуска"\n'
+                          f'Так же, ты можешь написать номер телефона, что бы узнать информацию о нем\n'
                           f'Или используй следующие кнопки без параметров\n\n'
                           f'Hello! My name is InfoBot\n'
                           f'You may write "news", "poem" and "movie" with parameter\n'
                           f'News "count of news"\n'
                           f'Poem "author name"\n'
                           f'Movie "release year"\n'
+                          f'Also you can write phone number to find out information about it\n'
                           f'Or use the next buttons without parameters\n')
         return resp
 

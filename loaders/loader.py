@@ -32,7 +32,7 @@ def check_permission(needed_level: str = 'regular'):
             logger.info(f'check permission')
             if needed_level not in Loader.privileges_levels.keys():
                 logger.error(f'{needed_level} is not permission level name')
-            user_permission = Loader.user_privileges.get(kwargs['chat_id'], Privileges.test)
+            user_permission = Loader.users[kwargs['chat_id']].get('value', Privileges.test)
             logger.info(f'User permission: {user_permission}, '
                         f'needed permission: {Loader.privileges_levels[needed_level]}')
             resp = {}
@@ -50,7 +50,7 @@ def check_permission(needed_level: str = 'regular'):
 
 class Loader:
     loaders = []
-    user_privileges = {}
+    users = {}
 
     privileges_levels = {
         'untrusted': 10,
