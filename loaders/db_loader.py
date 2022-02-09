@@ -23,6 +23,7 @@ class DBLoader(Loader):
             self.get_users_fom_config()
 
     def get_connect(self):
+        logger.info('get_connect')
         try:
             logger.info(f'Try to connect to DB')
             self.connection = connect(
@@ -35,6 +36,7 @@ class DBLoader(Loader):
             logger.info(f'Connection to DB success')
 
     def get_users_fom_db(self):
+        logger.info('get_users_fom_db')
         with self.connection.cursor() as cursor:
             query = f'select chat_id, login, first_name, value from ' \
                     f'{self.db_name}.users u ' \
@@ -49,6 +51,7 @@ class DBLoader(Loader):
                 Loader.users[cur[0]] = user_data
 
     def get_users_fom_config(self):
+        logger.info('get_users_fom_config')
         users = self.config['USERS']
         for value in users.values():
             lst = value.split(',')
@@ -72,7 +75,7 @@ class DBLoader(Loader):
                 return p_id
 
     def add_user(self, user_id: str, privileges: int, login: str, first_name: str):
-        logger.info(f'Adding new user {user_id}')
+        logger.info('add_user')
         login_db = 'NULL' if login is None else f"'{login}'"
         first_name_db = 'NULL' if first_name is None else f"'{first_name}'"
         user_id_db = f"'{user_id}'"
@@ -94,6 +97,7 @@ class DBLoader(Loader):
     @check_permission(needed_level='root')
     def update_user(self, text: str, **kwargs):
         resp = {}
+        logger.info('update_user')
         lst = text.split()
         if len(lst) != 3:
             logger.error(f'Not valid data')
@@ -104,7 +108,6 @@ class DBLoader(Loader):
                 return Loader.error_resp('User not found')
             user_id_db = f"'{user_id}'"
             privileges = int(lst[2])
-        logger.info(f'Updating user {user_id}')
         if int(self.config['MAIN']['PROD']):
             with self.connection.cursor() as cursor:
                 logger.info(f'Updating DB')
@@ -124,6 +127,7 @@ class DBLoader(Loader):
     @check_permission(needed_level='root')
     def show_users(self, **kwargs):
         resp = {}
+        logger.info('show_users')
         cnt = 1
         for key, value in Loader.users.items():
             if value['value'] > Loader.privileges_levels['regular']:
