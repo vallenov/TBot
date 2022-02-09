@@ -32,14 +32,12 @@ def check_permission(needed_level: str = 'regular'):
             logger.info(f'check permission')
             if needed_level not in Loader.privileges_levels.keys():
                 logger.error(f'{needed_level} is not permission level name')
-            user_permission = Loader.users[kwargs['chat_id']].get('value', Privileges.test)
+            user_permission = kwargs['privileges']
             logger.info(f'User permission: {user_permission}, '
                         f'needed permission: {Loader.privileges_levels[needed_level]}')
-            resp = {}
             if user_permission < Loader.privileges_levels[needed_level]:
                 logger.info('Access denied')
-                resp['res'] = 'ERROR'
-                resp['descr'] = 'Permission denied'
+                return Loader.error_resp('Permission denied')
             else:
                 logger.info('Access allowed')
                 resp = func(self, *args, **kwargs)
