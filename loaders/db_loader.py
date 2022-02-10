@@ -164,7 +164,7 @@ class DBLoader(Loader):
             resp[cnt] = f"Chat_id: {key}, " \
                         f"login: {value['login']}, " \
                         f"first_name: {value['first_name']}, " \
-                        f"priviliges: {value['value']}"
+                        f"privileges: {value['value']}"
             cnt += 1
         if not len(resp):
             resp[0] = 'Users not found'
