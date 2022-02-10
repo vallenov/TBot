@@ -113,8 +113,8 @@ class TBotClass:
                     self.internet_loader.get_phone_number_info(phone_number, privileges=privileges), ': '
                 )
             else:
-                resp['res'] = f'Привет! Меня зовут InfoBot\n'
-                resp['markup'] = self._gen_markup(privileges)
+                resp['res'] = self._dict_to_str(self._get_hello(privileges=privileges))
+                resp['markup'] = self._gen_markup(privileges=privileges)
             return resp
 
     @staticmethod
@@ -163,28 +163,51 @@ class TBotClass:
         return fin_str
 
     @check_permission()
-    def _get_help(self, **kwargs) -> dict:
+    def _get_help(self, privileges: int) -> dict:
         """
         Get bot functions
-        :param dev: change view of help
-        :return: {'func': 'description', ...}
+        :param privileges: user privileges
+        :return: {'res': 'OK or ERROR', 'text': 'message'}
         """
         logger.info('get_help')
         resp = dict()
         resp['res'] = 'OK'
-        resp[0] = str(f'Ты можешь написать "новости", "стих" и "фильм" с параметром\n'
-                      f'Новости "количество новостей"\n'
-                      f'Стих "имя автора или название"\n'
-                      f'Фильм "год выпуска"\n'
-                      f'Так же, ты можешь написать номер телефона, что бы узнать информацию о нем\n')
-        # f'Или используй следующие кнопки без параметров\n')
-        # resp['(ENG)'] = str(  # f'Hello! My name is InfoBot\n'
-        #     f'You may write "news", "poem" and "movie" with parameter\n'
-        #     f'News "count of news"\n'
-        #     f'Poem "author or poems name"\n'
-        #     f'Movie "release year"\n'
-        #     f'Also you can write phone number to find out information about it\n')
-        # f'Or use the next buttons without parameters\n')
+        # if Loader.privileges_levels['untrusted'] <= privileges:
+        #     return Loader.error_resp('Permission denied')
+        # if Loader.privileges_levels['test'] <= privileges:
+        #     return Loader.error_resp('Permission denied')
+        if Loader.privileges_levels['regular'] <= privileges:
+            resp[0] = str(f'Ты можешь написать "новости", "стих" и "фильм" с параметром\n'
+                          f'Новости "количество новостей"\n'
+                          f'Стих "имя автора или название"\n'
+                          f'Фильм "год выпуска"\n'
+                          f'Так же, ты можешь написать номер телефона, что бы узнать информацию о нем\n')
+        if Loader.privileges_levels['trusted'] <= privileges:
+            pass
+        if Loader.privileges_levels['root'] <= privileges:
+            pass
+        return resp
+
+    @check_permission()
+    def _get_hello(self, privileges: int) -> dict:
+        """
+        Get hello from bot
+        :param privileges: user privileges
+        :return: {'res': 'OK or ERROR', 'text': 'message'}
+        """
+        logger.info('get_help')
+        resp = dict()
+        resp['res'] = 'OK'
+        # if Loader.privileges_levels['untrusted'] <= privileges:
+        #     resp[0] = f'Permission denied'
+        # if Loader.privileges_levels['test'] <= privileges:
+        #     resp[0] = f'Permission denied'
+        if Loader.privileges_levels['regular'] <= privileges:
+            resp[0] = f'Привет! Меня зовут InfoBot\n'
+        if Loader.privileges_levels['trusted'] <= privileges:
+            pass
+        if Loader.privileges_levels['root'] <= privileges:
+            resp[0] = f'You are a root user'
         return resp
 
     @check_permission(needed_level='root')
@@ -199,7 +222,6 @@ class TBotClass:
         resp['res'] = 'OK'
         resp[0] = str(f'Update "chat_id" "privileges"\n'
                       f'Delete "chat_id"\n')
-
         return resp
 
     def _get_config(self):
