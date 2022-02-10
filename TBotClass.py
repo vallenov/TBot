@@ -86,9 +86,6 @@ class TBotClass:
                 resp['res'] = self._dict_to_str(self.internet_loader.get_news(form_text, privileges=privileges), '\n')
             elif form_text == 'affirmation' or form_text == 'аффирмация':
                 resp['res'] = self._dict_to_str(self.internet_loader.get_affirmation(privileges=privileges))
-            # elif form_text == 'events':
-            #     resp['res'] = self._dict_to_str(self._get_events(), '\n')
-            #     return resp
             elif form_text == 'events' or form_text == 'мероприятия':
                 resp['res'] = self._dict_to_str(asyncio.run(self.internet_loader.async_events(privileges=privileges)),
                                                 '\n')
@@ -102,15 +99,21 @@ class TBotClass:
                     self.internet_loader.get_random_movie(form_text, privileges=privileges), ' ')
             elif form_text.startswith('update') or form_text.startswith('обновить'):
                 resp['res'] = self._dict_to_str(self.db_loader.update_user(form_text, privileges=privileges), ' ')
+            elif form_text.startswith('delete') or form_text.startswith('удалить'):
+                resp['res'] = self._dict_to_str(self.db_loader.delete_user(form_text, privileges=privileges), ' ')
             elif form_text == 'users' or form_text == 'пользователи':
                 resp['res'] = self._dict_to_str(self.db_loader.show_users(privileges=privileges), ' ')
+            elif form_text == 'hidden_functions' or form_text == 'скрытые_функции':
+                resp['res'] = self._dict_to_str(self._get_help(privileges=privileges), ' ')
+            elif form_text == 'admins_help' or form_text == 'руководство_админу':
+                resp['res'] = self._dict_to_str(self._get_admins_help(privileges=privileges), ' ')
             elif TBotClass._is_phone_number(form_text) is not None:
                 phone_number = TBotClass._is_phone_number(form_text)
                 resp['res'] = self._dict_to_str(
                     self.internet_loader.get_phone_number_info(phone_number, privileges=privileges), ': '
                 )
             else:
-                resp['res'] = self._dict_to_str(self._get_help(privileges=privileges), ' ')
+                resp['res'] = f'Привет! Меня зовут InfoBot\n'
                 resp['markup'] = self._gen_markup(privileges)
             return resp
 
@@ -123,7 +126,8 @@ class TBotClass:
         if Loader.privileges_levels['test'] <= privileges:
             pass
         if Loader.privileges_levels['regular'] <= privileges:
-            markup.add(InlineKeyboardButton("💵 Exchange/Курс валют", callback_data="exchange"),
+            markup.add(InlineKeyboardButton("📜 Hidden functions/Скрытые функции", callback_data="hidden_functions"),
+                       InlineKeyboardButton("💵 Exchange/Курс валют", callback_data="exchange"),
                        InlineKeyboardButton("⛅️Weather/Погода", callback_data="weather"),
                        InlineKeyboardButton("💭 Quote/Цитата", callback_data="quote"),
                        InlineKeyboardButton("🤗 Wish/Пожелание", callback_data="wish"),
@@ -136,6 +140,7 @@ class TBotClass:
         if Loader.privileges_levels['trusted'] <= privileges:
             pass
         if Loader.privileges_levels['root'] <= privileges:
+            markup.add(InlineKeyboardButton("🛠 Admins help/Руководство админу", callback_data="admins_help"))
             markup.add(InlineKeyboardButton("👥 Users/Пользователи", callback_data="users"))
         return markup
 
@@ -160,27 +165,41 @@ class TBotClass:
     @check_permission()
     def _get_help(self, **kwargs) -> dict:
         """
-        Get bot function
+        Get bot functions
         :param dev: change view of help
         :return: {'func': 'description', ...}
         """
         logger.info('get_help')
-        resp = {}
+        resp = dict()
         resp['res'] = 'OK'
-        resp['(RU)'] = str(f'Привет! Меня зовут InfoBot\n'
-                           f'Ты можешь написать "новости", "стих" и "фильм" с параметром\n'
+        resp['(RU)'] = str(f'Ты можешь написать "новости", "стих" и "фильм" с параметром\n'
                            f'Новости "количество новостей"\n'
-                           f'Стих "имя автора"\n'
+                           f'Стих "имя автора или название"\n'
                            f'Фильм "год выпуска"\n'
-                           f'Так же, ты можешь написать номер телефона, что бы узнать информацию о нем\n'
-                           f'Или используй следующие кнопки без параметров\n')
-        resp['(ENG)'] = str(f'Hello! My name is InfoBot\n'
-                            f'You may write "news", "poem" and "movie" with parameter\n'
-                            f'News "count of news"\n'
-                            f'Poem "author name"\n'
-                            f'Movie "release year"\n'
-                            f'Also you can write phone number to find out information about it\n'
-                            f'Or use the next buttons without parameters\n')
+                           f'Так же, ты можешь написать номер телефона, что бы узнать информацию о нем\n')
+        # f'Или используй следующие кнопки без параметров\n')
+        resp['(ENG)'] = str(  # f'Hello! My name is InfoBot\n'
+            f'You may write "news", "poem" and "movie" with parameter\n'
+            f'News "count of news"\n'
+            f'Poem "author or poems name"\n'
+            f'Movie "release year"\n'
+            f'Also you can write phone number to find out information about it\n')
+        # f'Or use the next buttons without parameters\n')
+        return resp
+
+    @check_permission(needed_level='root')
+    def _get_admins_help(self, **kwargs) -> dict:
+        """
+        Get bot functions for admin
+        :param :
+        :return:
+        """
+        logger.info('get_admins_help')
+        resp = dict()
+        resp['res'] = 'OK'
+        resp[0] = str(f'Update "chat_id" "privileges"\n'
+                      f'Delete "chat_id"\n')
+
         return resp
 
     def _get_config(self):
