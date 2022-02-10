@@ -125,6 +125,35 @@ class DBLoader(Loader):
         return resp
 
     @check_permission(needed_level='root')
+    def delete_user(self, text: str, **kwargs):
+        resp = {}
+        logger.info('delete_user')
+        lst = text.split()
+        if len(lst) != 2:
+            logger.error(f'Not valid data')
+            return Loader.error_resp(f'Not valid data')
+        else:
+            user_id = lst[1]
+            if user_id not in Loader.users.keys():
+                return Loader.error_resp('User not found')
+            if Loader.users[user_id]['value'] >= Loader.privileges_levels['root']:
+                return Loader.error_resp('Can not delete root users')
+            user_id_db = f"'{user_id}'"
+        if int(self.config['MAIN']['PROD']):
+            with self.connection.cursor() as cursor:
+                logger.info(f'Updating DB')
+                query = f'delete from {self.db_name}.users ' \
+                        f'where chat_id = {user_id_db} '
+                cursor.execute(query)
+                self.connection.commit()
+        logger.info(f'Updating memory')
+        Loader.users.pop(user_id)
+        resp[0] = f'User {user_id} deleted'
+        logger.info(f'User {user_id} deleted')
+        resp['res'] = 'OK'
+        return resp
+
+    @check_permission(needed_level='root')
     def show_users(self, **kwargs):
         resp = {}
         logger.info('show_users')
