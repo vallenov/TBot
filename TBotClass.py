@@ -172,18 +172,18 @@ class TBotClass:
         logger.info('get_help')
         resp = dict()
         resp['res'] = 'OK'
-        resp['(RU)'] = str(f'Ты можешь написать "новости", "стих" и "фильм" с параметром\n'
-                           f'Новости "количество новостей"\n'
-                           f'Стих "имя автора или название"\n'
-                           f'Фильм "год выпуска"\n'
-                           f'Так же, ты можешь написать номер телефона, что бы узнать информацию о нем\n')
+        resp[0] = str(f'Ты можешь написать "новости", "стих" и "фильм" с параметром\n'
+                      f'Новости "количество новостей"\n'
+                      f'Стих "имя автора или название"\n'
+                      f'Фильм "год выпуска"\n'
+                      f'Так же, ты можешь написать номер телефона, что бы узнать информацию о нем\n')
         # f'Или используй следующие кнопки без параметров\n')
-        resp['(ENG)'] = str(  # f'Hello! My name is InfoBot\n'
-            f'You may write "news", "poem" and "movie" with parameter\n'
-            f'News "count of news"\n'
-            f'Poem "author or poems name"\n'
-            f'Movie "release year"\n'
-            f'Also you can write phone number to find out information about it\n')
+        # resp['(ENG)'] = str(  # f'Hello! My name is InfoBot\n'
+        #     f'You may write "news", "poem" and "movie" with parameter\n'
+        #     f'News "count of news"\n'
+        #     f'Poem "author or poems name"\n'
+        #     f'Movie "release year"\n'
+        #     f'Also you can write phone number to find out information about it\n')
         # f'Or use the next buttons without parameters\n')
         return resp
 

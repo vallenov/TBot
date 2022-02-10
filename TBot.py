@@ -83,10 +83,6 @@ def tbot():
                                  f'RAW - {call.message.chat}')
         safe_send(call.message.json['chat']['id'], replace['res'])
 
-    @bot.message_handler(commands=['start'])
-    def start_message(message):
-        bot.send_message(message.chat.id, 'Welcome, my friend!')
-
     @bot.message_handler(func=lambda message: True, content_types=content_types)
     def send_text(message):
         save_file(message)
