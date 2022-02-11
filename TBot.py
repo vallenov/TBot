@@ -82,7 +82,7 @@ def tbot():
                                  f'FirstName - {call.message.chat.first_name}, '
                                  f'Callback - {call.message.text}, '
                                  f'RAW - {call.message.chat}')
-        safe_send(call.message.json['chat']['id'], replace['res'])
+        safe_send(call.message.json['chat']['id'], replace['res'], reply_markup=replace.get('markup', None))
 
     @bot.message_handler(func=lambda message: True, content_types=content_types)
     def send_text(message):

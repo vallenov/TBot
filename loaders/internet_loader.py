@@ -444,18 +444,36 @@ class InternetLoader(Loader):
         """
         logger.info('get_random_movie')
         resp = {}
-        year = datetime.datetime.now().year
+        #year = datetime.datetime.now().year
         command = text.split(' ')
-        if len(command) > 1:
+        year_from = 0
+        year_to = 0
+        if len(command) == 1:
+            resp['res'] = 'OK'
+            resp[0] = 'Выберите промежуток'
+            return resp
+        elif len(command) == 2:
             try:
-                year = int(command[1])
+                year_from = int(command[1])
+                year_to = year_from
             except ValueError as e:
                 return Loader.error_resp('Format of data is not valid')
             else:
-                if year < 1890 or year > 2022:
+                if year_from < 1890 or year_to > 2022:
                     return Loader.error_resp(f'Year may be from 1890 to {datetime.datetime.now().year}')
+        elif len(command) > 2:
+            try:
+                year_from = int(command[1])
+                year_to = int(command[2])
+            except ValueError as e:
+                return Loader.error_resp('Format of data is not valid')
+            else:
+                if year_from < 1890 or year_to > 2022:
+                    return Loader.error_resp(f'Year may be from 1890 to {datetime.datetime.now().year}')
+                elif year_from > year_to:
+                    return Loader.error_resp(f'Start year may be greater then finish year')
         if self.config.has_option('URL', 'random_movie_url'):
-            random_movie_url = self.config['URL']['random_movie_url'].format(year, year)
+            random_movie_url = self.config['URL']['random_movie_url'].format(year_from, year_to)
         else:
             return Loader.error_resp("I can't do this yet😔")
         soup = InternetLoader._site_to_lxml(random_movie_url)
@@ -463,7 +481,7 @@ class InternetLoader(Loader):
         span_raw = result_top.find('span')
         is_result = int(span_raw.text.split(' ')[-1])
         if not is_result:
-            return Loader.error_resp(f'Movies by {year} is not found')
+            return Loader.error_resp(f'Movies by {year_from}-{year_to} is not found')
         if soup is None:
             logger.error(f'Empty soup data')
             return Loader.error_resp("Something wrong")
@@ -488,10 +506,10 @@ class InternetLoader(Loader):
                 is_cyrillic = True
             try_count += 1
             if try_count > per_page:
-                return Loader.error_resp(f'Movies by {year} is not found')
+                return Loader.error_resp(f'Movies by {year_from}-{year_to} is not found')
         movie_id = p_raw.find('a').get('href')
         movie_url = '/'.join(random_movie_url.split('/')[:3])
         resp['res'] = 'OK'
-        resp[0] = f'Случайный фильм {year} года'
+        resp[0] = f'Случайный фильм {year_from}-{year_to} годов'
         resp[1] = movie_url+movie_id
         return resp

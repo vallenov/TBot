@@ -97,6 +97,8 @@ class TBotClass:
             elif form_text.startswith('movie') or form_text.startswith('фильм'):
                 resp['res'] = self._dict_to_str(
                     self.internet_loader.get_random_movie(form_text, privileges=privileges), ' ')
+                if ' ' not in form_text:
+                    resp['markup'] = self._gen_movie_markup(privileges=privileges)
             elif form_text.startswith('update') or form_text.startswith('обновить'):
                 resp['res'] = self._dict_to_str(self.db_loader.update_user(form_text, privileges=privileges), ' ')
             elif form_text.startswith('delete') or form_text.startswith('удалить'):
@@ -116,6 +118,28 @@ class TBotClass:
                 resp['res'] = self._dict_to_str(self._get_hello(privileges=privileges))
                 resp['markup'] = self._gen_markup(privileges=privileges)
             return resp
+
+    @staticmethod
+    def _gen_movie_markup(privileges: int):
+        markup = InlineKeyboardMarkup()
+        markup.row_width = 1
+        if Loader.privileges_levels['untrusted'] <= privileges:
+            pass
+        if Loader.privileges_levels['test'] <= privileges:
+            pass
+        if Loader.privileges_levels['regular'] <= privileges:
+            markup.add(InlineKeyboardButton("🎞 1950-1960", callback_data="movie 1950 1960"),
+                       InlineKeyboardButton("🎞 1960-1970", callback_data="movie 1960 1970"),
+                       InlineKeyboardButton("🎞 1970-1980", callback_data="movie 1970 1980"),
+                       InlineKeyboardButton("🎞 1980-1990", callback_data="movie 1980 1990"),
+                       InlineKeyboardButton("🎞 1990-2000", callback_data="movie 1990 2000"),
+                       InlineKeyboardButton("🎞 2000-2010", callback_data="movie 2000 2010"),
+                       InlineKeyboardButton("🎞 2010-2020", callback_data="movie 2010 2020"))
+        if Loader.privileges_levels['trusted'] <= privileges:
+            pass
+        if Loader.privileges_levels['root'] <= privileges:
+            pass
+        return markup
 
     @staticmethod
     def _gen_markup(privileges: int):
