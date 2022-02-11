@@ -67,8 +67,8 @@ def tbot():
                         is_send = True
                 else:
                     conversation_logger.info('Response: ' + replace.replace('\n', ' '))
-                    logger.info(f'Send successful')
                     logger.info(f'Number of attempts: {current_try}')
+                    logger.info(f'Send successful')
                     break
 
     @bot.callback_query_handler(func=lambda call: True)
