@@ -54,12 +54,12 @@ def tbot():
                     else:
                         bot.send_message(chat_id, replace[start:start+MAX_LEN], reply_markup=reply_markup)
                     start += MAX_LEN
-                except ConnectionResetError:
-                    logger.exception(f'ConnectionResetError exception: {traceback.format_exc()}')
-                except requests.exceptions.ConnectionError:
-                    logger.exception(f'requests.exceptions.ConnectionError exception: {traceback.format_exc()}')
-                except urllib3.exceptions.ProtocolError:
-                    logger.exception(f'urllib3.exceptions.ProtocolError exception: {traceback.format_exc()}')
+                except ConnectionResetError as cre:
+                    logger.exception(f'ConnectionResetError exception: {cre}')
+                except requests.exceptions.ConnectionError as rec:
+                    logger.exception(f'requests.exceptions.ConnectionError exception: {rec}')
+                except urllib3.exceptions.ProtocolError as uep:
+                    logger.exception(f'urllib3.exceptions.ProtocolError exception: {uep}')
                 except Exception as _ex:
                     logger.exception(f'Unrecognized exception: {traceback.format_exc()}')
                     if not is_send:
