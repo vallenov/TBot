@@ -454,24 +454,27 @@ class InternetLoader(Loader):
             return resp
         elif len(command) == 2:
             try:
-                year_from = int(command[1])
-                year_to = year_from
+                act_year_from = int(command[1])
+                act_year_to = act_year_from
+                year_from = act_year_from
+                year_to = act_year_to
             except ValueError as e:
                 return Loader.error_resp('Format of data is not valid')
             else:
-                if year_from < 1890 or year_to > 2022:
+                if act_year_from < 1890 or act_year_to > 2022:
                     return Loader.error_resp(f'Year may be from 1890 to {datetime.datetime.now().year}')
         elif len(command) > 2:
             try:
-                year_from = int(command[1])
-                year_to = int(command[2])
+                act_year_from = int(command[1])
+                act_year_to = int(command[2])
+                if act_year_from < 1890 or act_year_to > 2022:
+                    return Loader.error_resp(f'Year may be from 1890 to {datetime.datetime.now().year}')
+                elif act_year_from > act_year_to:
+                    return Loader.error_resp(f'Start year may be greater then finish year')
+                year_from = random.choice(range(int(command[1]), int(command[2]) + 1))
+                year_to = year_from
             except ValueError as e:
                 return Loader.error_resp('Format of data is not valid')
-            else:
-                if year_from < 1890 or year_to > 2022:
-                    return Loader.error_resp(f'Year may be from 1890 to {datetime.datetime.now().year}')
-                elif year_from > year_to:
-                    return Loader.error_resp(f'Start year may be greater then finish year')
         if self.config.has_option('URL', 'random_movie_url'):
             random_movie_url = self.config['URL']['random_movie_url'].format(year_from, year_to)
         else:
@@ -486,30 +489,42 @@ class InternetLoader(Loader):
             logger.error(f'Empty soup data')
             return Loader.error_resp("Something wrong")
         div_raw = soup.find('div', class_='search_results search_results_last')
+        #print(div_raw)
         div_nav = div_raw.find('div', class_='navigator')
         from_to = div_nav.find('div', class_='pagesFromTo').text.split(' ')[0].split('—')
         per_page = int(from_to[1]) - int(from_to[0]) - 1
         page_count = int(div_nav.find('div', class_='pagesFromTo').text.split(' ')[-1]) // per_page
-        random_page_number = 1
-        if page_count > 1:
+        current_try = 0
+        max_try = 3
+        while current_try < max_try:
+            current_try += 1
             random_page_number = str(random.choice(range(1, page_count)))
-        movie_soup = InternetLoader._site_to_lxml(random_movie_url + str(random_page_number))
-        movie_div_raw = movie_soup.find('div', class_='search_results search_results_last')
-        div_elements = movie_div_raw.find_all('div', class_='element')
-        is_cyrillic = False
-        try_count = 0
-        simbols = string.ascii_lowercase + string.ascii_uppercase
-        while is_cyrillic is not True:
-            random_movie_raw = random.choice(div_elements)
-            p_raw = random_movie_raw.find('p', class_='name')
-            if p_raw.text[0] not in simbols:
-                is_cyrillic = True
-            try_count += 1
-            if try_count > per_page:
-                return Loader.error_resp(f'Movies by {year_from}-{year_to} is not found')
-        movie_id = p_raw.find('a').get('href')
-        movie_url = '/'.join(random_movie_url.split('/')[:3])
-        resp['res'] = 'OK'
-        resp[0] = f'Случайный фильм {year_from}-{year_to} годов'
-        resp[1] = movie_url+movie_id
-        return resp
+            movie_soup = InternetLoader._site_to_lxml(random_movie_url + str(random_page_number))
+            movie_div_raw = movie_soup.find('div', class_='search_results search_results_last')
+            div_elements = movie_div_raw.find_all('div', class_='element')
+            div_elements = list(filter(lambda x: 'no-poster' not in x.find('img').get('title'), div_elements))
+            if not div_elements:
+                logger.warning(f'No elements with poster')
+                continue
+            try_count = 0
+            #simbols = string.ascii_lowercase + string.ascii_uppercase + string.digits + string.punctuation
+            symbols = 'аоуыэяеёюибвгдйжзклмнпрстфхцчшщьъАОУЫЭЯЕЁЮИБВГДЙЖЗКЛМНПРСТФХЦЧШЩЬЪ'
+            while True:
+                random_movie_raw = random.choice(div_elements)
+                p_raw = random_movie_raw.find('p', class_='name')
+                name = p_raw.text
+                name = name.replace('видео', '')
+                name = name.replace('ТВ', '')
+                for simb in name:
+                    if simb in symbols:
+                        movie_id = p_raw.find('a').get('href')
+                        movie_url = '/'.join(random_movie_url.split('/')[:3])
+                        resp['res'] = 'OK'
+                        resp[0] = f'Случайный фильм {act_year_from}-{act_year_to} годов'
+                        resp[1] = movie_url + movie_id
+                        return resp
+                try_count += 1
+                if try_count > per_page:
+                    logger.warning(f'No elements with cyrillic symbols')
+                    break
+        return Loader.error_resp(f'Movie {year_from}-{year_to} years not found')
