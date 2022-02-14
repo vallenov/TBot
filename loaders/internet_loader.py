@@ -495,7 +495,7 @@ class InternetLoader(Loader):
         per_page = int(from_to[1]) - int(from_to[0]) - 1
         page_count = int(div_nav.find('div', class_='pagesFromTo').text.split(' ')[-1]) // per_page
         current_try = 0
-        max_try = 3
+        max_try = 5
         while current_try < max_try:
             current_try += 1
             random_page_number = str(random.choice(range(1, page_count)))
