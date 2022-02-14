@@ -27,9 +27,9 @@ class DBLoader(Loader):
         try:
             logger.info(f'Try to connect to DB')
             self.connection = connect(
-                        host=self.config['DB']['host'],
-                        user=self.config['DB']['login'],
-                        password=self.config['DB']['password'])
+                host=self.config['DB']['host'],
+                user=self.config['DB']['login'],
+                password=self.config['DB']['password'])
         except Error as e:
             logger.exception(f'Connection error {e}\nTraceback: {traceback.format_exc()}')
         else:
@@ -104,13 +104,33 @@ class DBLoader(Loader):
             return Loader.error_resp(f'Not valid data')
         else:
             user_id = lst[1]
-            if user_id not in Loader.users.keys():
+            user_inf = Loader.users.keys()
+            if all([user_id.lower() not in list(map(lambda x: x.lower(), user_inf)),
+                    user_id.lower() not in list(map(lambda x: Loader.users[x]['login'].lower()
+                        if Loader.users[x]['login'] is not None
+                        else Loader.users[x]['login'], user_inf)),
+                    user_id.lower() not in list(map(lambda x: Loader.users[x]['first_name'].lower()
+                        if Loader.users[x]['first_name'] is not None
+                        else Loader.users[x]['first_name'], user_inf))]):
                 return Loader.error_resp('User not found')
             user_id_db = f"'{user_id}'"
             privileges = int(lst[2])
         if int(self.config['MAIN']['PROD']):
             with self.connection.cursor() as cursor:
                 logger.info(f'Updating DB')
+                query = f'select chat_id from {self.db_name}.users ' \
+                        f'where chat_id = {user_id_db} ' \
+                        f'or login = {user_id_db} ' \
+                        f'or first_name = {user_id_db}'
+                cursor.execute(query)
+                cnt = 0
+                for cid in cursor:
+                    user_id = cid[0]
+                    user_id_db = f"'{user_id}'"
+                    cnt += 1
+                if cnt > 1:
+                    return Loader.error_resp('Count of founded data greater then 1')
+            with self.connection.cursor() as cursor:
                 p_id = self.get_p_id(privileges)
                 query = f'update {self.db_name}.users ' \
                         f'set privileges_id = {p_id} ' \
@@ -170,4 +190,3 @@ class DBLoader(Loader):
             resp[0] = 'Users not found'
         resp['res'] = 'OK'
         return resp
-
