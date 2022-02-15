@@ -92,7 +92,8 @@ class TBotClass:
             elif form_text == 'food' or form_text == 'еда':
                 resp['res'] = self._dict_to_str(self.internet_loader.get_restaurant(privileges=privileges), ' ')
             elif form_text.startswith('poem') or form_text.startswith('стих'):
-                resp['res'] = self._dict_to_str(self.file_loader.get_poem(form_text, privileges=privileges), '\n')
+                resp['res'] = self._dict_to_str(self.db_loader.get_poem(form_text, privileges=privileges), '\n')
+                # resp['res'] = self._dict_to_str(self.file_loader.get_poem(form_text, privileges=privileges), '\n')
                 # resp['res'] = self._dict_to_str(self.internet_loader.get_poem(), '')
             elif form_text.startswith('movie') or form_text.startswith('фильм'):
                 resp['res'] = self._dict_to_str(

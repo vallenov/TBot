@@ -1,4 +1,5 @@
 import logging
+import random
 import traceback
 from mysql.connector import connect, Error
 
@@ -79,7 +80,7 @@ class DBLoader(Loader):
         login_db = 'NULL' if login is None else f"'{login}'"
         first_name_db = 'NULL' if first_name is None else f"'{first_name}'"
         user_id_db = f"'{user_id}'"
-        if int(self.config['MAIN']['PROD']):
+        if self.use_db:
             with self.connection.cursor() as cursor:
                 p_id = self.get_p_id(privileges)
                 query = f'insert into {self.db_name}.users ' \
@@ -115,7 +116,7 @@ class DBLoader(Loader):
                 return Loader.error_resp('User not found')
             user_id_db = f"'{user_id}'"
             privileges = int(lst[2])
-        if int(self.config['MAIN']['PROD']):
+        if self.use_db:
             with self.connection.cursor() as cursor:
                 logger.info(f'Updating DB')
                 query = f'select chat_id from {self.db_name}.users ' \
@@ -159,7 +160,7 @@ class DBLoader(Loader):
             if Loader.users[user_id]['value'] >= Loader.privileges_levels['root']:
                 return Loader.error_resp('Can not delete root users')
             user_id_db = f"'{user_id}'"
-        if int(self.config['MAIN']['PROD']):
+        if self.use_db:
             with self.connection.cursor() as cursor:
                 logger.info(f'Updating DB')
                 query = f'delete from {self.db_name}.users ' \
@@ -190,3 +191,72 @@ class DBLoader(Loader):
             resp[0] = 'Users not found'
         resp['res'] = 'OK'
         return resp
+
+    def _poems_to_db(self, poems: list):
+        """
+        Upload poems list to DB
+        :param poems: [{'author': 'some', 'name': 'some', 'text': 'some'}..,
+        {'author': 'some', 'name': 'some', 'text': 'some'}
+        :return:
+        """
+        cnt = 1
+        lst = []
+        logger.info('Preparing to upload')
+        for p in poems:
+            print(cnt, p)
+            author = p['author']
+            name = p['name'].replace("'", '"')
+            text = p['text'].replace("'", "''")
+            lst.append((author, name, text))
+            cnt += 1
+        with self.connection.cursor() as cursor:
+            logger.info('Upload to DB')
+            query = "insert into TBot.tmp (author, name, text) values (%s, %s, %s)"
+            cursor.executemany(query, lst)
+            self.connection.commit()
+            logger.info('Upload complete')
+
+    @check_permission()
+    def get_poem(self, text: str, **kwargs) -> dict:
+        """
+        Get respoesy from DB
+        :param:
+        :return: poesy string
+        """
+        logger.info('get_poesy')
+        resp = {}
+        if self.use_db:
+            lst = text.split()
+            if len(lst) == 1:
+                with self.connection.cursor() as cursor:
+                    query = f'select min(p.p_id), max(p.p_id) from {self.db_name}.poems p'
+                    cursor.execute(query)
+                    for cnt in cursor:
+                        min_id = int(cnt[0])
+                        max_id = int(cnt[1])
+                        break
+                    random_poem = random.randint(min_id, max_id+1)
+                with self.connection.cursor() as cursor:
+                    query = f'select * from {self.db_name}.poems p where p.p_id = {random_poem}'
+                    cursor.execute(query)
+                    for poem in cursor:
+                        resp[0] = f"{poem[1]}\n\n{poem[2]}\n\n{poem[3]}"
+            else:
+                search_string = ' '.join(lst[1:])
+                with self.connection.cursor() as cursor:
+                    query = f"select * from {self.db_name}.poems " \
+                            f"where author like '%{search_string}%' " \
+                            f"or name like '%{search_string}%'"
+                    poems = []
+                    cursor.execute(query)
+                    for cur in cursor:
+                        poems.append(cur)
+                if poems:
+                    poem = random.choice(poems)
+                else:
+                    return Loader.error_resp('Poem not found')
+                resp[0] = f"{poem[1]}\n\n{poem[2]}\n\n{poem[3]}"
+            resp['res'] = 'OK'
+            return resp
+        else:
+            return Loader.error_resp('DB does not using')
