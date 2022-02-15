@@ -217,7 +217,7 @@ class DBLoader(Loader):
             logger.info('Upload complete')
 
     @check_permission()
-    def get_poem(self, **kwargs) -> dict:
+    def get_poem(self, text: str, **kwargs) -> dict:
         """
         Get respoesy from DB
         :param:
@@ -226,20 +226,44 @@ class DBLoader(Loader):
         logger.info('get_poesy')
         resp = {}
         if self.use_db:
-            with self.connection.cursor() as cursor:
-                query = f'select min(p.p_id), max(p.p_id) from {self.db_name}.poems p'
-                cursor.execute(query)
-                for cnt in cursor:
-                    min_id = int(cnt[0])
-                    max_id = int(cnt[1])
-                    break
-                random_poem = random.randint(min_id, max_id+1)
-            with self.connection.cursor() as cursor:
-                query = f'select * from TBot.poems p where p.p_id = {random_poem}'
-                cursor.execute(query)
-                for poem in cursor:
-                    resp['res'] = 'OK'
-                    resp[0] = f"{poem[1]}\n\n{poem[2]}\n\n{poem[3]}"
-                    return resp
+            lst = text.split()
+            if len(lst) == 1:
+                with self.connection.cursor() as cursor:
+                    query = f'select min(p.p_id), max(p.p_id) from {self.db_name}.poems p'
+                    cursor.execute(query)
+                    for cnt in cursor:
+                        min_id = int(cnt[0])
+                        max_id = int(cnt[1])
+                        break
+                    random_poem = random.randint(min_id, max_id+1)
+                with self.connection.cursor() as cursor:
+                    query = f'select * from {self.db_name}.poems p where p.p_id = {random_poem}'
+                    cursor.execute(query)
+                    for poem in cursor:
+                        resp[0] = f"{poem[1]}\n\n{poem[2]}\n\n{poem[3]}"
+            else:
+                search_string = ' '.join(lst[1:])
+                with self.connection.cursor() as cursor:
+                    query = f"select * from {self.db_name}.poems " \
+                            f"where author like '%{search_string}%' " \
+                            f"or name like '%{search_string}%'"
+                    poems = []
+                    cursor.execute(query)
+                    for poem in cursor:
+                        tmp = dict()
+                        tmp['author'] = poem[1]
+                        tmp['name'] = poem[2]
+                        tmp['text'] = poem[3]
+                        poems.append(tmp)
+                if poems:
+                    random_poem = random.choice(poems)
+                else:
+                    return Loader.error_resp('Poem not found')
+                author = random_poem['author']
+                name = random_poem['name']
+                text = random_poem['text']
+                resp[0] = f"{author}\n\n{name}\n\n{text}"
+            resp['res'] = 'OK'
+            return resp
         else:
             return Loader.error_resp('DB does not using')
