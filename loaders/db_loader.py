@@ -250,19 +250,12 @@ class DBLoader(Loader):
                     poems = []
                     cursor.execute(query)
                     for poem in cursor:
-                        tmp = dict()
-                        tmp['author'] = poem[1]
-                        tmp['name'] = poem[2]
-                        tmp['text'] = poem[3]
-                        poems.append(tmp)
+                        poems.append(poem)
                 if poems:
                     random_poem = random.choice(poems)
                 else:
                     return Loader.error_resp('Poem not found')
-                author = random_poem['author']
-                name = random_poem['name']
-                text = random_poem['text']
-                resp[0] = f"{author}\n\n{name}\n\n{text}"
+                resp[0] = f"{random_poem[1]}\n\n{random_poem[2]}\n\n{random_poem[3]}"
             resp['res'] = 'OK'
             return resp
         else:
