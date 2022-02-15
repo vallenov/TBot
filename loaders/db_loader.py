@@ -249,13 +249,13 @@ class DBLoader(Loader):
                             f"or name like '%{search_string}%'"
                     poems = []
                     cursor.execute(query)
-                    for poem in cursor:
-                        poems.append(poem)
+                    for cur in cursor:
+                        poems.append(cur)
                 if poems:
-                    random_poem = random.choice(poems)
+                    poem = random.choice(poems)
                 else:
                     return Loader.error_resp('Poem not found')
-                resp[0] = f"{random_poem[1]}\n\n{random_poem[2]}\n\n{random_poem[3]}"
+                resp[0] = f"{poem[1]}\n\n{poem[2]}\n\n{poem[3]}"
             resp['res'] = 'OK'
             return resp
         else:
