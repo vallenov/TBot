@@ -110,6 +110,10 @@ class TBotClass:
                 resp['res'] = self._dict_to_str(self._get_help(privileges=privileges), ' ')
             elif form_text == 'admins_help' or form_text == 'руководство_админу':
                 resp['res'] = self._dict_to_str(self._get_admins_help(privileges=privileges), ' ')
+            elif form_text.startswith('send_other') or form_text.startswith('отправить_другому'):
+                res = self.send_other(form_text, privileges=privileges)
+                resp['res'] = res['text']
+                resp['chat_id'] = res['chat_id']
             elif TBotClass._is_phone_number(form_text) is not None:
                 phone_number = TBotClass._is_phone_number(form_text)
                 resp['res'] = self._dict_to_str(
@@ -246,7 +250,8 @@ class TBotClass:
         resp = dict()
         resp['res'] = 'OK'
         resp[0] = str(f'Update "chat_id" "privileges"\n'
-                      f'Delete "chat_id"\n')
+                      f'Delete "chat_id"\n'
+                      f'Send_other "chat_id" "text"\n')
         return resp
 
     def _get_config(self):
@@ -278,6 +283,27 @@ class TBotClass:
             resp['descr'] = 'Number format is not valid'
             return None
         return raw_num
+
+    @check_permission(needed_level='root')
+    def send_other(self, text: str, **kwargs):
+        """
+        Get respoesy from DB
+        :param:
+        :return: poesy string
+        """
+        logger.info('send_other')
+        resp = {}
+        lst = text.split()
+        if len(lst) < 3:
+            Loader.error_resp('Format is not valid')
+        try:
+            chat_id = int(lst[1])
+        except ValueError as e:
+            Loader.error_resp('Chat_id format is not valid')
+        resp['chat_id'] = chat_id
+        resp['text'] = ' '.join(lst[2:])
+        return resp
+
 
     def send_dev_message(self, data: dict):
         """

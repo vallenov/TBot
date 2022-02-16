@@ -88,6 +88,9 @@ def tbot():
     def send_text(message):
         save_file(message)
         replace = tb.replace(message)
+        chat_id = replace.get('chat_id', None)
+        if chat_id is not None:
+            message.chat.id = chat_id
         if replace:
             safe_send(message.chat.id, replace['res'], reply_markup=replace.get('markup', None))
 
