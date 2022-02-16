@@ -1,7 +1,9 @@
 import logging
 import random
+import time
 import traceback
 from mysql.connector import connect, Error
+import threading
 
 from loaders.loader import Loader, check_permission
 
@@ -17,9 +19,11 @@ class DBLoader(Loader):
     def __init__(self, name):
         super().__init__(name)
         self.db_name = 'TBot'
-        if int(self.config['MAIN']['PROD']):
+        if self.use_db:
             self.get_connect()
             self.get_users_fom_db()
+            cwu = threading.Thread(target=self.connection_warming_up)
+            cwu.start()
         else:
             self.get_users_fom_config()
 
@@ -35,6 +39,16 @@ class DBLoader(Loader):
             logger.exception(f'Connection error {e}\nTraceback: {traceback.format_exc()}')
         else:
             logger.info(f'Connection to DB success')
+
+    def connection_warming_up(self):
+        while True:
+            logger.info('Connection warming up')
+            with self.connection.cursor() as cursor:
+                query = 'select 1 from dual'
+                cursor.execute(query)
+                for _ in cursor:
+                    pass
+            time.sleep(60*60)
 
     def get_users_fom_db(self):
         logger.info('get_users_fom_db')
