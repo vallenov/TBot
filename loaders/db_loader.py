@@ -194,7 +194,7 @@ class DBLoader(Loader):
         logger.info('show_users')
         cnt = 1
         for key, value in Loader.users.items():
-            if value['value'] > Loader.privileges_levels['regular']:
+            if value['value'] > Loader.privileges_levels['trusted']:
                 continue
             resp[cnt] = f"Chat_id: {key}, " \
                         f"login: {value['login']}, " \
