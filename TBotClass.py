@@ -111,9 +111,9 @@ class TBotClass:
             elif form_text == 'admins_help' or form_text == 'руководство_админу':
                 resp['res'] = self._dict_to_str(self._get_admins_help(privileges=privileges), ' ')
             elif form_text.startswith('send_other') or form_text.startswith('отправить_другому'):
-                res = self.send_other(form_text, privileges=privileges)
-                resp['res'] = res['text']
-                resp['chat_id'] = res['chat_id']
+                resp = self.send_other(form_text, privileges=privileges)
+                if resp['res'] == 'ERROR':
+                    resp['res'] = self._dict_to_str(resp)
             elif TBotClass._is_phone_number(form_text) is not None:
                 phone_number = TBotClass._is_phone_number(form_text)
                 resp['res'] = self._dict_to_str(
@@ -185,7 +185,7 @@ class TBotClass:
         for key, value in di.items():
             if isinstance(key, int):
                 fin_str += f'{value}\n'
-            elif key.lower() == 'res' or key.lower() == 'len':
+            elif key.lower() == 'res' or key.lower() == 'len' or key.lower() == 'chat_id':
                 continue
             else:
                 fin_str += f'{key}{delimiter}{value}\n'
@@ -296,14 +296,16 @@ class TBotClass:
         lst = text.split()
         if len(lst) < 3:
             Loader.error_resp('Format is not valid')
+        chat_id = 0
         try:
             chat_id = int(lst[1])
         except ValueError as e:
             Loader.error_resp('Chat_id format is not valid')
+        if str(chat_id) not in Loader.users.keys():
+            return Loader.error_resp('User not found')
         resp['chat_id'] = chat_id
-        resp['text'] = ' '.join(lst[2:])
+        resp['res'] = ' '.join(lst[2:])
         return resp
-
 
     def send_dev_message(self, data: dict):
         """
