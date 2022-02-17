@@ -38,10 +38,10 @@ class TBotClass:
 
     def __init__(self):
         logger.info('TBotClass init')
-        # self._get_config()
         self.internet_loader = InternetLoader('ILoader')
-        self.file_loader = FileLoader('FLoader')
         self.db_loader = DBLoader('DBLoader')
+        if not self.db_loader.use_db:
+            self.file_loader = FileLoader('FLoader')
 
     def __del__(self):
         logger.error(f'Traceback: {traceback.format_exc()}')
@@ -57,7 +57,7 @@ class TBotClass:
         resp = {}
         self._get_config()
         chat_id = str(message.json['chat']['id'])
-        if chat_id not in Loader.users.keys():
+        if self.internet_loader.use_db and chat_id not in Loader.users.keys():
             login = message.json['chat'].get('username', None)
             first_name = message.json['chat'].get('first_name', None)
             privileges = Loader.privileges_levels['regular']
@@ -92,9 +92,10 @@ class TBotClass:
             elif form_text == 'food' or form_text == 'еда':
                 resp['res'] = self._dict_to_str(self.internet_loader.get_restaurant(privileges=privileges), ' ')
             elif form_text.startswith('poem') or form_text.startswith('стих'):
-                resp['res'] = self._dict_to_str(self.db_loader.get_poem(form_text, privileges=privileges), '\n')
-                # resp['res'] = self._dict_to_str(self.file_loader.get_poem(form_text, privileges=privileges), '\n')
-                # resp['res'] = self._dict_to_str(self.internet_loader.get_poem(), '')
+                if self.db_loader.use_db:
+                    resp['res'] = self._dict_to_str(self.db_loader.get_poem(form_text, privileges=privileges), '\n')
+                else:
+                    resp['res'] = self._dict_to_str(self.file_loader.get_poem(form_text, privileges=privileges), '\n')
             elif form_text.startswith('movie') or form_text.startswith('фильм'):
                 resp['res'] = self._dict_to_str(
                     self.internet_loader.get_random_movie(form_text, privileges=privileges), ' ')
