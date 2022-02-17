@@ -79,11 +79,25 @@ class FileLoader(Loader):
                 resp['res'] = 'OK'
         else:
             logger.error('File poems.xlsx not found')
-            resp['res'] = 'ERROR'
-            resp['descr'] = 'ERROR "FL". Please, contact the administrator'
+            Loader.error_resp('ERROR "FL". Please, contact the administrator')
         author = random_poem['author']
         name = random_poem['name']
         text = random_poem['text']
         str_poem = f"{author}\n\n{name}\n\n{text}"
         resp.update({1: str_poem})
+        return resp
+
+    @check_permission()
+    def get_metaphorical_card(self, **kwargs):
+        """
+                Get poem from file
+                :param:
+                :return: poesy string
+                """
+        logger.info('get_metaphorical_card')
+        resp = {}
+        met_cards_path = os.path.join('file_db', 'metaphorical_cards')
+        random_card = random.choice(os.listdir(met_cards_path))
+        resp['photo'] = open(os.path.join(met_cards_path, random_card), 'rb')
+        resp['res'] = 'OK'
         return resp

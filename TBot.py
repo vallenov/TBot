@@ -40,20 +40,25 @@ def tbot():
 
     tb = TBotClass()
 
-    def safe_send(chat_id: int, replace: str, reply_markup=None):
+    def safe_send(chat_id: int, replace: dict, reply_markup=None):
         is_send = False
         current_try = 0
-        cnt_message = math.ceil(len(replace) / MAX_LEN)
         start = 0
+        text = replace.get('text', None)
+        cnt_message = math.ceil(len(replace) / MAX_LEN) if text is not None else 1
+        photo = replace.get('photo', None)
         for cnt in range(cnt_message):
             while current_try < MAX_TRY:
                 current_try += 1
                 try:
-                    if start + MAX_LEN >= len(replace):
-                        bot.send_message(chat_id, replace[start:], reply_markup=reply_markup)
-                    else:
-                        bot.send_message(chat_id, replace[start:start+MAX_LEN], reply_markup=reply_markup)
-                    start += MAX_LEN
+                    if photo is not None:
+                        bot.send_photo(chat_id, photo=photo, caption=text)
+                    elif text is not None:
+                        if start + MAX_LEN >= len(replace):
+                            bot.send_message(chat_id, text[start:], reply_markup=reply_markup)
+                        else:
+                            bot.send_message(chat_id, text[start:start+MAX_LEN], reply_markup=reply_markup)
+                        start += MAX_LEN
                 except ConnectionResetError as cre:
                     logger.exception(f'ConnectionResetError exception: {cre}')
                 except requests.exceptions.ConnectionError as rec:
@@ -66,7 +71,10 @@ def tbot():
                         tb.send_dev_message({'subject': 'TBot EXCEPTION', 'text': f'{traceback.format_exc()}'})
                         is_send = True
                 else:
-                    conversation_logger.info('Response: ' + replace.replace('\n', ' '))
+                    if text is not None:
+                        conversation_logger.info('Response: ' + text.replace('\n', ' '))
+                    else:
+                        conversation_logger.info('Response: picture')
                     logger.info(f'Number of attempts: {current_try}')
                     logger.info(f'Send successful')
                     break
@@ -82,7 +90,7 @@ def tbot():
                                  f'FirstName - {call.message.chat.first_name}, '
                                  f'Callback - {call.message.text}, '
                                  f'RAW - {call.message.chat}')
-        safe_send(call.message.json['chat']['id'], replace['res'], reply_markup=replace.get('markup', None))
+        safe_send(call.message.json['chat']['id'], replace, reply_markup=replace.get('markup', None))
 
     @bot.message_handler(func=lambda message: True, content_types=content_types)
     def send_text(message):
@@ -92,7 +100,7 @@ def tbot():
         if chat_id is not None:
             message.chat.id = chat_id
         if replace:
-            safe_send(message.chat.id, replace['res'], reply_markup=replace.get('markup', None))
+            safe_send(message.chat.id, replace, reply_markup=replace.get('markup', None))
 
     def save_file(message) -> None:
         """

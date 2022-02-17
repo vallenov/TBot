@@ -40,8 +40,8 @@ class TBotClass:
         logger.info('TBotClass init')
         self.internet_loader = InternetLoader('ILoader')
         self.db_loader = DBLoader('DBLoader')
-        if not self.db_loader.use_db:
-            self.file_loader = FileLoader('FLoader')
+        #if not self.db_loader.use_db:
+        self.file_loader = FileLoader('FLoader')
 
     def __del__(self):
         logger.error(f'Traceback: {traceback.format_exc()}')
@@ -75,53 +75,57 @@ class TBotClass:
             resp['status'] = 'OK'
             form_text = message.text.lower().strip()
             if form_text == 'exchange' or form_text == 'валюта':
-                resp['res'] = self._dict_to_str(self.internet_loader.get_exchange(privileges=privileges))
+                resp['text'] = self._dict_to_str(self.internet_loader.get_exchange(privileges=privileges))
             elif form_text == 'weather' or form_text == 'погода':
-                resp['res'] = self._dict_to_str(self.internet_loader.get_weather(privileges=privileges))
+                resp['text'] = self._dict_to_str(self.internet_loader.get_weather(privileges=privileges))
             elif form_text == 'quote' or form_text == 'цитата':
-                resp['res'] = self._dict_to_str(self.internet_loader.get_quote(privileges=privileges), '\n')
+                resp['text'] = self._dict_to_str(self.internet_loader.get_quote(privileges=privileges), '\n')
             elif form_text == 'wish' or form_text == 'пожелание':
-                resp['res'] = self._dict_to_str(self.internet_loader.get_wish(privileges=privileges))
+                resp['text'] = self._dict_to_str(self.internet_loader.get_wish(privileges=privileges))
             elif form_text.startswith('news') or form_text.startswith('новости'):
-                resp['res'] = self._dict_to_str(self.internet_loader.get_news(form_text, privileges=privileges), '\n')
+                resp['text'] = self._dict_to_str(self.internet_loader.get_news(form_text, privileges=privileges), '\n')
             elif form_text == 'affirmation' or form_text == 'аффирмация':
-                resp['res'] = self._dict_to_str(self.internet_loader.get_affirmation(privileges=privileges))
+                resp['text'] = self._dict_to_str(self.internet_loader.get_affirmation(privileges=privileges))
             elif form_text == 'events' or form_text == 'мероприятия':
-                resp['res'] = self._dict_to_str(asyncio.run(self.internet_loader.async_events(privileges=privileges)),
+                resp['text'] = self._dict_to_str(asyncio.run(self.internet_loader.async_events(privileges=privileges)),
                                                 '\n')
             elif form_text == 'food' or form_text == 'еда':
-                resp['res'] = self._dict_to_str(self.internet_loader.get_restaurant(privileges=privileges), ' ')
+                resp['text'] = self._dict_to_str(self.internet_loader.get_restaurant(privileges=privileges), ' ')
             elif form_text.startswith('poem') or form_text.startswith('стих'):
                 if self.db_loader.use_db:
-                    resp['res'] = self._dict_to_str(self.db_loader.get_poem(form_text, privileges=privileges), '\n')
+                    resp['text'] = self._dict_to_str(self.db_loader.get_poem(form_text, privileges=privileges), '\n')
                 else:
-                    resp['res'] = self._dict_to_str(self.file_loader.get_poem(form_text, privileges=privileges), '\n')
+                    resp['text'] = self._dict_to_str(self.file_loader.get_poem(form_text, privileges=privileges), '\n')
             elif form_text.startswith('movie') or form_text.startswith('фильм'):
-                resp['res'] = self._dict_to_str(
+                resp['text'] = self._dict_to_str(
                     self.internet_loader.get_random_movie(form_text, privileges=privileges), ' ')
                 if ' ' not in form_text:
                     resp['markup'] = self._gen_movie_markup(privileges=privileges)
             elif form_text.startswith('update') or form_text.startswith('обновить'):
-                resp['res'] = self._dict_to_str(self.db_loader.update_user(form_text, privileges=privileges), ' ')
+                resp['text'] = self._dict_to_str(self.db_loader.update_user(form_text, privileges=privileges), ' ')
             elif form_text.startswith('delete') or form_text.startswith('удалить'):
-                resp['res'] = self._dict_to_str(self.db_loader.delete_user(form_text, privileges=privileges), ' ')
+                resp['text'] = self._dict_to_str(self.db_loader.delete_user(form_text, privileges=privileges), ' ')
             elif form_text == 'users' or form_text == 'пользователи':
-                resp['res'] = self._dict_to_str(self.db_loader.show_users(privileges=privileges), ' ')
+                resp['text'] = self._dict_to_str(self.db_loader.show_users(privileges=privileges), ' ')
             elif form_text == 'hidden_functions' or form_text == 'скрытые_функции':
-                resp['res'] = self._dict_to_str(self._get_help(privileges=privileges), ' ')
+                resp['text'] = self._dict_to_str(self._get_help(privileges=privileges), ' ')
             elif form_text == 'admins_help' or form_text == 'руководство_админу':
-                resp['res'] = self._dict_to_str(self._get_admins_help(privileges=privileges), ' ')
+                resp['text'] = self._dict_to_str(self._get_admins_help(privileges=privileges), ' ')
             elif form_text.startswith('send_other') or form_text.startswith('отправить_другому'):
                 resp = self.send_other(form_text, privileges=privileges)
                 if resp['res'] == 'ERROR':
-                    resp['res'] = self._dict_to_str(resp)
+                    resp['text'] = self._dict_to_str(resp)
+            elif form_text == 'metaphorical_card' or form_text == 'метафорическая_карта':
+                resp = self.file_loader.get_metaphorical_card(privileges=privileges)
+                if resp['res'] == 'ERROR':
+                    resp['text'] = self._dict_to_str(resp)
             elif TBotClass._is_phone_number(form_text) is not None:
                 phone_number = TBotClass._is_phone_number(form_text)
                 resp['res'] = self._dict_to_str(
                     self.internet_loader.get_phone_number_info(phone_number, privileges=privileges), ': '
                 )
             else:
-                resp['res'] = self._dict_to_str(self._get_hello(privileges=privileges))
+                resp['text'] = self._dict_to_str(self._get_hello(privileges=privileges))
                 resp['markup'] = self._gen_markup(privileges=privileges)
             return resp
 
@@ -166,7 +170,8 @@ class TBotClass:
                        InlineKeyboardButton("🎭 Events/Мероприятия", callback_data="events"),
                        InlineKeyboardButton("🍲 Food/Еда", callback_data="food"),
                        InlineKeyboardButton("🪶 Poem/Стих", callback_data="poem"),
-                       InlineKeyboardButton("🎞 Movie/Фильм", callback_data="movie"))
+                       InlineKeyboardButton("🎞 Movie/Фильм", callback_data="movie"),
+                       InlineKeyboardButton("🎑 Metaphorical card/Метафорическая карта", callback_data="metaphorical_card"))
         if Loader.privileges_levels['trusted'] <= privileges:
             pass
         if Loader.privileges_levels['root'] <= privileges:
@@ -186,7 +191,7 @@ class TBotClass:
         for key, value in di.items():
             if isinstance(key, int):
                 fin_str += f'{value}\n'
-            elif key.lower() == 'res' or key.lower() == 'len' or key.lower() == 'chat_id':
+            elif key.lower() == 'res' or key.lower() == 'chat_id':
                 continue
             else:
                 fin_str += f'{key}{delimiter}{value}\n'
