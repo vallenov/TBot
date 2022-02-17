@@ -81,10 +81,10 @@ def tbot():
 
     @bot.callback_query_handler(func=lambda call: True)
     def callback_query(call):
+        save_file(call.message)
         call.message.text = call.data
         replace = tb.replace(call.message)
         #bot.answer_callback_query(call.id, replace)
-        save_file(call.message)
         safe_send(call.message.json['chat']['id'], replace, reply_markup=replace.get('markup', None))
 
     @bot.message_handler(func=lambda message: True, content_types=content_types)
