@@ -233,11 +233,11 @@ class DBLoader(Loader):
     @check_permission()
     def get_poem(self, text: str, **kwargs) -> dict:
         """
-        Get respoesy from DB
+        Get poem from DB
         :param:
         :return: poesy string
         """
-        logger.info('get_poesy')
+        logger.info('get_poem')
         resp = {}
         if self.use_db:
             lst = text.split()

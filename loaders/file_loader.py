@@ -54,11 +54,11 @@ class FileLoader(Loader):
     @check_permission()
     def get_poem(self, text: str, **kwargs) -> dict:
         """
-        Get respoesy from file
+        Get poem from file
         :param:
         :return: poesy string
         """
-        logger.info('get_poesy')
+        logger.info('get_poem')
         lst = text.split()
         resp = {}
         random_poem = {}

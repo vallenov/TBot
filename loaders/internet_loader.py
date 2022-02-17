@@ -350,11 +350,11 @@ class InternetLoader(Loader):
     @check_permission()
     def get_poem(self, **kwargs) -> dict:
         """
-        Get respoesy from internet
+        Get poem from internet
         :param:
         :return: poesy string
         """
-        logger.info('get_poesy')
+        logger.info('get_poem')
         resp = {}
         if self.config.has_option('URL', 'poesy_url'):
             poesy_url = self.config['URL']['poesy_url']
