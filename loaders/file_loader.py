@@ -24,7 +24,7 @@ class FileLoader(Loader):
             file_path = os.path.join('file_db', file)
             if os.path.exists(file_path):
                 self.fife_db[file] = file_path
-                self.poems = self._load_poems()
+                #self.poems = self._load_poems()
 
     def _load_poems(self) -> list:
         file_path = self.fife_db.get('poems.xlsx', False)
