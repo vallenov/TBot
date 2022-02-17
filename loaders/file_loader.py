@@ -24,7 +24,7 @@ class FileLoader(Loader):
             file_path = os.path.join('file_db', file)
             if os.path.exists(file_path):
                 self.fife_db[file] = file_path
-                self.poems = self._load_poems()
+                #self.poems = self._load_poems()
 
     def _load_poems(self) -> list:
         file_path = self.fife_db.get('poems.xlsx', False)
@@ -54,11 +54,11 @@ class FileLoader(Loader):
     @check_permission()
     def get_poem(self, text: str, **kwargs) -> dict:
         """
-        Get respoesy from file
+        Get poem from file
         :param:
         :return: poesy string
         """
-        logger.info('get_poesy')
+        logger.info('get_poem')
         lst = text.split()
         resp = {}
         random_poem = {}
@@ -79,11 +79,25 @@ class FileLoader(Loader):
                 resp['res'] = 'OK'
         else:
             logger.error('File poems.xlsx not found')
-            resp['res'] = 'ERROR'
-            resp['descr'] = 'ERROR "FL". Please, contact the administrator'
+            Loader.error_resp('ERROR "FL". Please, contact the administrator')
         author = random_poem['author']
         name = random_poem['name']
         text = random_poem['text']
         str_poem = f"{author}\n\n{name}\n\n{text}"
         resp.update({1: str_poem})
+        return resp
+
+    @check_permission()
+    def get_metaphorical_card(self, **kwargs) -> dict:
+        """
+        Get metaphorical card from file
+        :param:
+        :return: metaphorical card photo
+        """
+        logger.info('get_metaphorical_card')
+        resp = {}
+        met_cards_path = os.path.join('file_db', 'metaphorical_cards')
+        random_card = random.choice(os.listdir(met_cards_path))
+        resp['photo'] = open(os.path.join(met_cards_path, random_card), 'rb')
+        resp['res'] = 'OK'
         return resp
