@@ -112,7 +112,11 @@ def tbot():
         file_extention = None
         curdir = os.curdir
         if message.content_type == 'text':
-            conversation_logger.info(f'Response: '
+            logger.info(f'Request: '
+                        f'ID - {message.chat.id}, '
+                        f'Login - {message.chat.username}, '
+                        f'FirstName - {message.chat.first_name}')
+            conversation_logger.info(f'Request: '
                                      f'ID - {message.chat.id}, '
                                      f'Login - {message.chat.username}, '
                                      f'FirstName - {message.chat.first_name}, '
