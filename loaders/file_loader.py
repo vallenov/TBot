@@ -88,12 +88,12 @@ class FileLoader(Loader):
         return resp
 
     @check_permission()
-    def get_metaphorical_card(self, **kwargs):
+    def get_metaphorical_card(self, **kwargs) -> dict:
         """
-                Get poem from file
-                :param:
-                :return: poesy string
-                """
+        Get metaphorical card from file
+        :param:
+        :return: metaphorical card photo
+        """
         logger.info('get_metaphorical_card')
         resp = {}
         met_cards_path = os.path.join('file_db', 'metaphorical_cards')
