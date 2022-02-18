@@ -52,7 +52,7 @@ def tbot():
                 current_try += 1
                 try:
                     if photo is not None:
-                        bot.send_photo(chat_id, photo=photo, caption=text)
+                        bot.send_photo(chat_id, photo=open(photo, 'rb'), caption=text)
                     elif text is not None:
                         if start + MAX_LEN >= len(replace):
                             bot.send_message(chat_id, text[start:], reply_markup=reply_markup)
@@ -74,7 +74,7 @@ def tbot():
                     if text is not None:
                         conversation_logger.info('Response: ' + text.replace('\n', ' '))
                     else:
-                        conversation_logger.info('Response: picture')
+                        conversation_logger.info(f'Response: {photo}')
                     logger.info(f'Number of attempts: {current_try}')
                     logger.info(f'Send successful')
                     break

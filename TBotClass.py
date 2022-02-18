@@ -329,5 +329,5 @@ class TBotClass:
                 logger.exception(_ex)
             else:
                 logger.info('Send successful')
-                break
+                return
         logger.error('Max try exceeded')
