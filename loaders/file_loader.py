@@ -99,5 +99,6 @@ class FileLoader(Loader):
         met_cards_path = os.path.join('file_db', 'metaphorical_cards')
         random_card = random.choice(os.listdir(met_cards_path))
         resp['photo'] = open(os.path.join(met_cards_path, random_card), 'rb')
+        logger.info(f'Filename: {resp["photo"]}')
         resp['res'] = 'OK'
         return resp
