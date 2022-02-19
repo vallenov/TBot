@@ -62,12 +62,13 @@ class InternetLoader(Loader):
             logger.error('Empty soup data')
             return Loader.error_resp("Empty soup data")
         parse = soup.find_all('tr')
+        exchange = {}
         for item in parse[1:]:
             inf = item.find_all('td')
             if inf[1].text not in ex:
                 continue
-            resp[inf[1].text] = inf[4].text
-        resp['res'] = 'OK'
+            exchange[inf[1].text] = inf[4].text
+        resp['text'] = Loader.dict_to_str(exchange, ' = ')
         return resp
 
     @check_permission()
@@ -88,13 +89,14 @@ class InternetLoader(Loader):
             logger.error('Empty soup data')
             return Loader.error_resp("Empty soup data")
         parse = soup.find_all('div', class_='DetailsSummary--DetailsSummary--2HluQ DetailsSummary--fadeOnOpen--vFCc_')
+        weather = {}
         for i in parse:
             h2 = i.find('h2')
             div = i.find('div')
             span = div.find_all('span')
             span = list(map(lambda x: x.text, span))
-            resp[h2.text] = ''.join(span[:-1])
-        resp['res'] = 'OK'
+            weather[h2.text] = ''.join(span[:-1])
+        resp['text'] = Loader.dict_to_str(weather, ' = ')
         return resp
 
     @check_permission()
@@ -115,12 +117,12 @@ class InternetLoader(Loader):
             logger.error('Empty soup data')
             return Loader.error_resp("Empty soup data")
         quotes = soup.find_all('div', class_='quote')
-        for quote in quotes:
-            author = quote.find('a')
-            text = quote.find('div', class_='quote_name')
-            resp[text.text] = author.text
-        random_key = random.choice(list(resp.keys()))
-        return {'res': 'OK', random_key: resp[random_key]}
+        random_quote = random.choice(quotes)
+        author = random_quote.find('a')
+        text = random_quote.find('div', class_='quote_name')
+        resp[text.text] = author.text
+        resp['text'] = Loader.dict_to_str(resp, '\n')
+        return resp
 
     @check_permission()
     def get_wish(self, **kwargs) -> dict:

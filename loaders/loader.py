@@ -90,6 +90,34 @@ class Loader:
         :return: error response
         """
         resp = dict()
-        resp['res'] = 'ERROR'
-        resp['descr'] = error_text
+        #resp['res'] = 'ERROR'
+        resp['text'] = error_text
         return resp
+
+    @staticmethod
+    def dict_to_str(di: dict, delimiter: str = ' = ') -> str:
+        """
+        Turn dict to str
+        Digit not use
+        Keys "res" and "chat_id" is skipping
+        Example:
+             {1: 'text'} => 'text'
+             {'key': 'value'}, '=' => 'key = value'
+             {'key1': 'value1', 'key2': 'value2'}, ': ' => key1: value1\nkey2: value2
+        :param di: input dict
+        :param delimiter: delimiter string
+        :return: string
+        """
+        fin_str = ''
+        # if di.get('res').upper() == 'ERROR':
+        #     descr = di.get('descr', None)
+        #     if descr is not None:
+        #         logger.error(f'Description: {descr}')
+        #         return descr
+        #     return 'Something is wrong'
+        for key, value in di.items():
+            if isinstance(key, int):
+                fin_str += f'{value}\n'
+            else:
+                fin_str += f'{key}{delimiter}{value}\n'
+        return fin_str
