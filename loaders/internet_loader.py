@@ -120,8 +120,9 @@ class InternetLoader(Loader):
         random_quote = random.choice(quotes)
         author = random_quote.find('a')
         text = random_quote.find('div', class_='quote_name')
-        resp[text.text] = author.text
-        resp['text'] = Loader.dict_to_str(resp, '\n')
+        quote = dict()
+        quote[text.text] = author.text
+        resp['text'] = Loader.dict_to_str(quote, '\n')
         return resp
 
     @check_permission()
@@ -143,8 +144,7 @@ class InternetLoader(Loader):
             return Loader.error_resp("Something wrong")
         wishes = soup.find_all('ol')
         wish_list = wishes[0].find_all('li')
-        resp['res'] = 'OK'
-        resp[1] = random.choice(wish_list).text
+        resp['text'] = random.choice(wish_list).text
         return resp
 
     @check_permission()
@@ -171,15 +171,16 @@ class InternetLoader(Loader):
         if soup is None:
             logger.error(f'Empty soup data')
             return Loader.error_resp("Something wrong")
-        news = soup.find_all('div', class_='cell-list__item-info')
-        for n in news:
+        div_raw = soup.find_all('div', class_='cell-list__item-info')
+        news = {}
+        for n in div_raw:
             news_time = n.find('span', class_='elem-info__date')
             text = n.find('span', class_='share')
             if news_time and text:
-                resp[news_time.text] = text.get('data-title')
-            if len(resp) == count:
+                news[news_time.text] = text.get('data-title')
+            if len(news) == count:
                 break
-        resp['res'] = 'OK'
+        resp['text'] = Loader.dict_to_str(news, '\n')
         return resp
 
     @check_permission()
@@ -206,8 +207,7 @@ class InternetLoader(Loader):
             for em in li:
                 if em.text[0].isupper():
                     aff_list.append(em.text)
-        resp['res'] = 'OK'
-        resp[1] = random.choice(aff_list)
+        resp['text'] = random.choice(aff_list)
         return resp
 
     async def _get_url(self, session, url) -> None:
@@ -250,6 +250,7 @@ class InternetLoader(Loader):
             for _, link in links.items():
                 tasks.append(asyncio.create_task(self._get_url(session, link)))
             await asyncio.gather(*tasks)
+            events = {}
             for raw in self.async_url_data:
                 events_links = []
                 soup_curr = BeautifulSoup(raw, 'lxml')
@@ -262,8 +263,8 @@ class InternetLoader(Loader):
                         a = raw_h2.find('a')
                         descr = a.text.replace('\n', '')
                         events_links.append(f"{descr}\n{a.get('href')}\n")
-                resp[name] = random.choice(events_links)
-            resp['res'] = 'OK'
+                events[name] = random.choice(events_links)
+            resp['text'] = Loader.dict_to_str(events, '\n')
             return resp
 
     @check_permission()
@@ -288,6 +289,7 @@ class InternetLoader(Loader):
         raw_a = div[0].find_all('a')
         for a in raw_a:
             links[a.text] = a.get('href')
+        events = {}
         for name, link in links.items():
             events_links = []
             name = name.replace('\n', '')
@@ -297,8 +299,8 @@ class InternetLoader(Loader):
                 a = raw_h2.find('a')
                 descr = a.text.replace('\n', '')
                 events_links.append(f"{descr}\n{a.get('href')}\n")
-            resp[name] = random.choice(events_links)
-        resp['res'] = 'OK'
+            events[name] = random.choice(events_links)
+        resp['text'] = Loader.dict_to_str(events, ' ')
         return resp
 
     @check_permission()
@@ -331,7 +333,7 @@ class InternetLoader(Loader):
         soup = InternetLoader._site_to_lxml(self.config['URL']['restaurant_url'] + restaurant.get('href'))
         div_raw = soup.find('div', class_='props one-line-props')
         final_restaurant = dict()
-        final_restaurant[1] = restaurant.text
+        final_restaurant[0] = restaurant.text
         for d in div_raw:
             name = d.find('div', class_='name')
             if name:
@@ -341,9 +343,9 @@ class InternetLoader(Loader):
                 value = value.text.strip().replace('\n', '')
             if name is not None and value is not None:
                 final_restaurant[name] = value
-        final_restaurant[2] = self.config['URL']['restaurant_url'] + restaurant.get('href')
-        final_restaurant['res'] = 'OK'
-        return final_restaurant
+        final_restaurant[1] = self.config['URL']['restaurant_url'] + restaurant.get('href')
+        resp['text'] = Loader.dict_to_str(final_restaurant, ' ')
+        return resp
 
     @check_permission()
     def get_poem(self, **kwargs) -> dict:
@@ -397,8 +399,7 @@ class InternetLoader(Loader):
             quatrain = quatrain.replace('<br/>', '\n')
             quatrains.append(quatrain)
         poem = '\n\n'.join(quatrains)
-        resp['res'] = 'OK'
-        resp[author] = f'\n\n{name}\n\n{poem}{year}'
+        resp['text'] = f'{author}\n\n{name}\n\n{poem}{year}'
         return resp
 
     @check_permission()
@@ -423,14 +424,15 @@ class InternetLoader(Loader):
         table = div_raw.find('table', class_='teltr tel-mobile')
         tr_raw = table.find_all('tr', class_='')
         td_raw = tr_raw[-1].find_all('td')
-        resp['Страна'] = td_raw[0].find('strong').text
+        phone_info = dict()
+        phone_info['Страна'] = td_raw[0].find('strong').text
         operator_info = td_raw[1].find('strong').text
-        resp['Регион'] = operator_info.split('[')[1].replace(']', '').replace(',', '')
-        resp['Изначальный оператор'] = operator_info.split(' ')[0]
+        phone_info['Регион'] = operator_info.split('[')[1].replace(']', '').replace(',', '')
+        phone_info['Изначальный оператор'] = operator_info.split(' ')[0]
         p_raw = div_raw.find('p', style='')
         span_raw = p_raw.find_all('span')
-        resp['Текущий оператор'] = span_raw[-1].text
-        resp['res'] = 'OK'
+        phone_info['Текущий оператор'] = span_raw[-1].text
+        resp['text'] = Loader.dict_to_str(phone_info, ': ')
         return resp
 
     @check_permission()
@@ -442,7 +444,6 @@ class InternetLoader(Loader):
         """
         logger.info('get_random_movie')
         resp = {}
-        #year = datetime.datetime.now().year
         command = text.split(' ')
         year_from = 0
         year_to = 0

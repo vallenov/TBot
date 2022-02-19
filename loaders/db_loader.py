@@ -284,7 +284,7 @@ class DBLoader(Loader):
                     query = f'select * from {self.db_name}.poems p where p.p_id = {random_poem}'
                     cursor.execute(query)
                     for poem in cursor:
-                        resp[0] = f"{poem[1]}\n\n{poem[2]}\n\n{poem[3]}"
+                        resp['text'] = f"{poem[1]}\n\n{poem[2]}\n\n{poem[3]}"
             else:
                 search_string = ' '.join(lst[1:])
                 with self.connection.cursor() as cursor:
@@ -299,8 +299,7 @@ class DBLoader(Loader):
                     poem = random.choice(poems)
                 else:
                     return Loader.error_resp('Poem not found')
-                resp[0] = f"{poem[1]}\n\n{poem[2]}\n\n{poem[3]}"
-            resp['res'] = 'OK'
+                resp['text'] = f"{poem[1]}\n\n{poem[2]}\n\n{poem[3]}"
             return resp
         else:
             return Loader.error_resp('DB does not using')

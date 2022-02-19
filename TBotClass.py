@@ -81,23 +81,24 @@ class TBotClass:
             elif form_text == 'weather' or form_text == 'погода':
                 resp = self.internet_loader.get_weather(privileges=privileges)
             elif form_text == 'quote' or form_text == 'цитата':
-                resp['text'] = self._dict_to_str(self.internet_loader.get_quote(privileges=privileges), '\n')
+                resp = self.internet_loader.get_quote(privileges=privileges)
             elif form_text == 'wish' or form_text == 'пожелание':
-                resp['text'] = self._dict_to_str(self.internet_loader.get_wish(privileges=privileges))
+                resp = self.internet_loader.get_wish(privileges=privileges)
             elif form_text.startswith('news') or form_text.startswith('новости'):
-                resp['text'] = self._dict_to_str(self.internet_loader.get_news(form_text, privileges=privileges), '\n')
+                resp = self.internet_loader.get_news(form_text, privileges=privileges)
             elif form_text == 'affirmation' or form_text == 'аффирмация':
-                resp['text'] = self._dict_to_str(self.internet_loader.get_affirmation(privileges=privileges))
+                resp = self.internet_loader.get_affirmation(privileges=privileges)
             elif form_text == 'events' or form_text == 'мероприятия':
-                resp['text'] = self._dict_to_str(asyncio.run(self.internet_loader.async_events(privileges=privileges)),
-                                                '\n')
+                resp = asyncio.run(self.internet_loader.async_events(privileges=privileges))
             elif form_text == 'food' or form_text == 'еда':
-                resp['text'] = self._dict_to_str(self.internet_loader.get_restaurant(privileges=privileges), ' ')
+                resp = self.internet_loader.get_restaurant(privileges=privileges)
             elif form_text.startswith('poem') or form_text.startswith('стих'):
                 if self.db_loader.use_db:
-                    resp['text'] = self._dict_to_str(self.db_loader.get_poem(form_text, privileges=privileges), '\n')
+                    resp = self.db_loader.get_poem(form_text, privileges=privileges)
                 else:
-                    resp['text'] = self._dict_to_str(self.file_loader.get_poem(form_text, privileges=privileges), '\n')
+                    if not hasattr(self.file_loader, 'poems'):
+                        self.file_loader.load_poems()
+                    resp = self.file_loader.get_poem(form_text, privileges=privileges)
             elif form_text.startswith('movie') or form_text.startswith('фильм'):
                 resp['text'] = self._dict_to_str(
                     self.internet_loader.get_random_movie(form_text, privileges=privileges), ' ')
@@ -127,12 +128,9 @@ class TBotClass:
                     resp['text'] = self._dict_to_str(resp)
             elif TBotClass._is_phone_number(form_text) is not None:
                 phone_number = TBotClass._is_phone_number(form_text)
-                resp['res'] = self._dict_to_str(
-                    self.internet_loader.get_phone_number_info(phone_number, privileges=privileges), ': '
-                )
+                resp = self.internet_loader.get_phone_number_info(phone_number, privileges=privileges)
             else:
-                resp['text'] = self._dict_to_str(self._get_hello(privileges=privileges))
-                resp['markup'] = self._gen_markup(privileges=privileges)
+                resp = self._get_hello(privileges=privileges)
             return resp
 
     @staticmethod
@@ -221,17 +219,17 @@ class TBotClass:
         """
         logger.info('get_help')
         resp = dict()
-        resp['res'] = 'OK'
         # if Loader.privileges_levels['untrusted'] <= privileges:
         #     resp[0] = f'Permission denied'
         # if Loader.privileges_levels['test'] <= privileges:
         #     resp[0] = f'Permission denied'
         if Loader.privileges_levels['regular'] <= privileges:
-            resp[0] = f'Привет! Меня зовут InfoBot\n'
+            resp['text'] = f'Привет! Меня зовут InfoBot\n'
         if Loader.privileges_levels['trusted'] <= privileges:
             pass
         if Loader.privileges_levels['root'] <= privileges:
-            resp[0] = f'You are a root user'
+            resp['text'] = f'You are a root user'
+        resp['markup'] = self._gen_markup(privileges)
         return resp
 
     @check_permission(needed_level='root')

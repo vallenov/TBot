@@ -33,11 +33,12 @@ class FileLoader(Loader):
                 self.fife_db[file] = file_path
                 #self.poems = self._load_poems()
 
-    def _load_poems(self) -> list:
+    def load_poems(self) -> list:
         """
         Load poems from file to memory
         """
         file_path = self.fife_db.get('poems.xlsx', False)
+        self.poems = []
         if file_path:
             file_raw = pd.read_excel(file_path)
             file = pd.DataFrame(file_raw, columns=['Author', 'Name', 'Poem'])
@@ -57,9 +58,8 @@ class FileLoader(Loader):
                 poem['author'] = author
                 poem['name'] = name
                 poem['text'] = text
-                poems.append(poem)
+                self.poems.append(poem)
             logger.info(f'{file_path} download. len = {len(poems)}')
-            return poems
 
     @check_permission()
     def get_poem(self, text: str, **kwargs) -> dict:
@@ -72,10 +72,9 @@ class FileLoader(Loader):
         lst = text.split()
         resp = {}
         random_poem = {}
-        if self.poems:
+        if hasattr(self, 'poems'):
             if len(lst) == 1:
                 random_poem = random.choice(self.poems)
-                resp['res'] = 'OK'
             else:
                 search_string = ' '.join(lst[1:])
                 authors_poems_list = []
@@ -86,15 +85,14 @@ class FileLoader(Loader):
                     random_poem = random.choice(authors_poems_list)
                 else:
                     return Loader.error_resp('Poem not found')
-                resp['res'] = 'OK'
         else:
             logger.error('File poems.xlsx not found')
-            Loader.error_resp('ERROR "FL". Please, contact the administrator')
+            return Loader.error_resp('ERROR "FL". Please, contact with the administrator')
         author = random_poem['author']
         name = random_poem['name']
         text = random_poem['text']
         str_poem = f"{author}\n\n{name}\n\n{text}"
-        resp.update({1: str_poem})
+        resp['text'] = str_poem
         return resp
 
     @check_permission()
