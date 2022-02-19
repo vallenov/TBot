@@ -62,7 +62,9 @@ def tbot():
                 current_try += 1
                 try:
                     if photo is not None:
-                        bot.send_photo(chat_id, photo=open(photo, 'rb'), caption=text)
+                        if 'http' not in photo:
+                            photo = open(photo, 'rb')
+                        bot.send_photo(chat_id, photo=photo, caption=text)
                     elif text is not None:
                         if start + MAX_LEN >= len(replace):
                             bot.send_message(chat_id, text[start:], reply_markup=reply_markup)

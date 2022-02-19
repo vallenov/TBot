@@ -121,6 +121,10 @@ class TBotClass:
                 resp = self.file_loader.get_metaphorical_card(privileges=privileges)
                 if resp['res'] == 'ERROR':
                     resp['text'] = self._dict_to_str(resp)
+            elif form_text == 'russian_painting' or form_text == 'русская_картина':
+                resp = self.internet_loader.get_russian_painting(privileges=privileges)
+                if resp['res'] == 'ERROR':
+                    resp['text'] = self._dict_to_str(resp)
             elif TBotClass._is_phone_number(form_text) is not None:
                 phone_number = TBotClass._is_phone_number(form_text)
                 resp['res'] = self._dict_to_str(
@@ -173,7 +177,8 @@ class TBotClass:
                        InlineKeyboardButton("🍲 Food/Еда", callback_data="food"),
                        InlineKeyboardButton("🪶 Poem/Стих", callback_data="poem"),
                        InlineKeyboardButton("🎞 Movie/Фильм", callback_data="movie"),
-                       InlineKeyboardButton("🎑 Metaphorical card/Метафорическая карта", callback_data="metaphorical_card"))
+                       InlineKeyboardButton("🎑 Metaphorical card/Метафорическая карта", callback_data="metaphorical_card"),
+                       InlineKeyboardButton("🏞 Russian painting/Русская картина", callback_data="russian_painting"))
         if Loader.privileges_levels['trusted'] <= privileges:
             pass
         if Loader.privileges_levels['root'] <= privileges:

@@ -23,14 +23,14 @@ class InternetLoader(Loader):
     """
 
     @staticmethod
-    def _site_to_lxml(url: str) -> BeautifulSoup or None:
+    def _site_to_lxml(url: str, headers: dict = None) -> BeautifulSoup or None:
         """
         Get site and convert it to the lxml
         :param url: https://site.com/
         :return: BeautifulSoup object
         """
         try:
-            resp = requests.get(url)
+            resp = requests.get(url, headers=headers)
             if resp.status_code == 200:
                 soup = BeautifulSoup(resp.text, 'lxml')
             else:
@@ -524,3 +524,47 @@ class InternetLoader(Loader):
                     logger.warning(f'No elements with cyrillic symbols')
                     break
         return Loader.error_resp(f'Movie {year_from}-{year_to} years not found')
+
+    @check_permission()
+    def get_russian_painting(self, **kwargs) -> dict:
+        """
+        Get russian painting from internet
+        :param:
+        :return: dict
+        """
+        logger.info('get_poem')
+        resp = {}
+        if self.config.has_option('URL', 'russian_painting_url'):
+            russian_painting_url = self.config['URL']['russian_painting_url']
+        else:
+            return Loader.error_resp("I can't do this yet😔")
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) '
+                          'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}
+        soup = InternetLoader._site_to_lxml(russian_painting_url, headers)
+        if soup is None:
+            logger.error(f'Empty soup data')
+            return Loader.error_resp("Something wrong")
+        div_raw = soup.find_all('div', class_='pic')
+        random_painting = random.choice(div_raw)
+        a_raw = random_painting.find('a')
+        href = a_raw.get('href')
+        site = '/'.join(self.config['URL']['russian_painting_url'].split('/')[:3])
+        link = site + href
+        soup = InternetLoader._site_to_lxml(link, headers)
+        p_raw = soup.find('p', class_='xpic')
+        img_raw = p_raw.find('img')
+        picture = img_raw.get('src')
+        if picture:
+            resp['photo'] = picture
+        else:
+            logger.info('Picture not found')
+            Loader.error_resp('Something wrong')
+        text = img_raw.get('title')
+        if text:
+            text = text.split('900')[0]
+        else:
+            text = 'Picture'
+        resp['text'] = text
+        resp['res'] = 'OK'
+        return resp
