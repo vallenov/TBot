@@ -448,8 +448,7 @@ class InternetLoader(Loader):
         year_from = 0
         year_to = 0
         if len(command) == 1:
-            resp['res'] = 'OK'
-            resp[0] = 'Выберите промежуток'
+            resp['text'] = 'Выберите промежуток'
             return resp
         elif len(command) == 2:
             try:
@@ -488,7 +487,6 @@ class InternetLoader(Loader):
             logger.error(f'Empty soup data')
             return Loader.error_resp("Something wrong")
         div_raw = soup.find('div', class_='search_results search_results_last')
-        #print(div_raw)
         div_nav = div_raw.find('div', class_='navigator')
         from_to = div_nav.find('div', class_='pagesFromTo').text.split(' ')[0].split('—')
         per_page = int(from_to[1]) - int(from_to[0]) - 1
@@ -518,9 +516,9 @@ class InternetLoader(Loader):
                     if simb in symbols:
                         movie_id = p_raw.find('a').get('href')
                         movie_url = '/'.join(random_movie_url.split('/')[:3])
-                        resp['res'] = 'OK'
-                        resp[0] = f'Случайный фильм {act_year_from}-{act_year_to} годов'
-                        resp[1] = movie_url + movie_id
+                        text = f'Случайный фильм {act_year_from}-{act_year_to} годов'
+                        link = movie_url + movie_id
+                        resp['text'] = f'{text}\n{link}'
                         return resp
                 try_count += 1
                 if try_count > per_page:

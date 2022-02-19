@@ -100,8 +100,7 @@ class TBotClass:
                         self.file_loader.load_poems()
                     resp = self.file_loader.get_poem(form_text, privileges=privileges)
             elif form_text.startswith('movie') or form_text.startswith('фильм'):
-                resp['text'] = self._dict_to_str(
-                    self.internet_loader.get_random_movie(form_text, privileges=privileges), ' ')
+                resp = self.internet_loader.get_random_movie(form_text, privileges=privileges)
                 if ' ' not in form_text:
                     resp['markup'] = self._gen_movie_markup(privileges=privileges)
             elif form_text.startswith('update') or form_text.startswith('обновить'):
