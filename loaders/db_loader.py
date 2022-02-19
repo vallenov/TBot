@@ -15,6 +15,9 @@ logger.addHandler(handler)
 
 
 class DBLoader(Loader):
+    """
+    Work with DB
+    """
 
     def __init__(self, name):
         super().__init__(name)
@@ -28,6 +31,9 @@ class DBLoader(Loader):
             self.get_users_fom_config()
 
     def get_connect(self):
+        """
+        Initiate connection to DB
+        """
         logger.info('get_connect')
         try:
             logger.info(f'Try to connect to DB')
@@ -41,6 +47,9 @@ class DBLoader(Loader):
             logger.info(f'Connection to DB success')
 
     def connection_warming_up(self):
+        """
+        Periodic connection warming up
+        """
         while True:
             logger.info('Connection warming up')
             with self.connection.cursor() as cursor:
@@ -51,6 +60,9 @@ class DBLoader(Loader):
             time.sleep(60*60)
 
     def get_users_fom_db(self):
+        """
+        Get all users' information from DB to memory
+        """
         logger.info('get_users_fom_db')
         with self.connection.cursor() as cursor:
             query = f'select chat_id, login, first_name, value from ' \
@@ -66,6 +78,9 @@ class DBLoader(Loader):
                 Loader.users[cur[0]] = user_data
 
     def get_users_fom_config(self):
+        """
+        Get all users' information from config to memory
+        """
         logger.info('get_users_fom_config')
         users = self.config['USERS']
         for value in users.values():
@@ -77,6 +92,9 @@ class DBLoader(Loader):
             Loader.users[lst[0]] = user_data
 
     def get_p_id(self, privileges: int) -> int or None:
+        """
+        Get privileges id by privileges value
+        """
         with self.connection.cursor() as cursor:
             query = f'select t.p_id from {self.db_name}.lib_privileges t where t.value = {privileges}'
             cursor.execute(query)
@@ -90,6 +108,9 @@ class DBLoader(Loader):
                 return p_id
 
     def add_user(self, user_id: str, privileges: int, login: str, first_name: str):
+        """
+        Add new user to DB and memory
+        """
         logger.info('add_user')
         login_db = 'NULL' if login is None else f"'{login}'"
         first_name_db = 'NULL' if first_name is None else f"'{first_name}'"
@@ -111,6 +132,9 @@ class DBLoader(Loader):
 
     @check_permission(needed_level='root')
     def update_user(self, text: str, **kwargs):
+        """
+        Update user privileges in DB and memory
+        """
         resp = {}
         logger.info('update_user')
         lst = text.split()
@@ -161,6 +185,9 @@ class DBLoader(Loader):
 
     @check_permission(needed_level='root')
     def delete_user(self, text: str, **kwargs):
+        """
+        Delete user from DB and memory
+        """
         resp = {}
         logger.info('delete_user')
         lst = text.split()
@@ -190,6 +217,9 @@ class DBLoader(Loader):
 
     @check_permission(needed_level='root')
     def show_users(self, **kwargs):
+        """
+        Show current users information
+        """
         resp = {}
         logger.info('show_users')
         cnt = 1

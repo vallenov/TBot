@@ -13,12 +13,19 @@ logger.addHandler(handler)
 
 
 class FileLoader(Loader):
+    """
+    Work with files
+    """
+
     def __init__(self, name):
         super().__init__(name)
         self.files_list = ['poems.xlsx']
         self._check_file_db()
 
     def _check_file_db(self):
+        """
+        Check available files in directories
+        """
         self.fife_db = {}
         for file in self.files_list:
             file_path = os.path.join('file_db', file)
@@ -27,6 +34,9 @@ class FileLoader(Loader):
                 #self.poems = self._load_poems()
 
     def _load_poems(self) -> list:
+        """
+        Load poems from file to memory
+        """
         file_path = self.fife_db.get('poems.xlsx', False)
         if file_path:
             file_raw = pd.read_excel(file_path)

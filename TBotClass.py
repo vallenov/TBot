@@ -22,6 +22,9 @@ logger.addHandler(handler)
 
 
 def benchmark(func):
+    """
+    Count duration
+    """
     def wrap(*args, **kwargs):
         start = datetime.datetime.now()
         res = func(*args, **kwargs)
@@ -29,18 +32,17 @@ def benchmark(func):
         dur = float(str(duration.seconds) + '.' + str(duration.microseconds)[:3])
         logger.info(f'Duration: {dur} sec')
         return res
-
     return wrap
 
 
 class TBotClass:
+
     permission = False
 
     def __init__(self):
         logger.info('TBotClass init')
         self.internet_loader = InternetLoader('ILoader')
         self.db_loader = DBLoader('DBLoader')
-        #if not self.db_loader.use_db:
         self.file_loader = FileLoader('FLoader')
 
     def __del__(self):
@@ -52,7 +54,7 @@ class TBotClass:
         """
         Send result message to chat
         :param message: message from user
-        :return: replace string
+        :return: replace dict
         """
         resp = {}
         self._get_config()
@@ -181,6 +183,18 @@ class TBotClass:
 
     @staticmethod
     def _dict_to_str(di: dict, delimiter: str = ' = ') -> str:
+        """
+        Turn dict to str
+        Digit not use
+        Keys "res" and "chat_id" is skipping
+        Example:
+             {1: 'text'} => 'text'
+             {'key': 'value'}, '=' => 'key = value'
+             {'key1': 'value1', 'key2': 'value2'}, ': ' => key1: value1\nkey2: value2
+        :param di: input dict
+        :param delimiter: delimiter string
+        :return: string
+        """
         fin_str = ''
         if di.get('res').upper() == 'ERROR':
             descr = di.get('descr', None)
@@ -266,6 +280,11 @@ class TBotClass:
 
     @staticmethod
     def _is_phone_number(number: str) -> str or None:
+        """
+        Check string. If non phone number, return None. Else return formatted phone number
+        :param number: any format of phone number
+        :return: formatted phone number
+        """
         resp = {}
         if len(number) < 10 or len(number) > 18:
             return None
@@ -315,7 +334,7 @@ class TBotClass:
 
     def send_dev_message(self, data: dict):
         """
-        Отправка сообщения админу
+        Send message to admin
         :param data: {'to': name or email, 'subject': 'subject' (unnecessary), 'text': 'text'}
         """
         data.update({'to': self.config.get('MAIL', 'address')})

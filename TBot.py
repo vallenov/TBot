@@ -20,6 +20,9 @@ DOWNLOADS = 'downloads'
 
 
 def tbot():
+    """
+    Main func
+    """
     config = configparser.ConfigParser()
     config.read('TBot.ini', encoding='windows-1251')
     token = config['MAIN']['token']
@@ -41,6 +44,13 @@ def tbot():
     tb = TBotClass()
 
     def safe_send(chat_id: int, replace: dict, reply_markup=None):
+        """
+        Send message with several tries
+        :param chat_id: id of users chat
+        :param replace: replace dict
+        :param reply_markup: markup or None
+        :return:
+        """
         is_send = False
         current_try = 0
         start = 0
@@ -81,6 +91,9 @@ def tbot():
 
     @bot.callback_query_handler(func=lambda call: True)
     def callback_query(call):
+        """
+        Callback reaction
+        """
         save_file(call.message)
         call.message.text = call.data
         replace = tb.replace(call.message)
@@ -89,6 +102,9 @@ def tbot():
 
     @bot.message_handler(func=lambda message: True, content_types=content_types)
     def send_text(message):
+        """
+        Text reaction
+        """
         save_file(message)
         replace = tb.replace(message)
         chat_id = replace.get('chat_id', None)
