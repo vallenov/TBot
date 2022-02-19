@@ -18,12 +18,14 @@ logger.addHandler(handler)
 
 
 class InternetLoader(Loader):
+    """
+    Work with internet
+    """
 
     @staticmethod
     def _site_to_lxml(url: str) -> BeautifulSoup or None:
         """
         Get site and convert it to the lxml
-
         :param url: https://site.com/
         :return: BeautifulSoup object
         """
@@ -64,15 +66,6 @@ class InternetLoader(Loader):
             inf = item.find_all('td')
             if inf[1].text not in ex:
                 continue
-            '''
-            Structure of inf:
-            tmp = {}
-            tmp['id'] = inf[0].text
-            tmp['name'] = inf[1].text
-            tmp['e'] = inf[2].text
-            tmp['descr'] = inf[3].text
-            tmp['exchange'] = inf[4].text
-            '''
             resp[inf[1].text] = inf[4].text
         resp['res'] = 'OK'
         return resp
@@ -216,6 +209,9 @@ class InternetLoader(Loader):
         return resp
 
     async def _get_url(self, session, url) -> None:
+        """
+        Get async url data
+        """
         async with session.get(url) as res:
             data = await res.text()
             if res.status == 200:

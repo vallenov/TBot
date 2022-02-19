@@ -47,6 +47,10 @@ def check_permission(needed_level: str = 'regular'):
 
 
 class Loader:
+    """
+    Common loaders class
+    """
+
     loaders = []
     users = {}
 
@@ -65,16 +69,27 @@ class Loader:
         self.use_db = True if int(self.config['MAIN']['PROD']) else False
 
     def _get_config(self):
+        """
+        Get config from file
+        """
         self.config = configparser.ConfigParser()
         self.config.read('TBot.ini', encoding='windows-1251')
 
     @staticmethod
     def get_loaders():
+        """
+        Get all available loaders
+        """
         return Loader.loaders
 
     @staticmethod
     def error_resp(error_text: str):
-        resp = {}
+        """
+        Return error response with variable text
+        :param error_text: error description string
+        :return: error response
+        """
+        resp = dict()
         resp['res'] = 'ERROR'
         resp['descr'] = error_text
         return resp
