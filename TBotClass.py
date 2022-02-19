@@ -312,9 +312,9 @@ class TBotClass:
     @check_permission(needed_level='root')
     def send_other(self, text: str, **kwargs):
         """
-        Get respoesy from DB
-        :param:
-        :return: poesy string
+        Send message to other user
+        :param text: string "command chat_id message"
+        :return: dict {'chat_id': 1234567, 'text': 'some'}
         """
         logger.info('send_other')
         resp = {}
@@ -329,7 +329,7 @@ class TBotClass:
         if str(chat_id) not in Loader.users.keys():
             return Loader.error_resp('User not found')
         resp['chat_id'] = chat_id
-        resp['res'] = ' '.join(lst[2:])
+        resp['text'] = ' '.join(lst[2:])
         return resp
 
     def send_dev_message(self, data: dict):
