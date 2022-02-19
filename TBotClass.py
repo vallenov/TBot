@@ -330,6 +330,7 @@ class TBotClass:
             return Loader.error_resp('User not found')
         resp['chat_id'] = chat_id
         resp['text'] = ' '.join(lst[2:])
+        resp['res'] = 'OK'
         return resp
 
     def send_dev_message(self, data: dict):
