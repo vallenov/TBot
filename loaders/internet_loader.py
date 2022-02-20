@@ -539,9 +539,11 @@ class InternetLoader(Loader):
             russian_painting_url = self.config['URL']['russian_painting_url']
         else:
             return Loader.error_resp("I can't do this yet😔")
+        # headers = {
+        #     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) '
+        #                   'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) '
-                          'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}
+            'User-Agent': 'Mozilla/5.0'}
         soup = InternetLoader._site_to_lxml(russian_painting_url, headers)
         if soup is None:
             logger.error(f'Empty soup data')
