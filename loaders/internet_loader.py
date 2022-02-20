@@ -567,5 +567,4 @@ class InternetLoader(Loader):
         else:
             text = 'Picture'
         resp['text'] = text
-        resp['res'] = 'OK'
         return resp

@@ -57,7 +57,7 @@ class DBLoader(Loader):
                 cursor.execute(query)
                 for _ in cursor:
                     pass
-            time.sleep(60*60)
+            time.sleep(60 * 60)
 
     def get_users_fom_db(self):
         """
@@ -146,11 +146,11 @@ class DBLoader(Loader):
             user_inf = Loader.users.keys()
             if all([user_id.lower() not in list(map(lambda x: x.lower(), user_inf)),
                     user_id.lower() not in list(map(lambda x: Loader.users[x]['login'].lower()
-                        if Loader.users[x]['login'] is not None
-                        else Loader.users[x]['login'], user_inf)),
+                    if Loader.users[x]['login'] is not None
+                    else Loader.users[x]['login'], user_inf)),
                     user_id.lower() not in list(map(lambda x: Loader.users[x]['first_name'].lower()
-                        if Loader.users[x]['first_name'] is not None
-                        else Loader.users[x]['first_name'], user_inf))]):
+                    if Loader.users[x]['first_name'] is not None
+                    else Loader.users[x]['first_name'], user_inf))]):
                 return Loader.error_resp('User not found')
             user_id_db = f"'{user_id}'"
             privileges = int(lst[2])
@@ -174,13 +174,12 @@ class DBLoader(Loader):
                 query = f'update {self.db_name}.users ' \
                         f'set privileges_id = {p_id} ' \
                         f'where chat_id = {user_id_db} '
-                resp[0] = f'User {user_id} updated'
+                resp['text'] = f'User {user_id} updated'
                 cursor.execute(query)
                 self.connection.commit()
         logger.info(f'Updating memory')
         Loader.users[user_id]['value'] = privileges
         logger.info(f'User {user_id} updated')
-        resp['res'] = 'OK'
         return resp
 
     @check_permission(needed_level='root')
@@ -210,9 +209,8 @@ class DBLoader(Loader):
                 self.connection.commit()
         logger.info(f'Updating memory')
         Loader.users.pop(user_id)
-        resp[0] = f'User {user_id} deleted'
+        resp['text'] = f'User {user_id} deleted'
         logger.info(f'User {user_id} deleted')
-        resp['res'] = 'OK'
         return resp
 
     @check_permission(needed_level='root')
@@ -223,17 +221,19 @@ class DBLoader(Loader):
         resp = {}
         logger.info('show_users')
         cnt = 1
+        users = {}
         for key, value in Loader.users.items():
             if value['value'] > Loader.privileges_levels['trusted']:
                 continue
-            resp[cnt] = f"Chat_id: {key}, " \
-                        f"login: {value['login']}, " \
-                        f"first_name: {value['first_name']}, " \
-                        f"privileges: {value['value']}"
+            users[cnt] = f"Chat_id: {key}, " \
+                         f"login: {value['login']}, " \
+                         f"first_name: {value['first_name']}, " \
+                         f"privileges: {value['value']}"
             cnt += 1
-        if not len(resp):
-            resp[0] = 'Users not found'
-        resp['res'] = 'OK'
+        if not len(users):
+            resp['text'] = Loader.error_resp('Users not found')
+        else:
+            resp['text'] = Loader.dict_to_str(users, '')
         return resp
 
     def _poems_to_db(self, poems: list):
@@ -279,7 +279,7 @@ class DBLoader(Loader):
                         min_id = int(cnt[0])
                         max_id = int(cnt[1])
                         break
-                    random_poem = random.randint(min_id, max_id+1)
+                    random_poem = random.randint(min_id, max_id + 1)
                 with self.connection.cursor() as cursor:
                     query = f'select * from {self.db_name}.poems p where p.p_id = {random_poem}'
                     cursor.execute(query)

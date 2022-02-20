@@ -107,5 +107,4 @@ class FileLoader(Loader):
         met_cards_path = os.path.join('file_db', 'metaphorical_cards')
         random_card = random.choice(os.listdir(met_cards_path))
         resp['photo'] = os.path.join(met_cards_path, random_card)
-        resp['res'] = 'OK'
         return resp
