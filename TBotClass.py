@@ -25,6 +25,7 @@ def benchmark(func):
     """
     Count duration
     """
+
     def wrap(*args, **kwargs):
         start = datetime.datetime.now()
         res = func(*args, **kwargs)
@@ -32,11 +33,11 @@ def benchmark(func):
         dur = float(str(duration.seconds) + '.' + str(duration.microseconds)[:3])
         logger.info(f'Duration: {dur} sec')
         return res
+
     return wrap
 
 
 class TBotClass:
-
     permission = False
 
     def __init__(self):
@@ -77,58 +78,53 @@ class TBotClass:
             resp['status'] = 'OK'
             form_text = message.text.lower().strip()
             if form_text == 'exchange' or form_text == 'валюта':
-                resp['text'] = self._dict_to_str(self.internet_loader.get_exchange(privileges=privileges))
+                resp = self.internet_loader.get_exchange(privileges=privileges)
             elif form_text == 'weather' or form_text == 'погода':
-                resp['text'] = self._dict_to_str(self.internet_loader.get_weather(privileges=privileges))
+                resp = self.internet_loader.get_weather(privileges=privileges)
             elif form_text == 'quote' or form_text == 'цитата':
-                resp['text'] = self._dict_to_str(self.internet_loader.get_quote(privileges=privileges), '\n')
+                resp = self.internet_loader.get_quote(privileges=privileges)
             elif form_text == 'wish' or form_text == 'пожелание':
-                resp['text'] = self._dict_to_str(self.internet_loader.get_wish(privileges=privileges))
+                resp = self.internet_loader.get_wish(privileges=privileges)
             elif form_text.startswith('news') or form_text.startswith('новости'):
-                resp['text'] = self._dict_to_str(self.internet_loader.get_news(form_text, privileges=privileges), '\n')
+                resp = self.internet_loader.get_news(form_text, privileges=privileges)
             elif form_text == 'affirmation' or form_text == 'аффирмация':
-                resp['text'] = self._dict_to_str(self.internet_loader.get_affirmation(privileges=privileges))
+                resp = self.internet_loader.get_affirmation(privileges=privileges)
             elif form_text == 'events' or form_text == 'мероприятия':
-                resp['text'] = self._dict_to_str(asyncio.run(self.internet_loader.async_events(privileges=privileges)),
-                                                '\n')
+                resp = asyncio.run(self.internet_loader.async_events(privileges=privileges))
             elif form_text == 'food' or form_text == 'еда':
-                resp['text'] = self._dict_to_str(self.internet_loader.get_restaurant(privileges=privileges), ' ')
+                resp = self.internet_loader.get_restaurant(privileges=privileges)
             elif form_text.startswith('poem') or form_text.startswith('стих'):
                 if self.db_loader.use_db:
-                    resp['text'] = self._dict_to_str(self.db_loader.get_poem(form_text, privileges=privileges), '\n')
+                    resp = self.db_loader.get_poem(form_text, privileges=privileges)
                 else:
-                    resp['text'] = self._dict_to_str(self.file_loader.get_poem(form_text, privileges=privileges), '\n')
+                    if not hasattr(self.file_loader, 'poems'):
+                        self.file_loader.load_poems()
+                    resp = self.file_loader.get_poem(form_text, privileges=privileges)
             elif form_text.startswith('movie') or form_text.startswith('фильм'):
-                resp['text'] = self._dict_to_str(
-                    self.internet_loader.get_random_movie(form_text, privileges=privileges), ' ')
+                resp = self.internet_loader.get_random_movie(form_text, privileges=privileges)
                 if ' ' not in form_text:
                     resp['markup'] = self._gen_movie_markup(privileges=privileges)
             elif form_text.startswith('update') or form_text.startswith('обновить'):
-                resp['text'] = self._dict_to_str(self.db_loader.update_user(form_text, privileges=privileges), ' ')
+                resp = self.db_loader.update_user(form_text, privileges=privileges)
             elif form_text.startswith('delete') or form_text.startswith('удалить'):
-                resp['text'] = self._dict_to_str(self.db_loader.delete_user(form_text, privileges=privileges), ' ')
+                resp = self.db_loader.delete_user(form_text, privileges=privileges)
             elif form_text == 'users' or form_text == 'пользователи':
-                resp['text'] = self._dict_to_str(self.db_loader.show_users(privileges=privileges), ' ')
+                resp = self.db_loader.show_users(privileges=privileges)
             elif form_text == 'hidden_functions' or form_text == 'скрытые_функции':
-                resp['text'] = self._dict_to_str(self._get_help(privileges=privileges), ' ')
+                resp = self._get_help(privileges=privileges)
             elif form_text == 'admins_help' or form_text == 'руководство_админу':
-                resp['text'] = self._dict_to_str(self._get_admins_help(privileges=privileges), ' ')
+                resp = self._get_admins_help(privileges=privileges)
             elif form_text.startswith('send_other') or form_text.startswith('отправить_другому'):
                 resp = self.send_other(form_text, privileges=privileges)
-                if resp['res'] == 'ERROR':
-                    resp['text'] = self._dict_to_str(resp)
             elif form_text == 'metaphorical_card' or form_text == 'метафорическая_карта':
                 resp = self.file_loader.get_metaphorical_card(privileges=privileges)
-                if resp['res'] == 'ERROR':
-                    resp['text'] = self._dict_to_str(resp)
+            elif form_text == 'russian_painting' or form_text == 'русская_картина':
+                resp = self.internet_loader.get_russian_painting(privileges=privileges)
             elif TBotClass._is_phone_number(form_text) is not None:
                 phone_number = TBotClass._is_phone_number(form_text)
-                resp['res'] = self._dict_to_str(
-                    self.internet_loader.get_phone_number_info(phone_number, privileges=privileges), ': '
-                )
+                resp = self.internet_loader.get_phone_number_info(phone_number, privileges=privileges)
             else:
-                resp['text'] = self._dict_to_str(self._get_hello(privileges=privileges))
-                resp['markup'] = self._gen_markup(privileges=privileges)
+                resp = self._get_hello(privileges=privileges)
             return resp
 
     @staticmethod
@@ -173,43 +169,15 @@ class TBotClass:
                        InlineKeyboardButton("🍲 Food/Еда", callback_data="food"),
                        InlineKeyboardButton("🪶 Poem/Стих", callback_data="poem"),
                        InlineKeyboardButton("🎞 Movie/Фильм", callback_data="movie"),
-                       InlineKeyboardButton("🎑 Metaphorical card/Метафорическая карта", callback_data="metaphorical_card"))
+                       InlineKeyboardButton("🎑 Metaphorical card/Метафорическая карта",
+                                            callback_data="metaphorical_card"),
+                       InlineKeyboardButton("🏞 Russian painting/Русская картина", callback_data="russian_painting"))
         if Loader.privileges_levels['trusted'] <= privileges:
             pass
         if Loader.privileges_levels['root'] <= privileges:
             markup.add(InlineKeyboardButton("🛠 Admins help/Руководство админу", callback_data="admins_help"))
             markup.add(InlineKeyboardButton("👥 Users/Пользователи", callback_data="users"))
         return markup
-
-    @staticmethod
-    def _dict_to_str(di: dict, delimiter: str = ' = ') -> str:
-        """
-        Turn dict to str
-        Digit not use
-        Keys "res" and "chat_id" is skipping
-        Example:
-             {1: 'text'} => 'text'
-             {'key': 'value'}, '=' => 'key = value'
-             {'key1': 'value1', 'key2': 'value2'}, ': ' => key1: value1\nkey2: value2
-        :param di: input dict
-        :param delimiter: delimiter string
-        :return: string
-        """
-        fin_str = ''
-        if di.get('res').upper() == 'ERROR':
-            descr = di.get('descr', None)
-            if descr is not None:
-                logger.error(f'Description: {descr}')
-                return descr
-            return 'Something is wrong'
-        for key, value in di.items():
-            if isinstance(key, int):
-                fin_str += f'{value}\n'
-            elif key.lower() == 'res' or key.lower() == 'chat_id':
-                continue
-            else:
-                fin_str += f'{key}{delimiter}{value}\n'
-        return fin_str
 
     @check_permission()
     def _get_help(self, privileges: int) -> dict:
@@ -220,17 +188,17 @@ class TBotClass:
         """
         logger.info('get_help')
         resp = dict()
-        resp['res'] = 'OK'
+        resp['text'] = ''
         # if Loader.privileges_levels['untrusted'] <= privileges:
         #     return Loader.error_resp('Permission denied')
         # if Loader.privileges_levels['test'] <= privileges:
         #     return Loader.error_resp('Permission denied')
         if Loader.privileges_levels['regular'] <= privileges:
-            resp[0] = str(f'Ты можешь написать "новости", "стих" и "фильм" с параметром\n'
-                          f'Новости "количество новостей"\n'
-                          f'Стих "имя автора или название"\n'
-                          f'Фильм "год выпуска"\n'
-                          f'Так же, ты можешь написать номер телефона, что бы узнать информацию о нем\n')
+            resp['text'] += str(f'Ты можешь написать "новости", "стих" и "фильм" с параметром\n'
+                                f'Новости "количество новостей"\n'
+                                f'Стих "имя автора или название"\n'
+                                f'Фильм "год выпуска"\n'
+                                f'Так же, ты можешь написать номер телефона, что бы узнать информацию о нем\n')
         if Loader.privileges_levels['trusted'] <= privileges:
             pass
         if Loader.privileges_levels['root'] <= privileges:
@@ -246,17 +214,17 @@ class TBotClass:
         """
         logger.info('get_help')
         resp = dict()
-        resp['res'] = 'OK'
         # if Loader.privileges_levels['untrusted'] <= privileges:
         #     resp[0] = f'Permission denied'
         # if Loader.privileges_levels['test'] <= privileges:
         #     resp[0] = f'Permission denied'
         if Loader.privileges_levels['regular'] <= privileges:
-            resp[0] = f'Привет! Меня зовут InfoBot\n'
+            resp['text'] = f'Привет! Меня зовут InfoBot\n'
         if Loader.privileges_levels['trusted'] <= privileges:
             pass
         if Loader.privileges_levels['root'] <= privileges:
-            resp[0] = f'You are a root user'
+            resp['text'] = f'You are a root user'
+        resp['markup'] = self._gen_markup(privileges)
         return resp
 
     @check_permission(needed_level='root')
@@ -268,10 +236,9 @@ class TBotClass:
         """
         logger.info('get_admins_help')
         resp = dict()
-        resp['res'] = 'OK'
-        resp[0] = str(f'Update "chat_id" "privileges"\n'
-                      f'Delete "chat_id"\n'
-                      f'Send_other "chat_id" "text"\n')
+        resp['text'] = str(f'Update "chat_id" "privileges"\n'
+                           f'Delete "chat_id"\n'
+                           f'Send_other "chat_id" "text"\n')
         return resp
 
     def _get_config(self):
@@ -330,7 +297,6 @@ class TBotClass:
             return Loader.error_resp('User not found')
         resp['chat_id'] = chat_id
         resp['text'] = ' '.join(lst[2:])
-        resp['res'] = 'OK'
         return resp
 
     def send_dev_message(self, data: dict):

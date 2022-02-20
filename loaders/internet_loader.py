@@ -23,14 +23,14 @@ class InternetLoader(Loader):
     """
 
     @staticmethod
-    def _site_to_lxml(url: str) -> BeautifulSoup or None:
+    def _site_to_lxml(url: str, headers: dict = None) -> BeautifulSoup or None:
         """
         Get site and convert it to the lxml
         :param url: https://site.com/
         :return: BeautifulSoup object
         """
         try:
-            resp = requests.get(url)
+            resp = requests.get(url, headers=headers)
             if resp.status_code == 200:
                 soup = BeautifulSoup(resp.text, 'lxml')
             else:
@@ -62,12 +62,13 @@ class InternetLoader(Loader):
             logger.error('Empty soup data')
             return Loader.error_resp("Empty soup data")
         parse = soup.find_all('tr')
+        exchange = {}
         for item in parse[1:]:
             inf = item.find_all('td')
             if inf[1].text not in ex:
                 continue
-            resp[inf[1].text] = inf[4].text
-        resp['res'] = 'OK'
+            exchange[inf[1].text] = inf[4].text
+        resp['text'] = Loader.dict_to_str(exchange, ' = ')
         return resp
 
     @check_permission()
@@ -88,13 +89,14 @@ class InternetLoader(Loader):
             logger.error('Empty soup data')
             return Loader.error_resp("Empty soup data")
         parse = soup.find_all('div', class_='DetailsSummary--DetailsSummary--2HluQ DetailsSummary--fadeOnOpen--vFCc_')
+        weather = {}
         for i in parse:
             h2 = i.find('h2')
             div = i.find('div')
             span = div.find_all('span')
             span = list(map(lambda x: x.text, span))
-            resp[h2.text] = ''.join(span[:-1])
-        resp['res'] = 'OK'
+            weather[h2.text] = ''.join(span[:-1])
+        resp['text'] = Loader.dict_to_str(weather, ' = ')
         return resp
 
     @check_permission()
@@ -115,12 +117,13 @@ class InternetLoader(Loader):
             logger.error('Empty soup data')
             return Loader.error_resp("Empty soup data")
         quotes = soup.find_all('div', class_='quote')
-        for quote in quotes:
-            author = quote.find('a')
-            text = quote.find('div', class_='quote_name')
-            resp[text.text] = author.text
-        random_key = random.choice(list(resp.keys()))
-        return {'res': 'OK', random_key: resp[random_key]}
+        random_quote = random.choice(quotes)
+        author = random_quote.find('a')
+        text = random_quote.find('div', class_='quote_name')
+        quote = dict()
+        quote[text.text] = author.text
+        resp['text'] = Loader.dict_to_str(quote, '\n')
+        return resp
 
     @check_permission()
     def get_wish(self, **kwargs) -> dict:
@@ -141,8 +144,7 @@ class InternetLoader(Loader):
             return Loader.error_resp("Something wrong")
         wishes = soup.find_all('ol')
         wish_list = wishes[0].find_all('li')
-        resp['res'] = 'OK'
-        resp[1] = random.choice(wish_list).text
+        resp['text'] = random.choice(wish_list).text
         return resp
 
     @check_permission()
@@ -169,15 +171,16 @@ class InternetLoader(Loader):
         if soup is None:
             logger.error(f'Empty soup data')
             return Loader.error_resp("Something wrong")
-        news = soup.find_all('div', class_='cell-list__item-info')
-        for n in news:
+        div_raw = soup.find_all('div', class_='cell-list__item-info')
+        news = {}
+        for n in div_raw:
             news_time = n.find('span', class_='elem-info__date')
             text = n.find('span', class_='share')
             if news_time and text:
-                resp[news_time.text] = text.get('data-title')
-            if len(resp) == count:
+                news[news_time.text] = text.get('data-title')
+            if len(news) == count:
                 break
-        resp['res'] = 'OK'
+        resp['text'] = Loader.dict_to_str(news, '\n')
         return resp
 
     @check_permission()
@@ -204,8 +207,7 @@ class InternetLoader(Loader):
             for em in li:
                 if em.text[0].isupper():
                     aff_list.append(em.text)
-        resp['res'] = 'OK'
-        resp[1] = random.choice(aff_list)
+        resp['text'] = random.choice(aff_list)
         return resp
 
     async def _get_url(self, session, url) -> None:
@@ -248,6 +250,7 @@ class InternetLoader(Loader):
             for _, link in links.items():
                 tasks.append(asyncio.create_task(self._get_url(session, link)))
             await asyncio.gather(*tasks)
+            events = {}
             for raw in self.async_url_data:
                 events_links = []
                 soup_curr = BeautifulSoup(raw, 'lxml')
@@ -260,8 +263,8 @@ class InternetLoader(Loader):
                         a = raw_h2.find('a')
                         descr = a.text.replace('\n', '')
                         events_links.append(f"{descr}\n{a.get('href')}\n")
-                resp[name] = random.choice(events_links)
-            resp['res'] = 'OK'
+                events[name] = random.choice(events_links)
+            resp['text'] = Loader.dict_to_str(events, '\n')
             return resp
 
     @check_permission()
@@ -286,6 +289,7 @@ class InternetLoader(Loader):
         raw_a = div[0].find_all('a')
         for a in raw_a:
             links[a.text] = a.get('href')
+        events = {}
         for name, link in links.items():
             events_links = []
             name = name.replace('\n', '')
@@ -295,8 +299,8 @@ class InternetLoader(Loader):
                 a = raw_h2.find('a')
                 descr = a.text.replace('\n', '')
                 events_links.append(f"{descr}\n{a.get('href')}\n")
-            resp[name] = random.choice(events_links)
-        resp['res'] = 'OK'
+            events[name] = random.choice(events_links)
+        resp['text'] = Loader.dict_to_str(events, ' ')
         return resp
 
     @check_permission()
@@ -329,7 +333,7 @@ class InternetLoader(Loader):
         soup = InternetLoader._site_to_lxml(self.config['URL']['restaurant_url'] + restaurant.get('href'))
         div_raw = soup.find('div', class_='props one-line-props')
         final_restaurant = dict()
-        final_restaurant[1] = restaurant.text
+        final_restaurant[0] = restaurant.text
         for d in div_raw:
             name = d.find('div', class_='name')
             if name:
@@ -339,9 +343,9 @@ class InternetLoader(Loader):
                 value = value.text.strip().replace('\n', '')
             if name is not None and value is not None:
                 final_restaurant[name] = value
-        final_restaurant[2] = self.config['URL']['restaurant_url'] + restaurant.get('href')
-        final_restaurant['res'] = 'OK'
-        return final_restaurant
+        final_restaurant[1] = self.config['URL']['restaurant_url'] + restaurant.get('href')
+        resp['text'] = Loader.dict_to_str(final_restaurant, ' ')
+        return resp
 
     @check_permission()
     def get_poem(self, **kwargs) -> dict:
@@ -395,8 +399,7 @@ class InternetLoader(Loader):
             quatrain = quatrain.replace('<br/>', '\n')
             quatrains.append(quatrain)
         poem = '\n\n'.join(quatrains)
-        resp['res'] = 'OK'
-        resp[author] = f'\n\n{name}\n\n{poem}{year}'
+        resp['text'] = f'{author}\n\n{name}\n\n{poem}{year}'
         return resp
 
     @check_permission()
@@ -421,14 +424,15 @@ class InternetLoader(Loader):
         table = div_raw.find('table', class_='teltr tel-mobile')
         tr_raw = table.find_all('tr', class_='')
         td_raw = tr_raw[-1].find_all('td')
-        resp['Страна'] = td_raw[0].find('strong').text
+        phone_info = dict()
+        phone_info['Страна'] = td_raw[0].find('strong').text
         operator_info = td_raw[1].find('strong').text
-        resp['Регион'] = operator_info.split('[')[1].replace(']', '').replace(',', '')
-        resp['Изначальный оператор'] = operator_info.split(' ')[0]
+        phone_info['Регион'] = operator_info.split('[')[1].replace(']', '').replace(',', '')
+        phone_info['Изначальный оператор'] = operator_info.split(' ')[0]
         p_raw = div_raw.find('p', style='')
         span_raw = p_raw.find_all('span')
-        resp['Текущий оператор'] = span_raw[-1].text
-        resp['res'] = 'OK'
+        phone_info['Текущий оператор'] = span_raw[-1].text
+        resp['text'] = Loader.dict_to_str(phone_info, ': ')
         return resp
 
     @check_permission()
@@ -440,13 +444,11 @@ class InternetLoader(Loader):
         """
         logger.info('get_random_movie')
         resp = {}
-        #year = datetime.datetime.now().year
         command = text.split(' ')
         year_from = 0
         year_to = 0
         if len(command) == 1:
-            resp['res'] = 'OK'
-            resp[0] = 'Выберите промежуток'
+            resp['text'] = 'Выберите промежуток'
             return resp
         elif len(command) == 2:
             try:
@@ -485,7 +487,6 @@ class InternetLoader(Loader):
             logger.error(f'Empty soup data')
             return Loader.error_resp("Something wrong")
         div_raw = soup.find('div', class_='search_results search_results_last')
-        #print(div_raw)
         div_nav = div_raw.find('div', class_='navigator')
         from_to = div_nav.find('div', class_='pagesFromTo').text.split(' ')[0].split('—')
         per_page = int(from_to[1]) - int(from_to[0]) - 1
@@ -515,12 +516,57 @@ class InternetLoader(Loader):
                     if simb in symbols:
                         movie_id = p_raw.find('a').get('href')
                         movie_url = '/'.join(random_movie_url.split('/')[:3])
-                        resp['res'] = 'OK'
-                        resp[0] = f'Случайный фильм {act_year_from}-{act_year_to} годов'
-                        resp[1] = movie_url + movie_id
+                        text = f'Случайный фильм {act_year_from}-{act_year_to} годов'
+                        link = movie_url + movie_id
+                        resp['text'] = f'{text}\n{link}'
                         return resp
                 try_count += 1
                 if try_count > per_page:
                     logger.warning(f'No elements with cyrillic symbols')
                     break
         return Loader.error_resp(f'Movie {year_from}-{year_to} years not found')
+
+    @check_permission()
+    def get_russian_painting(self, **kwargs) -> dict:
+        """
+        Get russian painting from internet
+        :param:
+        :return: dict
+        """
+        logger.info('get_poem')
+        resp = {}
+        if self.config.has_option('URL', 'russian_painting_url'):
+            russian_painting_url = self.config['URL']['russian_painting_url']
+        else:
+            return Loader.error_resp("I can't do this yet😔")
+        # headers = {
+        #     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) '
+        #                   'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}
+        headers = {
+            'User-Agent': 'Mozilla/5.0'}
+        soup = InternetLoader._site_to_lxml(russian_painting_url, headers)
+        if soup is None:
+            logger.error(f'Empty soup data')
+            return Loader.error_resp("Something wrong")
+        div_raw = soup.find_all('div', class_='pic')
+        random_painting = random.choice(div_raw)
+        a_raw = random_painting.find('a')
+        href = a_raw.get('href')
+        site = '/'.join(self.config['URL']['russian_painting_url'].split('/')[:3])
+        link = site + href
+        soup = InternetLoader._site_to_lxml(link, headers)
+        p_raw = soup.find('p', class_='xpic')
+        img_raw = p_raw.find('img')
+        picture = img_raw.get('src')
+        if picture:
+            resp['photo'] = picture
+        else:
+            logger.info('Picture not found')
+            Loader.error_resp('Something wrong')
+        text = img_raw.get('title')
+        if text:
+            text = text.split('900')[0]
+        else:
+            text = 'Picture'
+        resp['text'] = text
+        return resp
