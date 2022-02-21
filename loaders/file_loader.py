@@ -37,6 +37,7 @@ class FileLoader(Loader):
         """
         Load poems from file to memory
         """
+        logger.info('load_poems')
         file_path = self.fife_db.get('poems.xlsx', False)
         self.poems = []
         if file_path:
@@ -71,7 +72,6 @@ class FileLoader(Loader):
         logger.info('get_poem')
         lst = text.split()
         resp = {}
-        random_poem = {}
         if hasattr(self, 'poems'):
             if len(lst) == 1:
                 random_poem = random.choice(self.poems)
@@ -87,7 +87,7 @@ class FileLoader(Loader):
                     return Loader.error_resp('Poem not found')
         else:
             logger.error('File poems.xlsx not found')
-            return Loader.error_resp('ERROR "FL". Please, contact with the administrator')
+            return Loader.error_resp()
         author = random_poem['author']
         name = random_poem['name']
         text = random_poem['text']
