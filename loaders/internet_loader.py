@@ -533,7 +533,7 @@ class InternetLoader(Loader):
         :param:
         :return: dict
         """
-        logger.info('get_poem')
+        logger.info('get_russian_painting')
         resp = {}
         if self.config.has_option('URL', 'russian_painting_url'):
             russian_painting_url = self.config['URL']['russian_painting_url']
