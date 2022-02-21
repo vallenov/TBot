@@ -83,7 +83,7 @@ class Loader:
         return Loader.loaders
 
     @staticmethod
-    def error_resp(error_text: str):
+    def error_resp(error_text: str = 'Something wrong'):
         """
         Return error response with variable text
         :param error_text: error description string

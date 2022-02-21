@@ -247,7 +247,6 @@ class DBLoader(Loader):
         lst = []
         logger.info('Preparing to upload')
         for p in poems:
-            print(cnt, p)
             author = p['author']
             name = p['name'].replace("'", '"')
             text = p['text'].replace("'", "''")

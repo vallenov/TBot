@@ -141,7 +141,7 @@ class InternetLoader(Loader):
         soup = InternetLoader._site_to_lxml(wish_url)
         if soup is None:
             logger.error(f'Empty soup data')
-            return Loader.error_resp("Something wrong")
+            return Loader.error_resp()
         wishes = soup.find_all('ol')
         wish_list = wishes[0].find_all('li')
         resp['text'] = random.choice(wish_list).text
@@ -170,7 +170,7 @@ class InternetLoader(Loader):
         soup = InternetLoader._site_to_lxml(news_url)
         if soup is None:
             logger.error(f'Empty soup data')
-            return Loader.error_resp("Something wrong")
+            return Loader.error_resp()
         div_raw = soup.find_all('div', class_='cell-list__item-info')
         news = {}
         for n in div_raw:
@@ -199,7 +199,7 @@ class InternetLoader(Loader):
         soup = InternetLoader._site_to_lxml(affirmation_url)
         if soup is None:
             logger.error(f'Empty soup data')
-            return Loader.error_resp("Something wrong")
+            return Loader.error_resp()
         aff_list = []
         ul = soup.find_all('ul')
         for u in ul:
@@ -283,7 +283,7 @@ class InternetLoader(Loader):
         soup = InternetLoader._site_to_lxml(events_url)
         if soup is None:
             logger.error(f'Empty soup data')
-            return Loader.error_resp("Something wrong")
+            return Loader.error_resp()
         links = {}
         div = soup.find_all('div', class_='site-nav-events')
         raw_a = div[0].find_all('a')
@@ -319,7 +319,7 @@ class InternetLoader(Loader):
         soup = InternetLoader._site_to_lxml(restaurant_url + '/msk/catalog/restaurants/all/')
         if soup is None:
             logger.error(f'Empty soup data')
-            return Loader.error_resp("Something wrong")
+            return Loader.error_resp()
         div_nav_raw = soup.find('div', class_='pagination-wrapper')
         a_raw = div_nav_raw.find('a')
         page_count = int(a_raw.get('data-nav-page-count'))
@@ -363,7 +363,7 @@ class InternetLoader(Loader):
         soup = InternetLoader._site_to_lxml(poesy_url)
         if soup is None:
             logger.error(f'Empty soup data')
-            return Loader.error_resp("Something wrong")
+            return Loader.error_resp()
         div_raw = soup.find('div', class_='_2uPBE')
         a_raw = div_raw.find_all('a', class_='GmJ5E')
         count = int(a_raw[-1].text)
@@ -485,7 +485,7 @@ class InternetLoader(Loader):
             return Loader.error_resp(f'Movies by {year_from}-{year_to} is not found')
         if soup is None:
             logger.error(f'Empty soup data')
-            return Loader.error_resp("Something wrong")
+            return Loader.error_resp()
         div_raw = soup.find('div', class_='search_results search_results_last')
         div_nav = div_raw.find('div', class_='navigator')
         from_to = div_nav.find('div', class_='pagesFromTo').text.split(' ')[0].split('—')
@@ -544,7 +544,7 @@ class InternetLoader(Loader):
         soup = InternetLoader._site_to_lxml(russian_painting_url, headers)
         if soup is None:
             logger.error(f'Empty soup data')
-            return Loader.error_resp("Something wrong")
+            return Loader.error_resp()
         div_raw = soup.find_all('div', class_='pic')
         random_painting = random.choice(div_raw)
         a_raw = random_painting.find('a')
@@ -559,7 +559,7 @@ class InternetLoader(Loader):
             resp['photo'] = picture
         else:
             logger.info('Picture not found')
-            Loader.error_resp('Something wrong')
+            Loader.error_resp()
         text = img_raw.get('title')
         if text:
             text = text.split('900')[0]
