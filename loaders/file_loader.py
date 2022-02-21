@@ -37,6 +37,7 @@ class FileLoader(Loader):
         """
         Load poems from file to memory
         """
+        logger.info('load_poems')
         file_path = self.fife_db.get('poems.xlsx', False)
         self.poems = []
         if file_path:
