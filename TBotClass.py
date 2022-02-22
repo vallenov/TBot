@@ -71,7 +71,7 @@ class TBotClass:
             send_data = dict()
             send_data['subject'] = 'TBot NEW USER'
             send_data['text'] = f'New user added. Chat_id: {chat_id}, login: {login}, first_name: {first_name}'
-            #self.send_dev_message(send_data, 'mail')
+            self.send_dev_message(send_data, 'mail')
             self.send_dev_message(send_data, 'telegram')
         else:
             privileges = Loader.users[chat_id]['value']
