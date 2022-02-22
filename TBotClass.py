@@ -71,7 +71,8 @@ class TBotClass:
             send_data = dict()
             send_data['subject'] = 'TBot NEW USER'
             send_data['text'] = f'New user added. Chat_id: {chat_id}, login: {login}, first_name: {first_name}'
-            self.send_dev_message(send_data)
+            self.send_dev_message(send_data, 'mail')
+            self.send_dev_message(send_data, 'telegram')
         else:
             privileges = Loader.users[chat_id]['value']
         if message.content_type == 'text':
@@ -299,17 +300,24 @@ class TBotClass:
         resp['text'] = ' '.join(lst[2:])
         return resp
 
-    def send_dev_message(self, data: dict):
+    def send_dev_message(self, data: dict, by: str = 'mail'):
         """
         Send message to admin
         :param data: {'to': name or email, 'subject': 'subject' (unnecessary), 'text': 'text'}
+        :param by: by what (mail or telegram)
         """
-        data.update({'to': self.config.get('MAIL', 'address')})
+        if by not in ('mail', 'telegram'):
+            logger.error(f'Wrong parameter by ({by}) in send_dev_message')
+            return
+        if by == 'mail':
+            data.update({'to': self.config.get('MAIL', 'address')})
+        else:
+            data.update({'to': self.config.get('DB', 'login')})
         current_try = 0
         while current_try < MAX_TRY:
             current_try += 1
             try:
-                requests.post(self.config.get('MAIL', 'message_server_address'), data=data,
+                requests.post(self.config.get('MAIL', 'message_server_address') + '/' + by, data=data,
                               headers={'Connection': 'close'})
             except Exception as _ex:
                 logger.exception(_ex)
