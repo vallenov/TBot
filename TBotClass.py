@@ -308,9 +308,12 @@ class TBotClass:
         :param data: {'to': name or email, 'subject': 'subject' (unnecessary), 'text': 'text'}
         :param by: by what (mail or telegram)
         """
+        resp = {}
         if by not in ('mail', 'telegram'):
             logger.error(f'Wrong parameter by ({by}) in send_dev_message')
-            return {'res': 'ERROR', 'descr': f'Wrong parameter by ({by}) in send_dev_message'}
+            resp['res'] = 'ERROR'
+            resp['descr'] = f'Wrong parameter by ({by}) in send_dev_message'
+            return resp
         if by == 'mail':
             data.update({'to': self.config.get('MAIL', 'address')})
         else:
@@ -325,5 +328,6 @@ class TBotClass:
                 logger.exception(_ex)
             else:
                 logger.info('Send successful')
-                return res.text
+                resp['res'] = res.text
+                return resp
         logger.error('Max try exceeded')
