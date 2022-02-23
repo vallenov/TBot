@@ -302,3 +302,10 @@ class DBLoader(Loader):
             return resp
         else:
             return Loader.error_resp('DB does not using')
+
+    def get_root_users(self):
+        root_users = []
+        for key, value in Loader.users.items():
+            if value['value'] == Loader.privileges_levels['root']:
+                root_users.append(key)
+        return root_users

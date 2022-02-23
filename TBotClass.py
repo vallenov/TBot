@@ -45,6 +45,8 @@ class TBotClass:
         self.internet_loader = InternetLoader('ILoader')
         self.db_loader = DBLoader('DBLoader')
         self.file_loader = FileLoader('FLoader')
+        self._get_config()
+        self.send_dev_message({'text': 'TBot is started'}, 'telegram')
 
     def __del__(self):
         logger.error(f'Traceback: {traceback.format_exc()}')
@@ -326,7 +328,7 @@ class TBotClass:
             current_try += 1
             try:
                 res = requests.post(self.config.get('MAIL', 'message_server_address') + '/' + by, data=data,
-                              headers={'Connection': 'close'})
+                                    headers={'Connection': 'close'})
             except Exception as _ex:
                 logger.exception(_ex)
             else:
