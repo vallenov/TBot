@@ -71,8 +71,10 @@ class TBotClass:
             send_data = dict()
             send_data['subject'] = 'TBot NEW USER'
             send_data['text'] = f'New user added. Chat_id: {chat_id}, login: {login}, first_name: {first_name}'
-            self.send_dev_message(send_data, 'mail')
-            self.send_dev_message(send_data, 'telegram')
+            mail_resp = self.send_dev_message(send_data, 'mail')
+            telegram_resp = self.send_dev_message(send_data, 'telegram')
+            if mail_resp['res'] == 'ERROR' or telegram_resp['res'] == 'ERROR':
+                logger.warning(f'Message do not received. MAIL = {mail_resp}, Telegram = {telegram_resp}')
         else:
             privileges = Loader.users[chat_id]['value']
         if message.content_type == 'text':
@@ -300,7 +302,7 @@ class TBotClass:
         resp['text'] = ' '.join(lst[2:])
         return resp
 
-    def send_dev_message(self, data: dict, by: str = 'mail'):
+    def send_dev_message(self, data: dict, by: str = 'mail') -> dict:
         """
         Send message to admin
         :param data: {'to': name or email, 'subject': 'subject' (unnecessary), 'text': 'text'}
@@ -308,7 +310,7 @@ class TBotClass:
         """
         if by not in ('mail', 'telegram'):
             logger.error(f'Wrong parameter by ({by}) in send_dev_message')
-            return
+            return {'res': 'ERROR', 'descr': f'Wrong parameter by ({by}) in send_dev_message'}
         if by == 'mail':
             data.update({'to': self.config.get('MAIL', 'address')})
         else:
@@ -317,11 +319,11 @@ class TBotClass:
         while current_try < MAX_TRY:
             current_try += 1
             try:
-                requests.post(self.config.get('MAIL', 'message_server_address') + '/' + by, data=data,
+                res = requests.post(self.config.get('MAIL', 'message_server_address') + '/' + by, data=data,
                               headers={'Connection': 'close'})
             except Exception as _ex:
                 logger.exception(_ex)
             else:
                 logger.info('Send successful')
-                return
+                return res.text
         logger.error('Max try exceeded')
