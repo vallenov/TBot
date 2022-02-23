@@ -2,6 +2,7 @@ import logging
 import random
 import os
 import pandas as pd
+import subprocess as sb
 
 from loaders.loader import Loader, check_permission
 
@@ -107,4 +108,22 @@ class FileLoader(Loader):
         met_cards_path = os.path.join('file_db', 'metaphorical_cards')
         random_card = random.choice(os.listdir(met_cards_path))
         resp['photo'] = os.path.join(met_cards_path, random_card)
+        return resp
+
+    @check_permission(needed_level='root')
+    def get_server_ip(self, **kwargs) -> dict:
+        """
+        Get server ip
+        :param:
+        :return: dict with ip
+        """
+        logger.info('get_self_ip')
+        resp = {}
+        output = sb.check_output("ifconfig | "
+                                 "grep `ifconfig -s | "
+                                 "grep '\<w.*' | "
+                                 "awk '{print $1}'` -A 1 | "
+                                 "grep inet | "
+                                 "awk '{print $2}'", shell=True)
+        resp['text'] = output.decode()
         return resp

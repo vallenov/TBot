@@ -45,6 +45,8 @@ class TBotClass:
         self.internet_loader = InternetLoader('ILoader')
         self.db_loader = DBLoader('DBLoader')
         self.file_loader = FileLoader('FLoader')
+        self._get_config()
+        self.send_dev_message({'text': 'TBot is started'}, 'telegram')
 
     def __del__(self):
         logger.error(f'Traceback: {traceback.format_exc()}')
@@ -123,6 +125,8 @@ class TBotClass:
                 resp = self.file_loader.get_metaphorical_card(privileges=privileges)
             elif form_text == 'russian_painting' or form_text == 'русская_картина':
                 resp = self.internet_loader.get_russian_painting(privileges=privileges)
+            elif form_text == 'ip':
+                resp = self.file_loader.get_server_ip(privileges=privileges)
             elif TBotClass._is_phone_number(form_text) is not None:
                 phone_number = TBotClass._is_phone_number(form_text)
                 resp = self.internet_loader.get_phone_number_info(phone_number, privileges=privileges)
@@ -178,8 +182,9 @@ class TBotClass:
         if Loader.privileges_levels['trusted'] <= privileges:
             pass
         if Loader.privileges_levels['root'] <= privileges:
-            markup.add(InlineKeyboardButton("🛠 Admins help/Руководство админу", callback_data="admins_help"))
-            markup.add(InlineKeyboardButton("👥 Users/Пользователи", callback_data="users"))
+            markup.add(InlineKeyboardButton("🛠 Admins help/Руководство админу", callback_data="admins_help"),
+                       InlineKeyboardButton("👥 Users/Пользователи", callback_data="users"),
+                       InlineKeyboardButton("🌐 Server IP/IP-адрес сервера", callback_data="ip"))
         return markup
 
     @check_permission()
@@ -323,7 +328,7 @@ class TBotClass:
             current_try += 1
             try:
                 res = requests.post(self.config.get('MAIL', 'message_server_address') + '/' + by, data=data,
-                              headers={'Connection': 'close'})
+                                    headers={'Connection': 'close'})
             except Exception as _ex:
                 logger.exception(_ex)
             else:

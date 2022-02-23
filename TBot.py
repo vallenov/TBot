@@ -31,9 +31,10 @@ def tbot():
 
     conversation_logger = logging.getLogger('conversation')
     conversation_logger.setLevel(logging.INFO)
-    if not os.path.exists(os.path.join(DOWNLOADS)):
-        os.mkdir(os.path.join(DOWNLOADS))
-        os.chown(os.path.join(DOWNLOADS), 1000, 1000)
+    curdir = os.curdir
+    if not os.path.exists(os.path.join(curdir, DOWNLOADS)):
+        os.mkdir(os.path.join(curdir, DOWNLOADS))
+        os.chown(os.path.join(curdir, DOWNLOADS), 1000, 1000)
     if not os.path.exists(os.path.join(DOWNLOADS, 'text')):
         os.mkdir(os.path.join(DOWNLOADS, 'text'))
         os.chown(os.path.join(DOWNLOADS, 'text'), 1000, 1000)
@@ -148,9 +149,6 @@ def tbot():
         if message.content_type == 'video':
             file_extention = '.mp4'
             file_info = bot.get_file(message.video.file_id)
-        if not os.path.exists(os.path.join(curdir, DOWNLOADS)):
-            os.mkdir(DOWNLOADS)
-            os.chown(os.path.join(curdir, DOWNLOADS), 1000, 1000)
         if not os.path.exists(os.path.join(curdir, DOWNLOADS, message.content_type)):
             os.mkdir(os.path.join(curdir, DOWNLOADS, message.content_type))
             os.chown(os.path.join(curdir, DOWNLOADS, message.content_type), 1000, 1000)
