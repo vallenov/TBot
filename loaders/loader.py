@@ -90,7 +90,6 @@ class Loader:
         :return: error response
         """
         resp = dict()
-        #resp['res'] = 'ERROR'
         resp['text'] = error_text
         return resp
 
@@ -109,15 +108,17 @@ class Loader:
         :return: string
         """
         fin_str = ''
-        # if di.get('res').upper() == 'ERROR':
-        #     descr = di.get('descr', None)
-        #     if descr is not None:
-        #         logger.error(f'Description: {descr}')
-        #         return descr
-        #     return 'Something is wrong'
         for key, value in di.items():
             if isinstance(key, int):
                 fin_str += f'{value}\n'
             else:
                 fin_str += f'{key}{delimiter}{value}\n'
         return fin_str
+
+    @staticmethod
+    def get_root_users():
+        root_users = []
+        for key, value in Loader.users.items():
+            if value['value'] == Loader.privileges_levels['root']:
+                root_users.append(key)
+        return root_users
