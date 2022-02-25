@@ -46,6 +46,7 @@ class TBotClass:
         self.db_loader = DBLoader('DBLoader')
         self.file_loader = FileLoader('FLoader')
         self._get_config()
+        logger.info(f'Send start message to root users')
         self.send_dev_message({'text': 'TBot is started'}, 'telegram')
 
     def __del__(self):
