@@ -90,7 +90,6 @@ class Loader:
         :return: error response
         """
         resp = dict()
-        #resp['res'] = 'ERROR'
         resp['text'] = error_text
         return resp
 
@@ -109,12 +108,6 @@ class Loader:
         :return: string
         """
         fin_str = ''
-        # if di.get('res').upper() == 'ERROR':
-        #     descr = di.get('descr', None)
-        #     if descr is not None:
-        #         logger.error(f'Description: {descr}')
-        #         return descr
-        #     return 'Something is wrong'
         for key, value in di.items():
             if isinstance(key, int):
                 fin_str += f'{value}\n'
