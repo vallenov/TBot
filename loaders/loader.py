@@ -121,3 +121,11 @@ class Loader:
             else:
                 fin_str += f'{key}{delimiter}{value}\n'
         return fin_str
+
+    @staticmethod
+    def get_root_users():
+        root_users = []
+        for key, value in Loader.users.items():
+            if value['value'] == Loader.privileges_levels['root']:
+                root_users.append(key)
+        return root_users
