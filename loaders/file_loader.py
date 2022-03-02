@@ -34,7 +34,7 @@ class FileLoader(Loader):
                 self.fife_db[file] = file_path
                 #self.poems = self._load_poems()
 
-    def load_poems(self) -> list:
+    def load_poems(self):
         """
         Load poems from file to memory
         """
