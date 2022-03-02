@@ -318,9 +318,9 @@ class TBotClass:
         """
         resp = {}
         if by not in ('mail', 'telegram'):
-            logger.error(f'Wrong parameter by ({by}) in send_dev_message')
             resp['res'] = 'ERROR'
             resp['descr'] = f'Wrong parameter by ({by}) in send_dev_message'
+            logger.error(resp['descr'])
             return resp
         if by == 'mail':
             data.update({'to': self.config.get('MAIL', 'address')})
