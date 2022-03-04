@@ -273,7 +273,7 @@ class DBLoader(Loader):
             cnt += 1
         with self.connection.cursor() as cursor:
             logger.info('Upload to DB')
-            query = "insert into TBot.tmp (author, name, text) values (%s, %s, %s)"
+            query = f"insert into {self.db_name}.tmp (author, name, text) values (%s, %s, %s)"
             cursor.executemany(query, lst)
             self.connection.commit()
             logger.info('Upload complete')
@@ -321,3 +321,26 @@ class DBLoader(Loader):
             return resp
         else:
             return Loader.error_resp('DB does not using')
+
+    @check_permission(needed_level='root')
+    def get_statistic(self, **kwargs):
+        """
+                Get poem from DB
+                :param:
+                :return: poesy string
+                """
+        logger.info('get_statistic')
+        resp = {'text': ''}
+        if self.use_db:
+            with self.connection.cursor() as cursor:
+                query = f"select u.chat_id, u.login, u.first_name, COUNT(u.chat_id)" \
+                        f"from {self.db_name}.log_requests lr" \
+                        f"join {self.db_name}.users u on lr.chat_id = u.chat_id" \
+                        f"GROUP by u.chat_id '"
+                cursor.execute(query)
+                for cur in cursor:
+                    resp['text'] += f'{cur[0]} {cur[1]} {cur[2]} {cur[3]}'
+            return resp
+        else:
+            return Loader.error_resp("DB isn't use")
+
