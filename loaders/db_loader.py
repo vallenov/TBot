@@ -325,21 +325,22 @@ class DBLoader(Loader):
     @check_permission(needed_level='root')
     def get_statistic(self, **kwargs):
         """
-                Get poem from DB
-                :param:
-                :return: poesy string
-                """
+        Get statistic
+        :param:
+        :return: statistic
+        """
         logger.info('get_statistic')
         resp = {'text': ''}
         if self.use_db:
             with self.connection.cursor() as cursor:
-                query = f"select u.chat_id, u.login, u.first_name, COUNT(u.chat_id) " \
+                query = f"select u.login, u.first_name, count(u.chat_id) " \
                         f"from {self.db_name}.log_requests lr " \
                         f"join {self.db_name}.users u on lr.chat_id = u.chat_id " \
-                        f"GROUP by u.chat_id"
+                        f"where lr.date_ins between  current_date() and current_date() + interval 1 day " \
+                        f"group by u.chat_id"
                 cursor.execute(query)
                 for cur in cursor:
-                    resp['text'] += f'{cur[0]} {cur[1]} {cur[2]} {cur[3]}'
+                    resp['text'] += f'{cur[0]} {cur[1]} {cur[2]}\n'
             return resp
         else:
             return Loader.error_resp("DB isn't use")
