@@ -107,14 +107,21 @@ class DBLoader(Loader):
             else:
                 return p_id
 
-    def add_user(self, user_id: str, privileges: int, login: str, first_name: str):
+    def log_request(self, chat_id):
+        with self.connection.cursor() as cursor:
+            query = f"insert into {self.db_name}.log_requests" \
+                     f"(chat_id) values ('{chat_id}')"
+            cursor.execute(query)
+            self.connection.commit()
+
+    def add_user(self, chat_id: str, privileges: int, login: str, first_name: str):
         """
         Add new user to DB and memory
         """
         logger.info('add_user')
         login_db = 'NULL' if login is None else f"'{login}'"
         first_name_db = 'NULL' if first_name is None else f"'{first_name}'"
-        user_id_db = f"'{user_id}'"
+        user_id_db = f"'{chat_id}'"
         if self.use_db:
             with self.connection.cursor() as cursor:
                 p_id = self.get_p_id(privileges)
@@ -124,11 +131,11 @@ class DBLoader(Loader):
                         f"({login_db}, {first_name_db}, {user_id_db}, {p_id})"
                 cursor.execute(query)
                 self.connection.commit()
-        logger.info(f'New user {user_id} added')
-        Loader.users[user_id] = dict()
-        Loader.users[user_id]['login'] = login
-        Loader.users[user_id]['first_name'] = first_name
-        Loader.users[user_id]['value'] = privileges
+        logger.info(f'New user {chat_id} added')
+        Loader.users[chat_id] = dict()
+        Loader.users[chat_id]['login'] = login
+        Loader.users[chat_id]['first_name'] = first_name
+        Loader.users[chat_id]['value'] = privileges
 
     @check_permission(needed_level='root')
     def update_user(self, text: str, **kwargs):
@@ -142,17 +149,17 @@ class DBLoader(Loader):
             logger.error(f'Not valid data')
             return Loader.error_resp(f'Not valid data')
         else:
-            user_id = lst[1]
+            chat_id = lst[1]
             user_inf = Loader.users.keys()
-            if all([user_id.lower() not in list(map(lambda x: x.lower(), user_inf)),
-                    user_id.lower() not in list(map(lambda x: Loader.users[x]['login'].lower()
+            if all([chat_id.lower() not in list(map(lambda x: x.lower(), user_inf)),
+                    chat_id.lower() not in list(map(lambda x: Loader.users[x]['login'].lower()
                     if Loader.users[x]['login'] is not None
                     else Loader.users[x]['login'], user_inf)),
-                    user_id.lower() not in list(map(lambda x: Loader.users[x]['first_name'].lower()
+                    chat_id.lower() not in list(map(lambda x: Loader.users[x]['first_name'].lower()
                     if Loader.users[x]['first_name'] is not None
                     else Loader.users[x]['first_name'], user_inf))]):
                 return Loader.error_resp('User not found')
-            user_id_db = f"'{user_id}'"
+            user_id_db = f"'{chat_id}'"
             privileges = int(lst[2])
         if self.use_db:
             with self.connection.cursor() as cursor:
@@ -164,8 +171,8 @@ class DBLoader(Loader):
                 cursor.execute(query)
                 cnt = 0
                 for cid in cursor:
-                    user_id = cid[0]
-                    user_id_db = f"'{user_id}'"
+                    chat_id = cid[0]
+                    chat_id_db = f"'{chat_id}'"
                     cnt += 1
                 if cnt > 1:
                     return Loader.error_resp('Count of founded data greater then 1')
@@ -173,13 +180,13 @@ class DBLoader(Loader):
                 p_id = self.get_p_id(privileges)
                 query = f'update {self.db_name}.users ' \
                         f'set privileges_id = {p_id} ' \
-                        f'where chat_id = {user_id_db} '
-                resp['text'] = f'User {user_id} updated'
+                        f'where chat_id = {chat_id_db} '
+                resp['text'] = f'User {chat_id} updated'
                 cursor.execute(query)
                 self.connection.commit()
         logger.info(f'Updating memory')
-        Loader.users[user_id]['value'] = privileges
-        logger.info(f'User {user_id} updated')
+        Loader.users[chat_id]['value'] = privileges
+        logger.info(f'User {chat_id} updated')
         return resp
 
     @check_permission(needed_level='root')
@@ -194,23 +201,23 @@ class DBLoader(Loader):
             logger.error(f'Not valid data')
             return Loader.error_resp(f'Not valid data')
         else:
-            user_id = lst[1]
-            if user_id not in Loader.users.keys():
+            chat_id = lst[1]
+            if chat_id not in Loader.users.keys():
                 return Loader.error_resp('User not found')
-            if Loader.users[user_id]['value'] >= Loader.privileges_levels['root']:
+            if Loader.users[chat_id]['value'] >= Loader.privileges_levels['root']:
                 return Loader.error_resp('Can not delete root users')
-            user_id_db = f"'{user_id}'"
+            chat_id_db = f"'{chat_id}'"
         if self.use_db:
             with self.connection.cursor() as cursor:
                 logger.info(f'Updating DB')
                 query = f'delete from {self.db_name}.users ' \
-                        f'where chat_id = {user_id_db} '
+                        f'where chat_id = {chat_id_db} '
                 cursor.execute(query)
                 self.connection.commit()
         logger.info(f'Updating memory')
-        Loader.users.pop(user_id)
-        resp['text'] = f'User {user_id} deleted'
-        logger.info(f'User {user_id} deleted')
+        Loader.users.pop(chat_id)
+        resp['text'] = f'User {chat_id} deleted'
+        logger.info(f'User {chat_id} deleted')
         return resp
 
     @check_permission(needed_level='root')
@@ -266,7 +273,7 @@ class DBLoader(Loader):
             cnt += 1
         with self.connection.cursor() as cursor:
             logger.info('Upload to DB')
-            query = "insert into TBot.tmp (author, name, text) values (%s, %s, %s)"
+            query = f"insert into {self.db_name}.tmp (author, name, text) values (%s, %s, %s)"
             cursor.executemany(query, lst)
             self.connection.commit()
             logger.info('Upload complete')
@@ -314,3 +321,26 @@ class DBLoader(Loader):
             return resp
         else:
             return Loader.error_resp('DB does not using')
+
+    @check_permission(needed_level='root')
+    def get_statistic(self, **kwargs):
+        """
+                Get poem from DB
+                :param:
+                :return: poesy string
+                """
+        logger.info('get_statistic')
+        resp = {'text': ''}
+        if self.use_db:
+            with self.connection.cursor() as cursor:
+                query = f"select u.chat_id, u.login, u.first_name, COUNT(u.chat_id) " \
+                        f"from {self.db_name}.log_requests lr " \
+                        f"join {self.db_name}.users u on lr.chat_id = u.chat_id " \
+                        f"GROUP by u.chat_id"
+                cursor.execute(query)
+                for cur in cursor:
+                    resp['text'] += f'{cur[0]} {cur[1]} {cur[2]} {cur[3]}'
+            return resp
+        else:
+            return Loader.error_resp("DB isn't use")
+
