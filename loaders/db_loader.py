@@ -107,6 +107,13 @@ class DBLoader(Loader):
             else:
                 return p_id
 
+    def log_request(self, chat_id):
+        with self.connection.cursor() as cursor:
+            query = f"insert into {self.db_name}.log_requests" \
+                     f"(chat_id) values ('{chat_id}')"
+            cursor.execute(query)
+            self.connection.commit()
+
     def add_user(self, chat_id: str, privileges: int, login: str, first_name: str):
         """
         Add new user to DB and memory
