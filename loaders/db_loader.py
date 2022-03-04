@@ -336,6 +336,7 @@ class DBLoader(Loader):
                 query = f"select u.login, u.first_name, count(u.chat_id) " \
                         f"from {self.db_name}.log_requests lr " \
                         f"join {self.db_name}.users u on lr.chat_id = u.chat_id " \
+                        f"where lr.date_ins between  current_date() and current_date() + interval 1 day " \
                         f"group by u.chat_id"
                 cursor.execute(query)
                 for cur in cursor:
