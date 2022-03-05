@@ -69,7 +69,7 @@ class TBotClass:
             login = message.json['chat'].get('username', None)
             first_name = message.json['chat'].get('first_name', None)
             privileges = Loader.privileges_levels['regular']
-            self.db_loader.add_user(user_id=chat_id,
+            self.db_loader.add_user(chat_id=chat_id,
                                     privileges=privileges,
                                     login=login,
                                     first_name=first_name)
@@ -131,8 +131,10 @@ class TBotClass:
                 resp = self.internet_loader.get_russian_painting(privileges=privileges)
             elif form_text == 'ip':
                 resp = self.file_loader.get_server_ip(privileges=privileges)
-            elif form_text == 'statistic' or form_text == 'статистика':
-                resp = self.db_loader.get_statistic(privileges=privileges)
+            elif form_text.startswith('statistic') or form_text.startswith('статистика'):
+                resp = self.db_loader.get_statistic(form_text, privileges=privileges)
+                if ' ' not in form_text:
+                    resp['markup'] = self._gen_statistic_markup(privileges=privileges)
             elif TBotClass._is_phone_number(form_text) is not None:
                 phone_number = TBotClass._is_phone_number(form_text)
                 resp = self.internet_loader.get_phone_number_info(phone_number, privileges=privileges)
@@ -156,6 +158,25 @@ class TBotClass:
                        InlineKeyboardButton("🎞 1990-2000", callback_data="movie 1990 2000"),
                        InlineKeyboardButton("🎞 2000-2010", callback_data="movie 2000 2010"),
                        InlineKeyboardButton("🎞 2010-2020", callback_data="movie 2010 2020"))
+        if Loader.privileges_levels['trusted'] <= privileges:
+            pass
+        if Loader.privileges_levels['root'] <= privileges:
+            pass
+        return markup
+
+    @staticmethod
+    def _gen_statistic_markup(privileges: int):
+        markup = InlineKeyboardMarkup()
+        markup.row_width = 1
+        if Loader.privileges_levels['untrusted'] <= privileges:
+            pass
+        if Loader.privileges_levels['test'] <= privileges:
+            pass
+        if Loader.privileges_levels['regular'] <= privileges:
+            markup.add(InlineKeyboardButton("📋 Today/Сегодня", callback_data="statistic today"),
+                       InlineKeyboardButton("📋 Week/Неделя", callback_data="statistic week"),
+                       InlineKeyboardButton("📋 Month/Месяц", callback_data="statistic month"),
+                       InlineKeyboardButton("📋 All/Вся", callback_data="statistic all"))
         if Loader.privileges_levels['trusted'] <= privileges:
             pass
         if Loader.privileges_levels['root'] <= privileges:
