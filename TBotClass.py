@@ -69,7 +69,7 @@ class TBotClass:
             login = message.json['chat'].get('username', None)
             first_name = message.json['chat'].get('first_name', None)
             privileges = Loader.privileges_levels['regular']
-            self.db_loader.add_user(user_id=chat_id,
+            self.db_loader.add_user(chat_id=chat_id,
                                     privileges=privileges,
                                     login=login,
                                     first_name=first_name)

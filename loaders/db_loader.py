@@ -121,14 +121,14 @@ class DBLoader(Loader):
         logger.info('add_user')
         login_db = 'NULL' if login is None else f"'{login}'"
         first_name_db = 'NULL' if first_name is None else f"'{first_name}'"
-        user_id_db = f"'{chat_id}'"
+        chat_id_db = f"'{chat_id}'"
         if self.use_db:
             with self.connection.cursor() as cursor:
                 p_id = self.get_p_id(privileges)
                 query = f'insert into {self.db_name}.users ' \
                         f'(login, first_name, chat_id, privileges_id) ' \
                         f'values ' \
-                        f"({login_db}, {first_name_db}, {user_id_db}, {p_id})"
+                        f"({login_db}, {first_name_db}, {chat_id_db}, {p_id})"
                 cursor.execute(query)
                 self.connection.commit()
         logger.info(f'New user {chat_id} added')
