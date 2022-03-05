@@ -323,7 +323,7 @@ class DBLoader(Loader):
             return Loader.error_resp('DB does not using')
 
     @check_permission(needed_level='root')
-    def get_statistic(self, **kwargs):
+    def get_statistic(self, text, **kwargs):
         """
         Get statistic
         :param:
@@ -331,12 +331,22 @@ class DBLoader(Loader):
         """
         logger.info('get_statistic')
         resp = {'text': ''}
+        lst = text.split()
+        if len(lst) == 1:
+            resp['text'] = 'Выберите интервал'
+            return resp
+        interval = {'today': 'where lr.date_ins between  current_date() and current_date() + interval 1 day ',
+                    'week': 'where lr.date_ins between current_date() - interval 7 day and current_date() ',
+                    'month': 'where lr.date_ins between current_date() - interval 30 day and current_date() ',
+                    'all': ''}
+        if lst[1] not in interval.keys():
+            return Loader.error_resp('Interval is not valid')
         if self.use_db:
             with self.connection.cursor() as cursor:
                 query = f"select u.login, u.first_name, count(u.chat_id) " \
                         f"from {self.db_name}.log_requests lr " \
                         f"join {self.db_name}.users u on lr.chat_id = u.chat_id " \
-                        f"where lr.date_ins between  current_date() and current_date() + interval 1 day " \
+                        f"{interval[lst[1]]}" \
                         f"group by u.chat_id"
                 cursor.execute(query)
                 for cur in cursor:
