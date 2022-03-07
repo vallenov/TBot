@@ -82,7 +82,8 @@ class TBotClass:
                 logger.warning(f'Message do not received. MAIL = {mail_resp}, Telegram = {telegram_resp}')
         else:
             privileges = Loader.users[chat_id]['value']
-        self.db_loader.log_request(chat_id)
+        if self.internet_loader.use_db:
+            self.db_loader.log_request(chat_id)
         if message.content_type == 'text':
             resp['status'] = 'OK'
             form_text = message.text.lower().strip()

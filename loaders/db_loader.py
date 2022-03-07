@@ -343,15 +343,23 @@ class DBLoader(Loader):
             return Loader.error_resp('Interval is not valid')
         if self.use_db:
             with self.connection.cursor() as cursor:
-                query = f"select u.login, u.first_name, count(u.chat_id) " \
+                query = f"select count(u.chat_id), u.login, u.first_name " \
                         f"from {self.db_name}.log_requests lr " \
                         f"join {self.db_name}.users u on lr.chat_id = u.chat_id " \
                         f"{interval[lst[1]]}" \
                         f"group by u.chat_id"
                 cursor.execute(query)
+                to_sort = []
                 for cur in cursor:
+                    to_sort.append([cur[0], cur[1], cur[2]])
+                for index_i in range(len(to_sort)):
+                    for index_j in range(len(to_sort) - 1):
+                        if index_i == index_j:
+                            continue
+                        elif to_sort[index_j][0] > to_sort[index_j + 1][0]:
+                            to_sort[index_j], to_sort[index_j + 1] = to_sort[index_j + 1], to_sort[index_j]
+                for cur in to_sort:
                     resp['text'] += f'{cur[0]} {cur[1]} {cur[2]}\n'
             return resp
         else:
-            return Loader.error_resp("DB isn't use")
-
+            return Loader.error_resp('DB is not used')
