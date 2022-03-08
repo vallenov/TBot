@@ -538,6 +538,8 @@ class InternetLoader(Loader):
         :return: book genres
         """
         logger.info('get_genres')
+        if self.book_genres:
+            return
         if self.config.has_option('URL', 'book_url'):
             book_url = self.config['URL']['book_url']
         else:
