@@ -22,6 +22,10 @@ class InternetLoader(Loader):
     Work with internet
     """
 
+    def __init__(self, name):
+        super().__init__(name)
+        self.book_genres = {}
+
     @staticmethod
     def _site_to_lxml(url: str, headers: dict = None) -> BeautifulSoup or None:
         """
@@ -32,6 +36,7 @@ class InternetLoader(Loader):
         try:
             resp = requests.get(url, headers=headers)
             if resp.status_code == 200:
+                resp.encoding = 'utf-8'
                 soup = BeautifulSoup(resp.text, 'lxml')
             else:
                 logger.error(f'Status of response: {resp.status_code}')
@@ -525,6 +530,70 @@ class InternetLoader(Loader):
                     logger.warning(f'No elements with cyrillic symbols')
                     break
         return Loader.error_resp(f'Movie {year_from}-{year_to} years not found')
+
+    def get_book_genres(self):
+        """
+        Get list of book's genres
+        :param:
+        :return: book genres
+        """
+        logger.info('get_genres')
+        if self.config.has_option('URL', 'book_url'):
+            book_url = self.config['URL']['book_url']
+        else:
+            return Loader.error_resp("I can't do this yet😔")
+        soup = InternetLoader._site_to_lxml(book_url)
+        if soup is None:
+            logger.error(f'Empty soup data')
+            return Loader.error_resp()
+        genre_raw = soup.find_all('div', class_='card-white genre-block')
+        for genre in genre_raw:
+            title_raw = genre.find('a', class_='main-genre-title')
+            if title_raw.text:
+                self.book_genres[title_raw.text] = title_raw.get('href')
+
+    @check_permission()
+    def get_book(self, text, **kwargs):
+        """
+        Get random book from internet
+        :param:
+        :return: book
+        """
+        logger.info('get_book')
+        resp = {}
+        err = self.get_book_genres()
+        if err:
+            return err
+        lst = text.split()
+        if len(lst) == 1:
+            resp['text'] = 'Выберите жанр'
+            return resp
+        category = ''
+        for genre in self.book_genres.keys():
+            if genre.lower().startswith(lst[1]):
+                category = self.book_genres[genre]
+        if not category:
+            return Loader.error_resp('Genre is not valid')
+        site = '/'.join(self.config['URL']['book_url'].split('/')[:3])
+        soup = InternetLoader._site_to_lxml(f'{site}{category}/listview/biglist/~6')
+        if soup is None:
+            logger.error(f'Empty soup data')
+            return Loader.error_resp()
+        a_raw = soup.find_all('a', class_='pagination-page pagination-wide')
+        last_page_raw = a_raw[-1].get('href')
+        last_page = last_page_raw.split('~')[-1]
+        random_page = random.choice(range(1, int(last_page) + 1))
+        soup = InternetLoader._site_to_lxml(f'{site}{category}/listview/biglist/~{random_page}')
+        if soup is None:
+            logger.error(f'Empty soup data')
+            return Loader.error_resp()
+        div_raw = soup.find('div', class_='blist-biglist')
+        book_list = div_raw.find_all('div', class_='book-item-manage')
+        random_book_raw = random.choice(book_list)
+        random_book = random_book_raw.find('a', class_='brow-book-name with-cycle')
+        resp['text'] = f"{random_book.get('title')}\n"
+        resp['text'] += f"{site}{random_book.get('href')}"
+        return resp
 
     @check_permission()
     def get_russian_painting(self, **kwargs) -> dict:
