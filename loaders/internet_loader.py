@@ -568,12 +568,31 @@ class InternetLoader(Loader):
         if len(lst) == 1:
             resp['text'] = 'Выберите жанр'
             return resp
-        interval = {'today': 'where lr.date_ins between  current_date() and current_date() + interval 1 day ',
-                    'week': 'where lr.date_ins between current_date() - interval 7 day and current_date() ',
-                    'month': 'where lr.date_ins between current_date() - interval 30 day and current_date() ',
-                    'all': ''}
-        if lst[1] not in interval.keys():
-            return Loader.error_resp('Interval is not valid')
+        category = ''
+        for genre in self.book_genres.keys():
+            if genre.lower().startswith(lst[1]):
+                category = self.book_genres[genre]
+        if not category:
+            return Loader.error_resp('Genre is not valid')
+        site = '/'.join(self.config['URL']['book_url'].split('/')[:3])
+        soup = InternetLoader._site_to_lxml(f'{site}{category}/listview/biglist/~6')
+        if soup is None:
+            logger.error(f'Empty soup data')
+            return Loader.error_resp()
+        a_raw = soup.find_all('a', class_='pagination-page pagination-wide')
+        last_page_raw = a_raw[-1].get('href')
+        last_page = last_page_raw.split('~')[-1]
+        random_page = random.choice(range(1, int(last_page) + 1))
+        soup = InternetLoader._site_to_lxml(f'{site}{category}/listview/biglist/~{random_page}')
+        if soup is None:
+            logger.error(f'Empty soup data')
+            return Loader.error_resp()
+        div_raw = soup.find('div', class_='blist-biglist')
+        book_list = div_raw.find_all('div', class_='book-item-manage')
+        random_book_raw = random.choice(book_list)
+        random_book = random_book_raw.find('a', class_='brow-book-name with-cycle')
+        resp['text'] = f"{random_book.get('title')}\n"
+        resp['text'] += f"{site}{random_book.get('href')}"
         return resp
 
     @check_permission()
