@@ -114,6 +114,10 @@ class TBotClass:
                 resp = self.internet_loader.get_random_movie(form_text, privileges=privileges)
                 if ' ' not in form_text:
                     resp['markup'] = self._gen_movie_markup(privileges=privileges)
+            elif form_text.startswith('book') or form_text.startswith('книга'):
+                resp = self.internet_loader.get_book(form_text, privileges=privileges)
+                if ' ' not in form_text and not resp['text'].startswith('Permission denied'):
+                    resp['markup'] = self.gen_custom_markup('book', self.internet_loader.book_genres, '📖')
             elif form_text.startswith('update') or form_text.startswith('обновить'):
                 resp = self.db_loader.update_user(form_text, privileges=privileges)
             elif form_text.startswith('delete') or form_text.startswith('удалить'):
@@ -142,6 +146,17 @@ class TBotClass:
             else:
                 resp = self._get_hello(privileges=privileges)
             return resp
+
+    @staticmethod
+    def gen_custom_markup(command,  category: dict, smile='🔹', row_width=1):
+        markup = InlineKeyboardMarkup()
+        markup.row_width = row_width
+        for cat in category.keys():
+            short_cat = cat.split()[0]
+            short_cat = short_cat.replace(',', '')
+            short_cat = short_cat.lower()
+            markup.add(InlineKeyboardButton(f'{smile} {cat}', callback_data=f'{command} {short_cat}'))
+        return markup
 
     @staticmethod
     def _gen_movie_markup(privileges: int):
@@ -204,6 +219,7 @@ class TBotClass:
                        InlineKeyboardButton("🍲 Food/Еда", callback_data="food"),
                        InlineKeyboardButton("🪶 Poem/Стих", callback_data="poem"),
                        InlineKeyboardButton("🎞 Movie/Фильм", callback_data="movie"),
+                       InlineKeyboardButton("📖 Book/Книга", callback_data="book"),
                        InlineKeyboardButton("🎑 Metaphorical card/Метафорическая карта",
                                             callback_data="metaphorical_card"),
                        InlineKeyboardButton("🏞 Russian painting/Русская картина", callback_data="russian_painting"))

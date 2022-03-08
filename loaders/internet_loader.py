@@ -22,6 +22,10 @@ class InternetLoader(Loader):
     Work with internet
     """
 
+    def __init__(self, name):
+        super().__init__(name)
+        self.book_genres = {}
+
     @staticmethod
     def _site_to_lxml(url: str, headers: dict = None) -> BeautifulSoup or None:
         """
@@ -32,6 +36,7 @@ class InternetLoader(Loader):
         try:
             resp = requests.get(url, headers=headers)
             if resp.status_code == 200:
+                resp.encoding = 'utf-8'
                 soup = BeautifulSoup(resp.text, 'lxml')
             else:
                 logger.error(f'Status of response: {resp.status_code}')
@@ -525,6 +530,51 @@ class InternetLoader(Loader):
                     logger.warning(f'No elements with cyrillic symbols')
                     break
         return Loader.error_resp(f'Movie {year_from}-{year_to} years not found')
+
+    def get_book_genres(self):
+        """
+        Get list of book's genres
+        :param:
+        :return: book genres
+        """
+        logger.info('get_genres')
+        if self.config.has_option('URL', 'book_url'):
+            book_url = self.config['URL']['book_url']
+        else:
+            return Loader.error_resp("I can't do this yet😔")
+        soup = InternetLoader._site_to_lxml(book_url)
+        if soup is None:
+            logger.error(f'Empty soup data')
+            return Loader.error_resp()
+        genre_raw = soup.find_all('div', class_='card-white genre-block')
+        for genre in genre_raw:
+            title_raw = genre.find('a', class_='main-genre-title')
+            if title_raw.text:
+                self.book_genres[title_raw.text] = title_raw.get('href')
+
+    @check_permission()
+    def get_book(self, text, **kwargs):
+        """
+        Get random book from internet
+        :param:
+        :return: book
+        """
+        logger.info('get_book')
+        resp = {}
+        err = self.get_book_genres()
+        if err:
+            return err
+        lst = text.split()
+        if len(lst) == 1:
+            resp['text'] = 'Выберите жанр'
+            return resp
+        interval = {'today': 'where lr.date_ins between  current_date() and current_date() + interval 1 day ',
+                    'week': 'where lr.date_ins between current_date() - interval 7 day and current_date() ',
+                    'month': 'where lr.date_ins between current_date() - interval 30 day and current_date() ',
+                    'all': ''}
+        if lst[1] not in interval.keys():
+            return Loader.error_resp('Interval is not valid')
+        return resp
 
     @check_permission()
     def get_russian_painting(self, **kwargs) -> dict:
