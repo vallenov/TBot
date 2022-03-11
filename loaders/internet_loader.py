@@ -452,32 +452,36 @@ class InternetLoader(Loader):
         command = text.split(' ')
         year_from = 0
         year_to = 0
+        if len(command) > 2:
+            return Loader.error_resp('Format of data is not valid')
         if len(command) == 1:
             resp['text'] = 'Выберите промежуток'
             return resp
         elif len(command) == 2:
-            try:
-                act_year_from = int(command[1])
-                act_year_to = act_year_from
-                year_from = act_year_from
-                year_to = act_year_to
-            except ValueError as e:
-                return Loader.error_resp('Format of data is not valid')
+            if '-' not in command[1]:
+                try:
+                    act_year_from = int(command[1])
+                    act_year_to = act_year_from
+                    year_from = act_year_from
+                    year_to = act_year_to
+                except ValueError as e:
+                    return Loader.error_resp('Format of data is not valid')
+                else:
+                    if act_year_from < 1890 or act_year_to > 2022:
+                        return Loader.error_resp(f'Year may be from 1890 to {datetime.datetime.now().year}')
             else:
-                if act_year_from < 1890 or act_year_to > 2022:
-                    return Loader.error_resp(f'Year may be from 1890 to {datetime.datetime.now().year}')
-        elif len(command) > 2:
-            try:
-                act_year_from = int(command[1])
-                act_year_to = int(command[2])
-                if act_year_from < 1890 or act_year_to > 2022:
-                    return Loader.error_resp(f'Year may be from 1890 to {datetime.datetime.now().year}')
-                elif act_year_from > act_year_to:
-                    return Loader.error_resp(f'Start year may be greater then finish year')
-                year_from = random.choice(range(int(command[1]), int(command[2]) + 1))
-                year_to = year_from
-            except ValueError as e:
-                return Loader.error_resp('Format of data is not valid')
+                try:
+                    split_years = command[1].split('-')
+                    act_year_from = int(split_years[0])
+                    act_year_to = int(split_years[1])
+                    if act_year_from < 1890 or act_year_to > 2022:
+                        return Loader.error_resp(f'Year may be from 1890 to {datetime.datetime.now().year}')
+                    elif act_year_from > act_year_to:
+                        return Loader.error_resp(f'Start year may be greater then finish year')
+                    year_from = random.choice(range(int(split_years[0]), int(split_years[1]) + 1))
+                    year_to = year_from
+                except ValueError as e:
+                    return Loader.error_resp('Format of data is not valid')
         if self.config.has_option('URL', 'random_movie_url'):
             random_movie_url = self.config['URL']['random_movie_url'].format(year_from, year_to)
         else:
