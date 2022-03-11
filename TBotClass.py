@@ -168,25 +168,6 @@ class TBotClass:
         return markup
 
     @staticmethod
-    def _gen_statistic_markup(privileges: int):
-        markup = InlineKeyboardMarkup()
-        markup.row_width = 1
-        if Loader.privileges_levels['untrusted'] <= privileges:
-            pass
-        if Loader.privileges_levels['test'] <= privileges:
-            pass
-        if Loader.privileges_levels['regular'] <= privileges:
-            markup.add(InlineKeyboardButton("📋 Today/Сегодня", callback_data="statistic today"),
-                       InlineKeyboardButton("📋 Week/Неделя", callback_data="statistic week"),
-                       InlineKeyboardButton("📋 Month/Месяц", callback_data="statistic month"),
-                       InlineKeyboardButton("📋 All/Вся", callback_data="statistic all"))
-        if Loader.privileges_levels['trusted'] <= privileges:
-            pass
-        if Loader.privileges_levels['root'] <= privileges:
-            pass
-        return markup
-
-    @staticmethod
     def _gen_markup(privileges: int):
         markup = InlineKeyboardMarkup()
         markup.row_width = 1
