@@ -112,8 +112,11 @@ class TBotClass:
                     resp = self.file_loader.get_poem(form_text, privileges=privileges)
             elif form_text.startswith('movie') or form_text.startswith('фильм'):
                 resp = self.internet_loader.get_random_movie(form_text, privileges=privileges)
-                if ' ' not in form_text:
-                    resp['markup'] = self._gen_movie_markup(privileges=privileges)
+                if ' ' not in form_text and not resp['text'].startswith('Permission denied'):
+                    resp['markup'] = self.gen_custom_markup('movie',
+                                                            ['1950-1960', '1960-1970', '1970-1980',
+                                                             '1980-1990', '1990-2000', '2000-2010', '2010-2020'],
+                                                            '🎞')
             elif form_text.startswith('book') or form_text.startswith('книга'):
                 resp = self.internet_loader.get_book(form_text, privileges=privileges)
                 if ' ' not in form_text and not resp['text'].startswith('Permission denied'):
@@ -148,36 +151,18 @@ class TBotClass:
             return resp
 
     @staticmethod
-    def gen_custom_markup(command,  category: dict, smile='🔹', row_width=1):
+    def gen_custom_markup(command,  category, smile='🔹', row_width=1):
         markup = InlineKeyboardMarkup()
         markup.row_width = row_width
-        for cat in category.keys():
+        if isinstance(category, dict):
+            item = category.keys()
+        if isinstance(category, list):
+            item = category
+        for cat in item:
             short_cat = cat.split()[0]
             short_cat = short_cat.replace(',', '')
             short_cat = short_cat.lower()
             markup.add(InlineKeyboardButton(f'{smile} {cat}', callback_data=f'{command} {short_cat}'))
-        return markup
-
-    @staticmethod
-    def _gen_movie_markup(privileges: int):
-        markup = InlineKeyboardMarkup()
-        markup.row_width = 1
-        if Loader.privileges_levels['untrusted'] <= privileges:
-            pass
-        if Loader.privileges_levels['test'] <= privileges:
-            pass
-        if Loader.privileges_levels['regular'] <= privileges:
-            markup.add(InlineKeyboardButton("🎞 1950-1960", callback_data="movie 1950 1960"),
-                       InlineKeyboardButton("🎞 1960-1970", callback_data="movie 1960 1970"),
-                       InlineKeyboardButton("🎞 1970-1980", callback_data="movie 1970 1980"),
-                       InlineKeyboardButton("🎞 1980-1990", callback_data="movie 1980 1990"),
-                       InlineKeyboardButton("🎞 1990-2000", callback_data="movie 1990 2000"),
-                       InlineKeyboardButton("🎞 2000-2010", callback_data="movie 2000 2010"),
-                       InlineKeyboardButton("🎞 2010-2020", callback_data="movie 2010 2020"))
-        if Loader.privileges_levels['trusted'] <= privileges:
-            pass
-        if Loader.privileges_levels['root'] <= privileges:
-            pass
         return markup
 
     @staticmethod
