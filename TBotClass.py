@@ -141,8 +141,10 @@ class TBotClass:
                 resp = self.file_loader.get_server_ip(privileges=privileges)
             elif form_text.startswith('statistic') or form_text.startswith('статистика'):
                 resp = self.db_loader.get_statistic(form_text, privileges=privileges)
-                if ' ' not in form_text:
-                    resp['markup'] = self._gen_statistic_markup(privileges=privileges)
+                if ' ' not in form_text and not resp['text'].startswith('Permission denied'):
+                    resp['markup'] = self.gen_custom_markup('statistic',
+                                                            ['Today', 'Week', 'Month', 'All'],
+                                                            '📋')
             elif TBotClass._is_phone_number(form_text) is not None:
                 phone_number = TBotClass._is_phone_number(form_text)
                 resp = self.internet_loader.get_phone_number_info(phone_number, privileges=privileges)
