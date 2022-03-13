@@ -32,13 +32,11 @@ class FileLoader(Loader):
             file_path = os.path.join('file_db', file)
             if os.path.exists(file_path):
                 self.fife_db[file] = file_path
-                #self.poems = self._load_poems()
 
     def load_poems(self):
         """
         Load poems from file to memory
         """
-        logger.info('load_poems')
         file_path = self.fife_db.get('poems.xlsx', False)
         self.poems = []
         if file_path:
@@ -70,7 +68,6 @@ class FileLoader(Loader):
         :param:
         :return: poesy string
         """
-        logger.info('get_poem')
         lst = text.split()
         resp = {}
         if hasattr(self, 'poems'):
@@ -103,7 +100,6 @@ class FileLoader(Loader):
         :param:
         :return: metaphorical card photo
         """
-        logger.info('get_metaphorical_card')
         resp = {}
         met_cards_path = os.path.join('file_db', 'metaphorical_cards')
         random_card = random.choice(os.listdir(met_cards_path))
@@ -117,7 +113,6 @@ class FileLoader(Loader):
         :param:
         :return: dict with ip
         """
-        logger.info('get_self_ip')
         resp = {}
         output = sb.check_output("ifconfig | "
                                  "grep `ifconfig -s | "

@@ -143,7 +143,6 @@ class DBLoader(Loader):
         Update user privileges in DB and memory
         """
         resp = {}
-        logger.info('update_user')
         lst = text.split()
         if len(lst) != 3:
             logger.error(f'Not valid data')
@@ -195,7 +194,6 @@ class DBLoader(Loader):
         Delete user from DB and memory
         """
         resp = {}
-        logger.info('delete_user')
         lst = text.split()
         if len(lst) != 2:
             logger.error(f'Not valid data')
@@ -226,7 +224,6 @@ class DBLoader(Loader):
         Show current users information
         """
         resp = {}
-        logger.info('show_users')
         cnt = 1
         users = {}
         max_rows_lens = [0] * 5
@@ -285,7 +282,6 @@ class DBLoader(Loader):
         :param:
         :return: poesy string
         """
-        logger.info('get_poem')
         resp = {}
         if self.use_db:
             lst = text.split()
@@ -329,7 +325,6 @@ class DBLoader(Loader):
         :param:
         :return: statistic
         """
-        logger.info('get_statistic')
         resp = {'text': ''}
         lst = text.split()
         if len(lst) == 1:

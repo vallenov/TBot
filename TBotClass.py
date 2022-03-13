@@ -207,7 +207,6 @@ class TBotClass:
         :param privileges: user privileges
         :return: {'res': 'OK or ERROR', 'text': 'message'}
         """
-        logger.info('get_help')
         resp = dict()
         resp['text'] = ''
         # if Loader.privileges_levels['untrusted'] <= privileges:
@@ -233,7 +232,6 @@ class TBotClass:
         :param privileges: user privileges
         :return: {'res': 'OK or ERROR', 'text': 'message'}
         """
-        logger.info('get_help')
         resp = dict()
         # if Loader.privileges_levels['untrusted'] <= privileges:
         #     resp[0] = f'Permission denied'
@@ -255,7 +253,6 @@ class TBotClass:
         :param :
         :return:
         """
-        logger.info('get_admins_help')
         resp = dict()
         resp['text'] = str(f'Update "chat_id" "privileges"\n'
                            f'Delete "chat_id"\n'
@@ -304,7 +301,6 @@ class TBotClass:
         :param text: string "command chat_id message"
         :return: dict {'chat_id': 1234567, 'text': 'some'}
         """
-        logger.info('send_other')
         resp = {}
         lst = text.split()
         if len(lst) < 3:
