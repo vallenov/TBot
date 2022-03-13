@@ -55,7 +55,6 @@ class InternetLoader(Loader):
         :param:
         :return: string like {'USD': '73,6059', 'EUR':'83,1158'}
         """
-        logger.info('get_exchange')
         resp = {}
         if self.config.has_option('URL', 'exchange_url'):
             exchange_url = self.config['URL']['exchange_url']
@@ -83,7 +82,6 @@ class InternetLoader(Loader):
         :param:
         :return: dict like {'Сегодня': '10°/15°', 'ср 12': '11°/18°'}
         """
-        logger.info('get_weather')
         resp = {}
         if self.config.has_option('URL', 'weather_url'):
             weather_url = self.config['URL']['weather_url']
@@ -111,7 +109,6 @@ class InternetLoader(Loader):
         :param:
         :return: dict like {'quote1': 'author1', 'quote2: 'author2'}
         """
-        logger.info('get_quote')
         resp = {}
         if self.config.has_option('URL', 'quote_url'):
             quote_url = self.config['URL']['quote_url']
@@ -137,7 +134,6 @@ class InternetLoader(Loader):
         :param:
         :return: wish string
         """
-        logger.info('get_wish')
         resp = {}
         if self.config.has_option('URL', 'wish_url'):
             wish_url = self.config['URL']['wish_url']
@@ -159,7 +155,6 @@ class InternetLoader(Loader):
         :param:
         :return: wish string
         """
-        logger.info('get_news')
         resp = {}
         count = 5
         lst = text.split(' ')
@@ -195,7 +190,6 @@ class InternetLoader(Loader):
         :param:
         :return: affirmation string
         """
-        logger.info('get_affirmationx')
         resp = {}
         if self.config.has_option('URL', 'affirmation_url'):
             affirmation_url = self.config['URL']['affirmation_url']
@@ -234,7 +228,6 @@ class InternetLoader(Loader):
         :param:
         :return: events digest
         """
-        logger.info('get_events')
         self.async_url_data = []
         tasks = []
         resp = {}
@@ -279,7 +272,6 @@ class InternetLoader(Loader):
         :param:
         :return: events digest
         """
-        logger.info('get_events')
         resp = {}
         if self.config.has_option('URL', 'events_url'):
             events_url = self.config['URL']['events_url']
@@ -315,7 +307,6 @@ class InternetLoader(Loader):
         :param:
         :return: restaurant string
         """
-        logger.info('get_restaurant')
         resp = {}
         if self.config.has_option('URL', 'restaurant_url'):
             restaurant_url = self.config['URL']['restaurant_url']
@@ -359,7 +350,6 @@ class InternetLoader(Loader):
         :param:
         :return: poesy string
         """
-        logger.info('get_poem')
         resp = {}
         if self.config.has_option('URL', 'poesy_url'):
             poesy_url = self.config['URL']['poesy_url']
@@ -414,7 +404,6 @@ class InternetLoader(Loader):
         :param:
         :return: poesy string
         """
-        logger.info('get_phone_number_info')
         resp = {}
         if self.config.has_option('URL', 'kodi_url'):
             kodi_url = self.config['URL']['kodi_url']
@@ -447,7 +436,6 @@ class InternetLoader(Loader):
         :param:
         :return: random movie string
         """
-        logger.info('get_random_movie')
         resp = {}
         command = text.split(' ')
         year_from = 0
@@ -513,7 +501,6 @@ class InternetLoader(Loader):
                 logger.warning(f'No elements with poster')
                 continue
             try_count = 0
-            #simbols = string.ascii_lowercase + string.ascii_uppercase + string.digits + string.punctuation
             symbols = 'аоуыэяеёюибвгдйжзклмнпрстфхцчшщьъАОУЫЭЯЕЁЮИБВГДЙЖЗКЛМНПРСТФХЦЧШЩЬЪ'
             while True:
                 random_movie_raw = random.choice(div_elements)
@@ -541,7 +528,6 @@ class InternetLoader(Loader):
         :param:
         :return: book genres
         """
-        logger.info('get_genres')
         if self.book_genres:
             return
         if self.config.has_option('URL', 'book_url'):
@@ -565,7 +551,6 @@ class InternetLoader(Loader):
         :param:
         :return: book
         """
-        logger.info('get_book')
         resp = {}
         err = self.get_book_genres()
         if err:
@@ -608,7 +593,6 @@ class InternetLoader(Loader):
         :param:
         :return: dict
         """
-        logger.info('get_russian_painting')
         resp = {}
         if self.config.has_option('URL', 'russian_painting_url'):
             russian_painting_url = self.config['URL']['russian_painting_url']

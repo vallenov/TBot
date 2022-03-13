@@ -168,25 +168,6 @@ class TBotClass:
         return markup
 
     @staticmethod
-    def _gen_statistic_markup(privileges: int):
-        markup = InlineKeyboardMarkup()
-        markup.row_width = 1
-        if Loader.privileges_levels['untrusted'] <= privileges:
-            pass
-        if Loader.privileges_levels['test'] <= privileges:
-            pass
-        if Loader.privileges_levels['regular'] <= privileges:
-            markup.add(InlineKeyboardButton("📋 Today/Сегодня", callback_data="statistic today"),
-                       InlineKeyboardButton("📋 Week/Неделя", callback_data="statistic week"),
-                       InlineKeyboardButton("📋 Month/Месяц", callback_data="statistic month"),
-                       InlineKeyboardButton("📋 All/Вся", callback_data="statistic all"))
-        if Loader.privileges_levels['trusted'] <= privileges:
-            pass
-        if Loader.privileges_levels['root'] <= privileges:
-            pass
-        return markup
-
-    @staticmethod
     def _gen_markup(privileges: int):
         markup = InlineKeyboardMarkup()
         markup.row_width = 1
@@ -226,7 +207,6 @@ class TBotClass:
         :param privileges: user privileges
         :return: {'res': 'OK or ERROR', 'text': 'message'}
         """
-        logger.info('get_help')
         resp = dict()
         resp['text'] = ''
         # if Loader.privileges_levels['untrusted'] <= privileges:
@@ -252,7 +232,6 @@ class TBotClass:
         :param privileges: user privileges
         :return: {'res': 'OK or ERROR', 'text': 'message'}
         """
-        logger.info('get_help')
         resp = dict()
         # if Loader.privileges_levels['untrusted'] <= privileges:
         #     resp[0] = f'Permission denied'
@@ -274,7 +253,6 @@ class TBotClass:
         :param :
         :return:
         """
-        logger.info('get_admins_help')
         resp = dict()
         resp['text'] = str(f'Update "chat_id" "privileges"\n'
                            f'Delete "chat_id"\n'
@@ -323,7 +301,6 @@ class TBotClass:
         :param text: string "command chat_id message"
         :return: dict {'chat_id': 1234567, 'text': 'some'}
         """
-        logger.info('send_other')
         resp = {}
         lst = text.split()
         if len(lst) < 3:

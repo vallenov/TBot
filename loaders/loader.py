@@ -29,6 +29,7 @@ def check_permission(needed_level: str = 'regular'):
         :return: wrapped function
         """
         def wrap(self, *args, **kwargs):
+            logger.info(func.__qualname__)
             logger.info(f'check permission')
             if needed_level not in Loader.privileges_levels.keys():
                 logger.error(f'{needed_level} is not permission level name')
