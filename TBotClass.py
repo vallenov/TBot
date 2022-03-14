@@ -65,23 +65,27 @@ class TBotClass:
         resp = {}
         self._get_config()
         chat_id = str(message.json['chat']['id'])
-        if self.internet_loader.use_db and chat_id not in Loader.users.keys():
+        if self.internet_loader.use_db:
             login = message.json['chat'].get('username', None)
             first_name = message.json['chat'].get('first_name', None)
-            privileges = Loader.privileges_levels['regular']
-            self.db_loader.add_user(chat_id=chat_id,
-                                    privileges=privileges,
-                                    login=login,
-                                    first_name=first_name)
-            send_data = dict()
-            send_data['subject'] = 'TBot NEW USER'
-            send_data['text'] = f'New user added. Chat_id: {chat_id}, login: {login}, first_name: {first_name}'
-            mail_resp = self.send_dev_message(send_data, 'mail')
-            telegram_resp = self.send_dev_message(send_data, 'telegram')
-            if mail_resp['res'] == 'ERROR' or telegram_resp['res'] == 'ERROR':
-                logger.warning(f'Message do not received. MAIL = {mail_resp}, Telegram = {telegram_resp}')
-        else:
-            privileges = Loader.users[chat_id]['value']
+            if chat_id not in Loader.users.keys():
+                privileges = Loader.privileges_levels['regular']
+                self.db_loader.add_user(chat_id=chat_id,
+                                        privileges=privileges,
+                                        login=login,
+                                        first_name=first_name)
+                send_data = dict()
+                send_data['subject'] = 'TBot NEW USER'
+                send_data['text'] = f'New user added. Chat_id: {chat_id}, login: {login}, first_name: {first_name}'
+                mail_resp = self.send_dev_message(send_data, 'mail')
+                telegram_resp = self.send_dev_message(send_data, 'telegram')
+                if mail_resp['res'] == 'ERROR' or telegram_resp['res'] == 'ERROR':
+                    logger.warning(f'Message do not received. MAIL = {mail_resp}, Telegram = {telegram_resp}')
+            else:
+                if Loader.users[chat_id]['login'] != login or \
+                   Loader.users[chat_id]['first_name'] != first_name:
+                    self.db_loader.update_user(chat_id, login, first_name)
+        privileges = Loader.users[chat_id]['value']
         if self.internet_loader.use_db:
             self.db_loader.log_request(chat_id)
         if message.content_type == 'text':
@@ -122,7 +126,7 @@ class TBotClass:
                 if ' ' not in form_text and not resp['text'].startswith('Permission denied'):
                     resp['markup'] = self.gen_custom_markup('book', self.internet_loader.book_genres, '📖')
             elif form_text.startswith('update') or form_text.startswith('обновить'):
-                resp = self.db_loader.update_user(form_text, privileges=privileges)
+                resp = self.db_loader.update_user_privileges(form_text, privileges=privileges)
             elif form_text.startswith('delete') or form_text.startswith('удалить'):
                 resp = self.db_loader.delete_user(form_text, privileges=privileges)
             elif form_text == 'users' or form_text == 'пользователи':
