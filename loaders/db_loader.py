@@ -110,7 +110,7 @@ class DBLoader(Loader):
     def log_request(self, chat_id):
         with self.connection.cursor() as cursor:
             query = f"insert into {self.db_name}.log_requests" \
-                     f"(chat_id) values ('{chat_id}')"
+                    f"(chat_id) values ('{chat_id}')"
             cursor.execute(query)
             self.connection.commit()
 
@@ -137,8 +137,31 @@ class DBLoader(Loader):
         Loader.users[chat_id]['first_name'] = first_name
         Loader.users[chat_id]['value'] = privileges
 
+    def update_user(self, chat_id: str, login: str, first_name: str):
+        """
+        Update user info in DB and memory
+        :param chat_id: unique user_id
+        :param login: login
+        :param first_name: first_name
+        """
+        logger.info('update_user')
+        if self.use_db:
+            with self.connection.cursor() as cursor:
+                chat_id_db = f"'{chat_id}'"
+                login_db = 'NULL' if not login else f"'{login}'"
+                first_name_db = 'NULL' if not first_name else f"'{first_name}'"
+                query = f'update {self.db_name}.users ' \
+                        f'set login = {login_db}, ' \
+                        f'first_name = {first_name_db} ' \
+                        f'where chat_id = {chat_id_db} '
+                cursor.execute(query)
+                self.connection.commit()
+        Loader.users[chat_id]['login'] = login
+        Loader.users[chat_id]['first_name'] = first_name
+        logger.info('User info updated')
+
     @check_permission(needed_level='root')
-    def update_user(self, text: str, **kwargs):
+    def update_user_privileges(self, text: str, **kwargs):
         """
         Update user privileges in DB and memory
         """
@@ -247,7 +270,7 @@ class DBLoader(Loader):
             for key, value in users.items():
                 usr_split = users[key].split()
                 for usr in range(len(usr_split)):
-                    usr_split[usr] = usr_split[usr].center(max_rows_lens[usr+1] + 1)
+                    usr_split[usr] = usr_split[usr].center(max_rows_lens[usr + 1] + 1)
                 users[key] = ' '.join(usr_split)
             resp['text'] = Loader.dict_to_str(users, '')
         return resp
