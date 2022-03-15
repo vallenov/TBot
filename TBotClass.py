@@ -127,8 +127,8 @@ class TBotClass:
                     resp['markup'] = self.gen_custom_markup('book', self.internet_loader.book_genres, '📖')
             elif form_text.startswith('update') or form_text.startswith('обновить'):
                 resp = self.db_loader.update_user_privileges(form_text, privileges=privileges)
-            elif form_text.startswith('delete') or form_text.startswith('удалить'):
-                resp = self.db_loader.delete_user(form_text, privileges=privileges)
+            # elif form_text.startswith('delete') or form_text.startswith('удалить'):
+            #     resp = self.db_loader.delete_user(form_text, privileges=privileges)
             elif form_text == 'users' or form_text == 'пользователи':
                 resp = self.db_loader.show_users(privileges=privileges)
             elif form_text == 'hidden_functions' or form_text == 'скрытые_функции':
@@ -259,7 +259,7 @@ class TBotClass:
         """
         resp = dict()
         resp['text'] = str(f'Update "chat_id" "privileges"\n'
-                           f'Delete "chat_id"\n'
+                           #f'Delete "chat_id"\n'
                            f'Send_other "chat_id" "text"\n')
         return resp
 
