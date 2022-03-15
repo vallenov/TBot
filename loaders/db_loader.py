@@ -215,6 +215,9 @@ class DBLoader(Loader):
     def delete_user(self, text: str, **kwargs):
         """
         Delete user from DB and memory
+
+        NOT USED!
+
         """
         resp = {}
         lst = text.split()
