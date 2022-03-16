@@ -1,14 +1,12 @@
 import datetime
 import random
 import logging
-import string
 import requests
 from bs4 import BeautifulSoup
 import asyncio
 import aiohttp
 
 from loaders.loader import Loader, check_permission
-#from loaders.loader import
 
 logger = logging.getLogger(__name__)
 handler = logging.FileHandler('run.log')
