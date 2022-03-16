@@ -127,8 +127,6 @@ class TBotClass:
                     resp['markup'] = self.gen_custom_markup('book', self.internet_loader.book_genres, '📖')
             elif form_text.startswith('update') or form_text.startswith('обновить'):
                 resp = self.db_loader.update_user_privileges(form_text, privileges=privileges)
-            # elif form_text.startswith('delete') or form_text.startswith('удалить'):
-            #     resp = self.db_loader.delete_user(form_text, privileges=privileges)
             elif form_text == 'users' or form_text == 'пользователи':
                 resp = self.db_loader.show_users(privileges=privileges)
             elif form_text == 'hidden_functions' or form_text == 'скрытые_функции':
@@ -213,10 +211,6 @@ class TBotClass:
         """
         resp = dict()
         resp['text'] = ''
-        # if Loader.privileges_levels['untrusted'] <= privileges:
-        #     return Loader.error_resp('Permission denied')
-        # if Loader.privileges_levels['test'] <= privileges:
-        #     return Loader.error_resp('Permission denied')
         if Loader.privileges_levels['regular'] <= privileges:
             resp['text'] += str(f'Ты можешь написать "новости", "стих" и "фильм" с параметром\n'
                                 f'Новости "количество новостей"\n'
@@ -237,10 +231,6 @@ class TBotClass:
         :return: {'res': 'OK or ERROR', 'text': 'message'}
         """
         resp = dict()
-        # if Loader.privileges_levels['untrusted'] <= privileges:
-        #     resp[0] = f'Permission denied'
-        # if Loader.privileges_levels['test'] <= privileges:
-        #     resp[0] = f'Permission denied'
         if Loader.privileges_levels['regular'] <= privileges:
             resp['text'] = f'Привет! Меня зовут InfoBot\n'
         if Loader.privileges_levels['trusted'] <= privileges:
@@ -259,7 +249,6 @@ class TBotClass:
         """
         resp = dict()
         resp['text'] = str(f'Update "chat_id" "privileges"\n'
-                           #f'Delete "chat_id"\n'
                            f'Send_other "chat_id" "text"\n')
         return resp
 

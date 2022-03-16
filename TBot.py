@@ -100,7 +100,6 @@ def tbot():
         save_file(call.message)
         call.message.text = call.data
         replace = tb.replace(call.message)
-        #bot.answer_callback_query(call.id, replace)
         safe_send(call.message.json['chat']['id'], replace, reply_markup=replace.get('markup', None))
 
     @bot.message_handler(func=lambda message: True, content_types=content_types)

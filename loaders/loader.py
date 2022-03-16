@@ -117,7 +117,7 @@ class Loader:
         return fin_str
 
     @staticmethod
-    def get_root_users():
+    def get_root_users() -> list:
         root_users = []
         for key, value in Loader.users.items():
             if value['value'] == Loader.privileges_levels['root']:
