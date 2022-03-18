@@ -355,6 +355,9 @@ class DBLoader(Loader):
         lst = text.split()
         if len(lst) == 1:
             resp['text'] = 'Выберите интервал'
+            resp['markup'] = Loader.gen_custom_markup('statistic',
+                                               ['Today', 'Week', 'Month', 'All'],
+                                               '📋')
             return resp
         interval = {'today': 'where lr.date_ins between  current_date() and current_date() + interval 1 day ',
                     'week': 'where lr.date_ins between current_date() - interval 7 day and current_date() ',

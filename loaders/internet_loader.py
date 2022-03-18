@@ -317,11 +317,11 @@ class InternetLoader(Loader):
         div_nav_raw = soup.find('div', class_='pagination-wrapper')
         a_raw = div_nav_raw.find('a')
         page_count = int(a_raw.get('data-nav-page-count'))
-        rand_page = random.choice(range(1, page_count+1))
+        rand_page = random.choice(range(1, page_count + 1))
         if rand_page > 1:
             soup = InternetLoader._site_to_lxml(self.config['URL']['restaurant_url']
-                                           + '/msk/catalog/restaurants/all/'
-                                           + f'?page={rand_page}')
+                                                + '/msk/catalog/restaurants/all/'
+                                                + f'?page={rand_page}')
         names = soup.find_all('a', class_='name')
         restaurant = random.choice(names)
         soup = InternetLoader._site_to_lxml(self.config['URL']['restaurant_url'] + restaurant.get('href'))
@@ -442,6 +442,10 @@ class InternetLoader(Loader):
             return Loader.error_resp('Format of data is not valid')
         if len(command) == 1:
             resp['text'] = 'Выберите промежуток'
+            resp['markup'] = Loader.gen_custom_markup('movie',
+                                     ['1950-1960', '1960-1970', '1970-1980',
+                                      '1980-1990', '1990-2000', '2000-2010', '2010-2020'],
+                                     '🎞')
             return resp
         elif len(command) == 2:
             if '-' not in command[1]:
@@ -556,6 +560,7 @@ class InternetLoader(Loader):
         lst = text.split()
         if len(lst) == 1:
             resp['text'] = 'Выберите жанр'
+            resp['markup'] = Loader.gen_custom_markup('book', self.book_genres, '📖')
             return resp
         category = ''
         for genre in self.book_genres.keys():
