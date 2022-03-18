@@ -1,15 +1,6 @@
 import configparser
 import logging
 
-
-class Privileges:
-    untrusted = 10
-    test = 20
-    regular = 30
-    trusted = 40
-    root = 50
-
-
 logger = logging.getLogger(__name__)
 handler = logging.FileHandler('run.log')
 handler.setLevel(logging.INFO)
