@@ -166,3 +166,34 @@ class Loader:
                        InlineKeyboardButton("🌐 Server IP/IP-адрес сервера", callback_data="ip"),
                        InlineKeyboardButton("📋 Statistic/Статистика", callback_data="statistic"))
         return markup
+
+    @staticmethod
+    def is_phone_number(number: str) -> str or None:
+        """
+        Check string. If non phone number, return None. Else return formatted phone number
+        :param number: any format of phone number
+        :return: formatted phone number
+        """
+        resp = {}
+        if len(number) < 10 or len(number) > 18:
+            return None
+        allowed_simbols = '0123456789+()- '
+        for num in number:
+            if num not in allowed_simbols:
+                return None
+        raw_num = number
+        raw_num = raw_num.strip()
+        raw_num = raw_num.replace(' ', '')
+        raw_num = raw_num.replace('+', '')
+        raw_num = raw_num.replace('(', '')
+        raw_num = raw_num.replace(')', '')
+        raw_num = raw_num.replace('-', '')
+        if len(raw_num) < 11:
+            raw_num = '8' + raw_num
+        if raw_num.startswith('7'):
+            raw_num = '8' + raw_num[1:]
+        if not raw_num.startswith('89'):
+            resp['res'] = 'ERROR'
+            resp['descr'] = 'Number format is not valid'
+            return None
+        return raw_num

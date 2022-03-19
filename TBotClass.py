@@ -43,7 +43,7 @@ class TBotClass:
         self.internet_loader = InternetLoader('ILoader')
         self.db_loader = DBLoader('DBLoader')
         self.file_loader = FileLoader('FLoader')
-        self._get_config()
+        self.get_config()
         self.is_prod = int(self.config.get('MAIN', 'PROD'))
         if self.is_prod:
             logger.info(f'Send start message to root users')
@@ -55,20 +55,22 @@ class TBotClass:
             'wish': self.internet_loader.get_wish,
             'news': self.internet_loader.get_news,
             'affirmation': self.internet_loader.get_affirmation,
-            'events': self.internet_loader.async_events,
+            #'events': self.internet_loader.async_events,
             'food': self.internet_loader.get_restaurant,
             'poem': self.db_loader.get_poem if self.internet_loader.use_db else self.file_loader.get_poem,
             'movie': self.internet_loader.get_random_movie,
             'book': self.internet_loader.get_book,
             'update': self.db_loader.update_user_privileges,
             'users': self.db_loader.show_users,
-            'hidden_functions': self._get_help,
-            'admins_help': self._get_admins_help,
+            'hidden_functions': self.get_help,
+            'admins_help': self.get_admins_help,
             'send_other': self.send_other,
             'metaphorical_card': self.file_loader.get_metaphorical_card,
             'russian_paintings': self.internet_loader.get_russian_painting,
             'ip': self.file_loader.get_server_ip,
-            'statistic': self.db_loader
+            'statistic': self.db_loader,
+            'phone': self.internet_loader.get_phone_number_info,
+            'default': self.get_hello
         }
 
     def __del__(self):
@@ -83,7 +85,7 @@ class TBotClass:
         :return: replace dict
         """
         resp = {}
-        self._get_config()
+        self.get_config()
         chat_id = str(message.json['chat']['id'])
         if self.internet_loader.use_db:
             login = message.json['chat'].get('username', None)
@@ -113,7 +115,7 @@ class TBotClass:
             resp['status'] = 'OK'
             form_text = message.text.lower().strip()
             sptext = form_text.split()
-            func = self.mapping[sptext[0]]
+            func = self.mapping.get(sptext[0], self.mapping.get('default'))
             return func(privileges=privileges, text=form_text)
             # if form_text == 'exchange' or form_text == 'валюта':
             #     resp = self.internet_loader.get_exchange(privileges=privileges)
@@ -160,15 +162,15 @@ class TBotClass:
             #     resp = self.file_loader.get_server_ip(privileges=privileges)
             # elif form_text.startswith('statistic') or form_text.startswith('статистика'):
             #     resp = self.db_loader.get_statistic(form_text, privileges=privileges)
-            elif TBotClass._is_phone_number(form_text) is not None:
-                phone_number = TBotClass._is_phone_number(form_text)
-                resp = self.internet_loader.get_phone_number_info(phone_number, privileges=privileges)
-            else:
-                resp = self._get_hello(privileges=privileges)
-            return resp
+            # elif TBotClass._is_phone_number(form_text) is not None:
+            #     phone_number = TBotClass._is_phone_number(form_text)
+            #     resp = self.internet_loader.get_phone_number_info(phone_number, privileges=privileges)
+            # else:
+            #     resp = self._get_hello(privileges=privileges)
+            # return resp
 
     @check_permission()
-    def _get_help(self, privileges: int) -> dict:
+    def get_help(self, privileges: int, **kwargs) -> dict:
         """
         Get bot functions
         :param privileges: user privileges
@@ -189,7 +191,7 @@ class TBotClass:
         return resp
 
     @check_permission()
-    def _get_hello(self, privileges: int) -> dict:
+    def get_hello(self, privileges: int, **kwargs) -> dict:
         """
         Get hello from bot
         :param privileges: user privileges
@@ -206,7 +208,7 @@ class TBotClass:
         return resp
 
     @check_permission(needed_level='root')
-    def _get_admins_help(self, **kwargs) -> dict:
+    def get_admins_help(self, **kwargs) -> dict:
         """
         Get bot functions for admin
         :param :
@@ -217,40 +219,9 @@ class TBotClass:
                            f'Send_other "chat_id" "text"\n')
         return resp
 
-    def _get_config(self):
+    def get_config(self):
         self.config = configparser.ConfigParser()
         self.config.read('TBot.ini', encoding='windows-1251')
-
-    @staticmethod
-    def _is_phone_number(number: str) -> str or None:
-        """
-        Check string. If non phone number, return None. Else return formatted phone number
-        :param number: any format of phone number
-        :return: formatted phone number
-        """
-        resp = {}
-        if len(number) < 10 or len(number) > 18:
-            return None
-        allowed_simbols = '0123456789+()- '
-        for num in number:
-            if num not in allowed_simbols:
-                return None
-        raw_num = number
-        raw_num = raw_num.strip()
-        raw_num = raw_num.replace(' ', '')
-        raw_num = raw_num.replace('+', '')
-        raw_num = raw_num.replace('(', '')
-        raw_num = raw_num.replace(')', '')
-        raw_num = raw_num.replace('-', '')
-        if len(raw_num) < 11:
-            raw_num = '8' + raw_num
-        if raw_num.startswith('7'):
-            raw_num = '8' + raw_num[1:]
-        if not raw_num.startswith('89'):
-            resp['res'] = 'ERROR'
-            resp['descr'] = 'Number format is not valid'
-            return None
-        return raw_num
 
     @check_permission(needed_level='root')
     def send_other(self, text: str, **kwargs):

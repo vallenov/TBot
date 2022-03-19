@@ -396,7 +396,7 @@ class InternetLoader(Loader):
         return resp
 
     @check_permission()
-    def get_phone_number_info(self, number, **kwargs) -> dict:
+    def get_phone_number_info(self, text: str, **kwargs) -> dict:
         """
         Get phone number info from internet
         :param:
@@ -407,6 +407,8 @@ class InternetLoader(Loader):
             kodi_url = self.config['URL']['kodi_url']
         else:
             return Loader.error_resp("I can't do this yet😔")
+        lst = text.split()
+        number = Loader.is_phone_number(lst[1])
         headers = {'Connection': 'close'}
         res = requests.post(kodi_url, data={'number': number}, headers=headers)
         if 'Ошибка: Номер не найден' in res.text:
