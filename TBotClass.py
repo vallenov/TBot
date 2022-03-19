@@ -68,7 +68,7 @@ class TBotClass:
             'metaphorical_card': self.file_loader.get_metaphorical_card,
             'russian_paintings': self.internet_loader.get_russian_painting,
             'ip': self.file_loader.get_server_ip,
-            'statistic': self.db_loader,
+            'statistic': self.db_loader.get_statistic,
             'phone': self.internet_loader.get_phone_number_info,
             'default': self.get_hello
         }
