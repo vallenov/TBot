@@ -48,6 +48,28 @@ class TBotClass:
         if self.is_prod:
             logger.info(f'Send start message to root users')
             self.send_dev_message({'text': 'TBot is started'}, 'telegram')
+        self.mapping = {
+            'exchange': self.internet_loader.get_exchange,
+            'weather': self.internet_loader.get_weather,
+            'quote': self.internet_loader.get_quote,
+            'wish': self.internet_loader.get_wish,
+            'news': self.internet_loader.get_news,
+            'affirmation': self.internet_loader.get_affirmation,
+            'events': self.internet_loader.async_events,
+            'food': self.internet_loader.get_restaurant,
+            'poem': self.db_loader.get_poem if self.internet_loader.use_db else self.file_loader.get_poem,
+            'movie': self.internet_loader.get_random_movie,
+            'book': self.internet_loader.get_book,
+            'update': self.db_loader.update_user_privileges,
+            'users': self.db_loader.show_users,
+            'hidden_functions': self._get_help,
+            'admins_help': self._get_admins_help,
+            'send_other': self.send_other,
+            'metaphorical_card': self.file_loader.get_metaphorical_card,
+            'russian_paintings': self.internet_loader.get_russian_painting,
+            'ip': self.file_loader.get_server_ip,
+            'statistic': self.db_loader
+        }
 
     def __del__(self):
         logger.error(f'Traceback: {traceback.format_exc()}')
@@ -86,54 +108,58 @@ class TBotClass:
         privileges = Loader.users[chat_id]['value']
         if self.internet_loader.use_db:
             self.db_loader.log_request(chat_id)
+
         if message.content_type == 'text':
             resp['status'] = 'OK'
             form_text = message.text.lower().strip()
-            if form_text == 'exchange' or form_text == 'валюта':
-                resp = self.internet_loader.get_exchange(privileges=privileges)
-            elif form_text == 'weather' or form_text == 'погода':
-                resp = self.internet_loader.get_weather(privileges=privileges)
-            elif form_text == 'quote' or form_text == 'цитата':
-                resp = self.internet_loader.get_quote(privileges=privileges)
-            elif form_text == 'wish' or form_text == 'пожелание':
-                resp = self.internet_loader.get_wish(privileges=privileges)
-            elif form_text.startswith('news') or form_text.startswith('новости'):
-                resp = self.internet_loader.get_news(form_text, privileges=privileges)
-            elif form_text == 'affirmation' or form_text == 'аффирмация':
-                resp = self.internet_loader.get_affirmation(privileges=privileges)
-            elif form_text == 'events' or form_text == 'мероприятия':
-                resp = asyncio.run(self.internet_loader.async_events(privileges=privileges))
-            elif form_text == 'food' or form_text == 'еда':
-                resp = self.internet_loader.get_restaurant(privileges=privileges)
-            elif form_text.startswith('poem') or form_text.startswith('стих'):
-                if self.db_loader.use_db:
-                    resp = self.db_loader.get_poem(form_text, privileges=privileges)
-                else:
-                    if not hasattr(self.file_loader, 'poems'):
-                        self.file_loader.load_poems()
-                    resp = self.file_loader.get_poem(form_text, privileges=privileges)
-            elif form_text.startswith('movie') or form_text.startswith('фильм'):
-                resp = self.internet_loader.get_random_movie(form_text, privileges=privileges)
-            elif form_text.startswith('book') or form_text.startswith('книга'):
-                resp = self.internet_loader.get_book(form_text, privileges=privileges)
-            elif form_text.startswith('update') or form_text.startswith('обновить'):
-                resp = self.db_loader.update_user_privileges(form_text, privileges=privileges)
-            elif form_text == 'users' or form_text == 'пользователи':
-                resp = self.db_loader.show_users(privileges=privileges)
-            elif form_text == 'hidden_functions' or form_text == 'скрытые_функции':
-                resp = self._get_help(privileges=privileges)
-            elif form_text == 'admins_help' or form_text == 'руководство_админу':
-                resp = self._get_admins_help(privileges=privileges)
-            elif form_text.startswith('send_other') or form_text.startswith('отправить_другому'):
-                resp = self.send_other(form_text, privileges=privileges)
-            elif form_text == 'metaphorical_card' or form_text == 'метафорическая_карта':
-                resp = self.file_loader.get_metaphorical_card(privileges=privileges)
-            elif form_text == 'russian_painting' or form_text == 'русская_картина':
-                resp = self.internet_loader.get_russian_painting(privileges=privileges)
-            elif form_text == 'ip':
-                resp = self.file_loader.get_server_ip(privileges=privileges)
-            elif form_text.startswith('statistic') or form_text.startswith('статистика'):
-                resp = self.db_loader.get_statistic(form_text, privileges=privileges)
+            sptext = form_text.split()
+            func = self.mapping[sptext[0]]
+            return func(privileges=privileges, text=form_text)
+            # if form_text == 'exchange' or form_text == 'валюта':
+            #     resp = self.internet_loader.get_exchange(privileges=privileges)
+            # elif form_text == 'weather' or form_text == 'погода':
+            #     resp = self.internet_loader.get_weather(privileges=privileges)
+            # elif form_text == 'quote' or form_text == 'цитата':
+            #     resp = self.internet_loader.get_quote(privileges=privileges)
+            # elif form_text == 'wish' or form_text == 'пожелание':
+            #     resp = self.internet_loader.get_wish(privileges=privileges)
+            # elif form_text.startswith('news') or form_text.startswith('новости'):
+            #     resp = self.internet_loader.get_news(form_text, privileges=privileges)
+            # elif form_text == 'affirmation' or form_text == 'аффирмация':
+            #     resp = self.internet_loader.get_affirmation(privileges=privileges)
+            # elif form_text == 'events' or form_text == 'мероприятия':
+            #     resp = asyncio.run(self.internet_loader.async_events(privileges=privileges))
+            # elif form_text == 'food' or form_text == 'еда':
+            #     resp = self.internet_loader.get_restaurant(privileges=privileges)
+            # elif form_text.startswith('poem') or form_text.startswith('стих'):
+            #     if self.db_loader.use_db:
+            #         resp = self.db_loader.get_poem(form_text, privileges=privileges)
+            #     else:
+            #         if not hasattr(self.file_loader, 'poems'):
+            #             self.file_loader.load_poems()
+            #         resp = self.file_loader.get_poem(form_text, privileges=privileges)
+            # elif form_text.startswith('movie') or form_text.startswith('фильм'):
+            #     resp = self.internet_loader.get_random_movie(form_text, privileges=privileges)
+            # elif form_text.startswith('book') or form_text.startswith('книга'):
+            #     resp = self.internet_loader.get_book(form_text, privileges=privileges)
+            # elif form_text.startswith('update') or form_text.startswith('обновить'):
+            #     resp = self.db_loader.update_user_privileges(form_text, privileges=privileges)
+            # elif form_text == 'users' or form_text == 'пользователи':
+            #     resp = self.db_loader.show_users(privileges=privileges)
+            # elif form_text == 'hidden_functions' or form_text == 'скрытые_функции':
+            #     resp = self._get_help(privileges=privileges)
+            # elif form_text == 'admins_help' or form_text == 'руководство_админу':
+            #     resp = self._get_admins_help(privileges=privileges)
+            # elif form_text.startswith('send_other') or form_text.startswith('отправить_другому'):
+            #     resp = self.send_other(form_text, privileges=privileges)
+            # elif form_text == 'metaphorical_card' or form_text == 'метафорическая_карта':
+            #     resp = self.file_loader.get_metaphorical_card(privileges=privileges)
+            # elif form_text == 'russian_painting' or form_text == 'русская_картина':
+            #     resp = self.internet_loader.get_russian_painting(privileges=privileges)
+            # elif form_text == 'ip':
+            #     resp = self.file_loader.get_server_ip(privileges=privileges)
+            # elif form_text.startswith('statistic') or form_text.startswith('статистика'):
+            #     resp = self.db_loader.get_statistic(form_text, privileges=privileges)
             elif TBotClass._is_phone_number(form_text) is not None:
                 phone_number = TBotClass._is_phone_number(form_text)
                 resp = self.internet_loader.get_phone_number_info(phone_number, privileges=privileges)
@@ -154,7 +180,7 @@ class TBotClass:
             resp['text'] += str(f'Ты можешь написать "новости", "стих" и "фильм" с параметром\n'
                                 f'Новости "количество новостей"\n'
                                 f'Стих "имя автора или название"\n'
-                                f'Фильм "год выпуска"\n'
+                                f'Фильм "год выпуска" или "промежуток", например "фильм 2001-2005"\n'
                                 f'Так же, ты можешь написать номер телефона, что бы узнать информацию о нем\n')
         if Loader.privileges_levels['trusted'] <= privileges:
             pass

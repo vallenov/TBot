@@ -37,7 +37,10 @@ class FileLoader(Loader):
         """
         Load poems from file to memory
         """
-        file_path = self.fife_db.get('poems.xlsx', False)
+        try:
+            file_path = self.fife_db.get('poems.xlsx', False)
+        except Exception as e:
+            return False
         self.poems = []
         if file_path:
             file_raw = pd.read_excel(file_path)
@@ -60,6 +63,9 @@ class FileLoader(Loader):
                 poem['text'] = text
                 self.poems.append(poem)
             logger.info(f'{file_path} download. len = {len(poems)}')
+            return True
+        else:
+            return False
 
     @check_permission()
     def get_poem(self, text: str, **kwargs) -> dict:
@@ -70,7 +76,10 @@ class FileLoader(Loader):
         """
         lst = text.split()
         resp = {}
-        if hasattr(self, 'poems'):
+        is_load = False
+        if not hasattr(self, 'poems'):
+            is_load = self.load_poems()
+        if is_load:
             if len(lst) == 1:
                 random_poem = random.choice(self.poems)
             else:
