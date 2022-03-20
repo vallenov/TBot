@@ -19,6 +19,13 @@ MAX_LEN = 4095
 DOWNLOADS = 'downloads'
 
 
+class Msg:
+    def __init__(self, text: str, chat: dict, content_type: str = 'text'):
+        self.content_type = content_type
+        self.json = {'chat': chat}
+        self.text = text
+
+
 def tbot():
     """
     Main func
