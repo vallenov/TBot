@@ -4,6 +4,7 @@ import traceback
 import datetime
 import asyncio
 import requests
+import inspect
 
 from loaders.loader import Loader, check_permission
 from loaders.internet_loader import InternetLoader
@@ -55,7 +56,7 @@ class TBotClass:
             'wish': self.internet_loader.get_wish,
             'news': self.internet_loader.get_news,
             'affirmation': self.internet_loader.get_affirmation,
-            #'events': self.internet_loader.async_events,
+            'events': [self.internet_loader.async_events],
             'food': self.internet_loader.get_restaurant,
             'poem': self.db_loader.get_poem if self.internet_loader.use_db else self.file_loader.get_poem,
             'movie': self.internet_loader.get_random_movie,
@@ -116,9 +117,10 @@ class TBotClass:
             form_text = message.text.lower().strip()
             sptext = form_text.split()
             func = self.mapping.get(sptext[0], self.mapping.get('default'))
-            return func(privileges=privileges, text=form_text)
-            # elif form_text == 'events' or form_text == 'мероприятия':
-            #     resp = asyncio.run(self.internet_loader.async_events(privileges=privileges))
+            if not isinstance(func, list):
+                return func(privileges=privileges, text=form_text)
+            else:
+                return asyncio.run(func[0](privileges=privileges, text=form_text))
 
     @check_permission()
     def get_help(self, privileges: int, **kwargs) -> dict:
