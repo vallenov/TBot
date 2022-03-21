@@ -1,6 +1,7 @@
 import configparser
 import logging
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+from functools import wraps
 
 logger = logging.getLogger(__name__)
 handler = logging.FileHandler('run.log')
@@ -20,6 +21,7 @@ def check_permission(needed_level: str = 'regular'):
         :param func: input function
         :return: wrapped function
         """
+        @wraps(func)
         def wrap(self, *args, **kwargs):
             logger.info(func.__qualname__)
             logger.info(f'check permission')
