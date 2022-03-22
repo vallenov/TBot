@@ -116,7 +116,8 @@ class TBotClass:
             resp['status'] = 'OK'
             form_text = message.text.lower().strip()
             sptext = form_text.split()
-            func = self.mapping.get(sptext[0], self.mapping.get('default'))
+            default_func = self.mapping.get('default')
+            func = self.mapping.get(sptext[0], default_func)
             if not inspect.iscoroutinefunction(func.__wrapped__):
                 return func(privileges=privileges, text=form_text)
             else:
