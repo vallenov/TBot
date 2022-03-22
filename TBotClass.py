@@ -116,7 +116,8 @@ class TBotClass:
             resp['status'] = 'OK'
             form_text = message.text.lower().strip()
             sptext = form_text.split()
-            func = self.mapping.get(sptext[0], self.mapping.get('default'))
+            default_func = self.mapping.get('default')
+            func = self.mapping.get(sptext[0], default_func)
             if not inspect.iscoroutinefunction(func.__wrapped__):
                 return func(privileges=privileges, text=form_text)
             else:
@@ -136,7 +137,7 @@ class TBotClass:
                                 f'Новости "количество новостей"\n'
                                 f'Стих "имя автора или название"\n'
                                 f'Фильм "год выпуска" или "промежуток", например "фильм 2001-2005"\n'
-                                f'Так же, ты можешь написать номер телефона, что бы узнать информацию о нем\n')
+                                f'Так же, ты можешь написать phone и номер телефона, что бы узнать информацию о нем\n')
         if Loader.privileges_levels['trusted'] <= privileges:
             pass
         if Loader.privileges_levels['root'] <= privileges:
