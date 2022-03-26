@@ -26,6 +26,21 @@ class Msg:
         self.text = text
 
 
+def check_bot_connection(bot_obj) -> None:
+    """
+    Check bot connection
+    """
+    is_bot = None
+    try:
+        is_bot = bot_obj.get_me()
+    except telebot.apihelper.ApiException as taa:
+        logger.exception(f'{taa}')
+    if not hasattr(is_bot, 'id'):
+        logger.exception('Bot not found')
+    else:
+        logger.info(f'Connection to bot success')
+
+
 def tbot():
     """
     Main func
@@ -34,6 +49,8 @@ def tbot():
     config.read('TBot.ini', encoding='windows-1251')
     token = config['MAIN']['token']
     bot = telebot.TeleBot(token)
+    check_bot_connection(bot)
+
     content_types = ['audio', 'photo', 'voice', 'video', 'document', 'text', 'location', 'contact', 'sticker']
 
     conversation_logger = logging.getLogger('conversation')
@@ -77,7 +94,7 @@ def tbot():
                         if start + MAX_LEN >= len(replace):
                             bot.send_message(chat_id, text[start:], reply_markup=reply_markup)
                         else:
-                            bot.send_message(chat_id, text[start:start+MAX_LEN], reply_markup=reply_markup)
+                            bot.send_message(chat_id, text[start:start + MAX_LEN], reply_markup=reply_markup)
                         start += MAX_LEN
                 except ConnectionResetError as cre:
                     logger.exception(f'ConnectionResetError exception: {cre}')
