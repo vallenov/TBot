@@ -5,6 +5,7 @@ import datetime
 import asyncio
 import requests
 import inspect
+from functools import wraps
 
 from loaders.loader import Loader, check_permission
 from loaders.internet_loader import InternetLoader
@@ -24,7 +25,7 @@ def benchmark(func):
     """
     Count duration
     """
-
+    @wraps(func)
     def wrap(*args, **kwargs):
         start = datetime.datetime.now()
         res = func(*args, **kwargs)

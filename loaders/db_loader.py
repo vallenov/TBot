@@ -353,19 +353,19 @@ class DBLoader(Loader):
         """
         resp = {'text': ''}
         lst = text.split()
-        if len(lst) == 1:
-            resp['text'] = 'Выберите интервал'
-            resp['markup'] = Loader.gen_custom_markup('statistic',
-                                               ['Today', 'Week', 'Month', 'All'],
-                                               '📋')
-            return resp
-        interval = {'today': 'where lr.date_ins between  current_date() and current_date() + interval 1 day ',
-                    'week': 'where lr.date_ins between current_date() - interval 7 day and current_date() ',
-                    'month': 'where lr.date_ins between current_date() - interval 30 day and current_date() ',
-                    'all': ''}
-        if lst[1] not in interval.keys():
-            return Loader.error_resp('Interval is not valid')
         if self.use_db:
+            if len(lst) == 1:
+                resp['text'] = 'Выберите интервал'
+                resp['markup'] = Loader.gen_custom_markup('statistic',
+                                                   ['Today', 'Week', 'Month', 'All'],
+                                                   '📋')
+                return resp
+            interval = {'today': 'where lr.date_ins between  current_date() and current_date() + interval 1 day ',
+                        'week': 'where lr.date_ins between current_date() - interval 7 day and current_date() ',
+                        'month': 'where lr.date_ins between current_date() - interval 30 day and current_date() ',
+                        'all': ''}
+            if lst[1] not in interval.keys():
+                return Loader.error_resp('Interval is not valid')
             with self.connection.cursor() as cursor:
                 query = f"select count(u.chat_id), u.login, u.first_name " \
                         f"from {self.db_name}.log_requests lr " \
