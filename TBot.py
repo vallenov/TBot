@@ -14,7 +14,7 @@ import math
 from TBotClass import TBotClass
 
 MAX_TRY = 5
-MAX_LEN = 4095
+MAX_LEN = 4000
 
 DOWNLOADS = 'downloads'
 
