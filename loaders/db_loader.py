@@ -4,6 +4,7 @@ import time
 import traceback
 from mysql.connector import connect, Error
 import threading
+import matplotlib.pyplot as plt
 
 from loaders.loader import Loader, check_permission
 
@@ -360,9 +361,9 @@ class DBLoader(Loader):
                                                    ['Today', 'Week', 'Month', 'All'],
                                                    '📋')
                 return resp
-            interval = {'today': 'where lr.date_ins between  current_date() and current_date() + interval 1 day ',
-                        'week': 'where lr.date_ins between current_date() - interval 7 day and current_date() ',
-                        'month': 'where lr.date_ins between current_date() - interval 30 day and current_date() ',
+            interval = {'today': 'where lr.date_ins > current_date() - interval 1 day ',
+                        'week': 'where lr.date_ins > current_date() - interval 7 day ',
+                        'month': 'where lr.date_ins > current_date() - interval 30 day ',
                         'all': ''}
             if lst[1] not in interval.keys():
                 return Loader.error_resp('Interval is not valid')
