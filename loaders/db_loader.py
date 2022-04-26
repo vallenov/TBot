@@ -361,13 +361,15 @@ class DBLoader(Loader):
             for cur in cursor:
                 dt.append(cur[0])
                 cnt.append(cur[1])
-            plt.plot(dt, cnt)
             if not os.path.exists('tmp'):
                 os.mkdir('tmp')
             unique_name = str(datetime.datetime.now()).replace(':', '').replace(' ', '')[:16]
             img_path = os.path.join('tmp', f'graph_{unique_name}.png')
-            plt.xlabel('Date')
-            plt.ylabel('Count of requests')
+            plt.figure(figsize=(15, 5))
+            plt.plot(dt, cnt)
+            plt.xlabel('Date', fontsize=14)
+            plt.ylabel('Count of requests', fontsize=14)
+            plt.grid()
             plt.savefig(img_path)
             plt.close()
             return img_path
