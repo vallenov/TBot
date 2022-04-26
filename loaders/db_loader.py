@@ -2,6 +2,8 @@ import logging
 import random
 import time
 import traceback
+import os
+import datetime
 from mysql.connector import connect, Error
 import threading
 import matplotlib.pyplot as plt
@@ -345,6 +347,29 @@ class DBLoader(Loader):
         else:
             return Loader.error_resp('DB does not using')
 
+    def get_graph(self, interval: str):
+        dt = []
+        cnt = []
+        interval_plot = {'week': 'where date(dc.date) > date(current_date() - interval 7 day) ',
+                         'month': 'where date(dc.date) > date(current_date() - interval 30 day) '}
+        with self.connection.cursor() as cursor:
+            query = f"select * from (select date(lr.date_ins) date, count(*) cnt " \
+                    f"from {self.db_name}.log_requests lr " \
+                    f"group by date(lr.date_ins)) as dc " \
+                    f"{interval_plot.get(interval, '')}"
+            cursor.execute(query)
+            for cur in cursor:
+                dt.append(cur[0])
+                cnt.append(cur[1])
+            plt.plot(dt, cnt)
+            if not os.path.exists('tmp'):
+                os.mkdir('tmp')
+            unique_name = str(datetime.datetime.now()).replace(':', '').replace(' ', '')[:16]
+            img_path = os.path.join('tmp', f'graph_{unique_name}.png')
+            plt.savefig(img_path)
+            plt.close()
+            return img_path
+
     @check_permission(needed_level='root')
     def get_statistic(self, text, **kwargs):
         """
@@ -361,6 +386,8 @@ class DBLoader(Loader):
                                                    ['Today', 'Week', 'Month', 'All'],
                                                    '📋')
                 return resp
+            if lst[1] != 'today':
+                resp['photo'] = self.get_graph(lst[1])
             interval = {'today': 'where lr.date_ins > current_date() - interval 1 day ',
                         'week': 'where lr.date_ins > current_date() - interval 7 day ',
                         'month': 'where lr.date_ins > current_date() - interval 30 day ',
