@@ -7,3 +7,4 @@ aiohttp==3.8.1
 pandas==1.4.0
 openpyxl==3.0.9
 mysql-connector-python==8.0.28
+matplotlib==3.5.1
