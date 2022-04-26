@@ -366,6 +366,8 @@ class DBLoader(Loader):
                 os.mkdir('tmp')
             unique_name = str(datetime.datetime.now()).replace(':', '').replace(' ', '')[:16]
             img_path = os.path.join('tmp', f'graph_{unique_name}.png')
+            plt.xlabel('Date')
+            plt.ylabel('Count of requests')
             plt.savefig(img_path)
             plt.close()
             return img_path
