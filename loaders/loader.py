@@ -11,16 +11,16 @@ logger.addHandler(handler)
 
 
 def check_permission(needed_level: str = 'regular'):
+    """
+    Decorator, which check user permission
+    Each function with this decorator need consist "**kwargs" in its attributions and receive the parameter
+    "check_id" when called
+    @check permission(needed_level='level') ('untrusted', 'test', 'regular', 'trusted', 'root')
+    function(self, **kwargs)
+    :param func: input function
+    :return: wrapped function
+    """
     def decorator(func):
-        """
-        Decorator, which check user permission
-        Each function with this decorator need consist "**kwargs" in its attributions and receive the parameter
-        "check_id" when called
-        @check permission(needed_level='level') ('untrusted', 'test', 'regular', 'trusted', 'root')
-        function(self, **kwargs)
-        :param func: input function
-        :return: wrapped function
-        """
         @wraps(func)
         def wrap(self, *args, **kwargs):
             logger.info(func.__qualname__)
