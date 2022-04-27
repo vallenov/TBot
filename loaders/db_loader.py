@@ -164,7 +164,7 @@ class DBLoader(Loader):
         logger.info('User info updated')
 
     @check_permission(needed_level='root')
-    def update_user_privileges(self, text: str, **kwargs):
+    def update_user_privileges(self, text: str, **kwargs) -> dict:
         """
         Update user privileges in DB and memory
         """
@@ -215,7 +215,7 @@ class DBLoader(Loader):
         return resp
 
     @check_permission(needed_level='root')
-    def delete_user(self, text: str, **kwargs):
+    def delete_user(self, text: str, **kwargs) -> dict:
         """
         Delete user from DB and memory
 
@@ -248,7 +248,7 @@ class DBLoader(Loader):
         return resp
 
     @check_permission(needed_level='root')
-    def show_users(self, **kwargs):
+    def show_users(self, **kwargs) -> dict:
         """
         Show current users information
         """
@@ -347,7 +347,12 @@ class DBLoader(Loader):
         else:
             return Loader.error_resp('DB does not using')
 
-    def get_graph(self, interval: str):
+    def get_graph(self, interval: str) -> str:
+        """
+        Create graph image
+        :param interval: graph interval
+        :return: path to image
+        """
         dt = []
         cnt = []
         interval_plot = {'week': 'where date(dc.date) > date(current_date() - interval 7 day) ',
@@ -375,10 +380,10 @@ class DBLoader(Loader):
             return img_path
 
     @check_permission(needed_level='root')
-    def get_statistic(self, text, **kwargs):
+    def get_statistic(self, text, **kwargs) -> dict:
         """
         Get statistic
-        :param:
+        :param text: command string
         :return: statistic
         """
         resp = {'text': ''}
@@ -387,8 +392,8 @@ class DBLoader(Loader):
             if len(lst) == 1:
                 resp['text'] = 'Выберите интервал'
                 resp['markup'] = Loader.gen_custom_markup('statistic',
-                                                   ['Today', 'Week', 'Month', 'All'],
-                                                   '📋')
+                                                          ['Today', 'Week', 'Month', 'All'],
+                                                          '📋')
                 return resp
             if lst[1] != 'today':
                 resp['photo'] = self.get_graph(lst[1])
