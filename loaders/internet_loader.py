@@ -25,12 +25,16 @@ class InternetLoader(Loader):
         self.book_genres = {}
 
     @staticmethod
-    def _site_to_lxml(url: str, headers: dict = None) -> BeautifulSoup or None:
+    def _site_to_lxml(url: str) -> BeautifulSoup or None:
         """
         Get site and convert it to the lxml
         :param url: https://site.com/
         :return: BeautifulSoup object
         """
+        headers = {
+            'User-Agent': 'Mozilla/5.0',
+            'Connection': 'close'
+        }
         try:
             resp = requests.get(url, headers=headers)
             if resp.status_code == 200:
@@ -409,8 +413,7 @@ class InternetLoader(Loader):
             return Loader.error_resp("I can't do this yet😔")
         lst = text.split()
         number = Loader.is_phone_number(lst[1])
-        headers = {'Connection': 'close'}
-        res = requests.post(kodi_url, data={'number': number}, headers=headers)
+        res = requests.post(kodi_url, data={'number': number})
         if 'Ошибка: Номер не найден' in res.text:
             return Loader.error_resp('Number not found/Номер не найден')
         soup = BeautifulSoup(res.text, 'lxml')
@@ -603,9 +606,7 @@ class InternetLoader(Loader):
             russian_painting_url = self.config['URL']['russian_painting_url']
         else:
             return Loader.error_resp("I can't do this yet😔")
-        headers = {
-            'User-Agent': 'Mozilla/5.0'}
-        soup = InternetLoader._site_to_lxml(russian_painting_url, headers)
+        soup = InternetLoader._site_to_lxml(russian_painting_url)
         if soup is None:
             logger.error(f'Empty soup data')
             return Loader.error_resp()
@@ -615,7 +616,7 @@ class InternetLoader(Loader):
         href = a_raw.get('href')
         site = '/'.join(self.config['URL']['russian_painting_url'].split('/')[:3])
         link = site + href
-        soup = InternetLoader._site_to_lxml(link, headers)
+        soup = InternetLoader._site_to_lxml(link)
         p_raw = soup.find('p', class_='xpic')
         img_raw = p_raw.find('img')
         picture = img_raw.get('src')
