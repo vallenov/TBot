@@ -164,7 +164,7 @@ class Loader:
             pass
         if Loader.privileges_levels['root'] <= privileges:
             markup.add(InlineKeyboardButton("🛠 Admins help/Руководство админу", callback_data="admins_help"),
-                       InlineKeyboardButton("📷 Camera/Пользователи", callback_data="camera"),
+                       InlineKeyboardButton("📷 Camera/Камера", callback_data="camera"),
                        InlineKeyboardButton("👥 Users/Пользователи", callback_data="users"),
                        InlineKeyboardButton("🌐 Server IP/IP-адрес сервера", callback_data="ip"),
                        InlineKeyboardButton("📋 Statistic/Статистика", callback_data="statistic"))
