@@ -3,6 +3,7 @@ import random
 import os
 import pandas as pd
 import subprocess as sb
+import datetime
 
 from loaders.loader import Loader, check_permission
 
@@ -130,4 +131,19 @@ class FileLoader(Loader):
                                  "grep inet | "
                                  "awk '{print $2}'", shell=True)
         resp['text'] = output.decode()
+        return resp
+
+    @check_permission(needed_level='root')
+    def get_camera_capture(self, **kwargs) -> dict:
+        """
+        Get photo from camera
+        :param:
+        :return: dict with path to file
+        """
+        resp = {}
+        unique_name = 'camera_' + str(datetime.datetime.now()).replace(':', '').replace(' ', '')[:16]
+        path = os.path.join('tmp', unique_name)
+        cmd = f"raspistill -o {path} -rot 180"
+        os.system(cmd)
+        resp['photo'] = path
         return resp
