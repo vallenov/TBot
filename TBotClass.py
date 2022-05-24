@@ -72,6 +72,7 @@ class TBotClass:
             'ip': self.file_loader.get_server_ip,
             'statistic': self.db_loader.get_statistic,
             'phone': self.internet_loader.get_phone_number_info,
+            'camera': self.file_loader.get_camera_capture,
             'default': self.get_hello
         }
 
