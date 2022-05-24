@@ -143,7 +143,7 @@ class FileLoader(Loader):
         resp = {}
         unique_name = 'camera_' + str(datetime.datetime.now()).replace(':', '').replace(' ', '')[:16]
         path = os.path.join('tmp', unique_name)
-        cmd = f"raspistill -o {path} -rot 180"
+        cmd = f"raspistill -o {path} -rot 180 -w 640 -h 480"
         os.system(cmd)
         resp['photo'] = path
         return resp
