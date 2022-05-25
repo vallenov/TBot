@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import configparser
+import time
 import traceback
 import telebot
 import logging
@@ -102,6 +103,9 @@ def tbot():
                     logger.exception(f'requests.exceptions.ConnectionError exception: {rec}')
                 except urllib3.exceptions.ProtocolError as uep:
                     logger.exception(f'urllib3.exceptions.ProtocolError exception: {uep}')
+                except TypeError as te:
+                    logger.exception(f'file not ready yet: {te}')
+                    time.sleep(1)
                 except Exception as _ex:
                     logger.exception(f'Unrecognized exception: {traceback.format_exc()}')
                     if not is_send:
