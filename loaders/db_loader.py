@@ -9,6 +9,7 @@ import threading
 import matplotlib.pyplot as plt
 
 from loaders.loader import Loader, check_permission
+from models import *
 
 logger = logging.getLogger(__name__)
 handler = logging.FileHandler('run.log')
