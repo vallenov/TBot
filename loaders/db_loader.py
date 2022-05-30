@@ -85,6 +85,7 @@ class DBLoader(Loader):
     def get_users_fom_db_mysql_conn(self):
         """
         Get all users' information from DB to memory
+        (don't use. use get_users_fom_db instead)
         """
         logger.info('get_users_fom_db')
         with self.connection.cursor() as cursor:
@@ -114,21 +115,19 @@ class DBLoader(Loader):
             user_data['value'] = int(lst[3])
             Loader.users[lst[0]] = user_data
 
-    def get_p_id(self, privileges: int) -> int or None:
+    @staticmethod
+    def get_p_id(privileges: int) -> int or None:
         """
         Get privileges id by privileges value
         """
-        with self.connection.cursor() as cursor:
-            query = f'select t.p_id from {self.db_name}.lib_privileges t where t.value = {privileges}'
-            cursor.execute(query)
-            for cur in cursor:
-                p_id = cur[0]
-                break
-            if not p_id:
-                logger.error(f'p_id not found')
-                return None
-            else:
-                return p_id
+        data = md.LibPrivileges.query.filter(
+            md.LibPrivileges.value == privileges
+        ).one_or_none()
+        if not data:
+            logger.error(f'p_id not found')
+            return None
+        else:
+            return data.p_id
 
     @staticmethod
     def log_request(chat_id: str):
@@ -159,7 +158,7 @@ class DBLoader(Loader):
         """
         logger.info('add_user')
         if self.use_db:
-            p_id = md.LibPrivileges.query.filter(md.LibPrivileges.value == privileges).one_or_none().p_id
+            p_id = self.get_p_id(privileges)
             db.session.add(md.Users(chat_id=chat_id,
                                     login=login,
                                     first_name=first_name,
@@ -214,6 +213,7 @@ class DBLoader(Loader):
     def update_user_mysql_conn(self, chat_id: str, login: str, first_name: str):
         """
         Update user info in DB and memory
+        (don't use. use update_user instead)
         :param chat_id: unique user_id
         :param login: login
         :param first_name: first_name
@@ -264,7 +264,7 @@ class DBLoader(Loader):
             ).all()
             if len(user) > 1:
                 return Loader.error_resp('Count of founded data greater then 1')
-            p_id = md.LibPrivileges.query.filter(md.LibPrivileges.value == privileges).one_or_none().p_id
+            p_id = self.get_p_id(privileges)
             for u in user:
                 u.privileges_id = p_id
             db.session.commit()
@@ -278,6 +278,7 @@ class DBLoader(Loader):
     def update_user_privileges_mysql_conn(self, text: str, **kwargs) -> dict:
         """
         Update user privileges in DB and memory
+        (don't use. use update_user_privileges instead)
         """
         resp = {}
         lst = text.split()
@@ -323,39 +324,6 @@ class DBLoader(Loader):
         logger.info(f'Updating memory')
         Loader.users[chat_id]['value'] = privileges
         logger.info(f'User {chat_id} updated')
-        return resp
-
-    @check_permission(needed_level='root')
-    def delete_user(self, text: str, **kwargs) -> dict:
-        """
-        Delete user from DB and memory
-
-        NOT USED!
-
-        """
-        resp = {}
-        lst = text.split()
-        if len(lst) != 2:
-            logger.error(f'Not valid data')
-            return Loader.error_resp(f'Not valid data')
-        else:
-            chat_id = lst[1]
-            if chat_id not in Loader.users.keys():
-                return Loader.error_resp('User not found')
-            if Loader.users[chat_id]['value'] >= Loader.privileges_levels['root']:
-                return Loader.error_resp('Can not delete root users')
-            chat_id_db = f"'{chat_id}'"
-        if self.use_db:
-            with self.connection.cursor() as cursor:
-                logger.info(f'Updating DB')
-                query = f'delete from {self.db_name}.users ' \
-                        f'where chat_id = {chat_id_db} '
-                cursor.execute(query)
-                self.connection.commit()
-        logger.info(f'Updating memory')
-        Loader.users.pop(chat_id)
-        resp['text'] = f'User {chat_id} deleted'
-        logger.info(f'User {chat_id} deleted')
         return resp
 
     @check_permission(needed_level='root')
