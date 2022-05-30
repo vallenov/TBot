@@ -9,7 +9,7 @@ class LibPrivileges(db.Model):
     }
 
     p_id = db.Column(db.Integer, primary_key=True)
-    valuse = db.Column(db.Integer)
+    value = db.Column(db.Integer)
     name = db.Column(db.String(100))
 
 
