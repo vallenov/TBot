@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 
 from loaders.loader import Loader, check_permission
 from models import *
+from sqlalchemy.sql import func, or_
 
 logger = logging.getLogger(__name__)
 handler = logging.FileHandler('run.log')
@@ -307,6 +308,40 @@ class DBLoader(Loader):
 
     @check_permission()
     def get_poem(self, text: str, **kwargs) -> dict:
+        """
+        Get poem from DB
+        :param:
+        :return: poesy string
+        """
+        resp = {}
+        if self.use_db:
+            lst = text.split()
+            if len(lst) == 1:
+                max_id = db.session.query(func.max(Poems.p_id)).scalar()
+                min_id = db.session.query(func.min(Poems.p_id)).scalar()
+                random_id = random.randint(min_id, max_id + 1)
+                poem = Poems.query.filter(
+                    Poems.p_id == random_id
+                ).one_or_none()
+                if not poem:
+                    Loader.error_resp('Something wrong')
+                resp['text'] = f"{poem.author}\n\n{poem.name}\n\n{poem.text}"
+            else:
+                search_string = ' '.join(lst[1:])
+                poems = Poems.query.filter(
+                    Poems.author.like(f'%{search_string}%') | Poems.name.like(f'%{search_string}%')
+                ).all()
+                if poems:
+                    poem = random.choice(poems)
+                else:
+                    return Loader.error_resp('Poem not found')
+                resp['text'] = f"{poem.author}\n\n{poem.name}\n\n{poem.text}"
+            return resp
+        else:
+            return Loader.error_resp('DB does not using')
+
+    @check_permission()
+    def get_poem_msql_conn(self, text: str, **kwargs) -> dict:
         """
         Get poem from DB
         :param:
