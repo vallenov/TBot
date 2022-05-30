@@ -158,6 +158,24 @@ class DBLoader(Loader):
         Add new user to DB and memory
         """
         logger.info('add_user')
+        if self.use_db:
+            p_id = md.LibPrivileges.query.filter(md.LibPrivileges == privileges).one_or_none()
+            db.session.add(md.Users(chat_id=chat_id,
+                                    login=login,
+                                    first_name=first_name,
+                                    privileges_id=p_id))
+            db.session.commit()
+        logger.info(f'New user {chat_id} added')
+        Loader.users[chat_id] = dict()
+        Loader.users[chat_id]['login'] = login
+        Loader.users[chat_id]['first_name'] = first_name
+        Loader.users[chat_id]['value'] = privileges
+
+    def add_user_mysql_conn(self, chat_id: str, privileges: int, login: str, first_name: str):
+        """
+        Add new user to DB and memory
+        """
+        logger.info('add_user')
         login_db = 'NULL' if login is None else f"'{login}'"
         first_name_db = 'NULL' if first_name is None else f"'{first_name}'"
         chat_id_db = f"'{chat_id}'"
