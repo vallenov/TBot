@@ -113,7 +113,23 @@ class DBLoader(Loader):
             else:
                 return p_id
 
-    def log_request(self, chat_id):
+    @staticmethod
+    def log_request(chat_id: str):
+        """
+        Insert base request info to DB
+        :param chat_id: person chat_id
+        :return:
+        """
+        db.session.add(md.LogRequests(chat_id=chat_id))
+        db.session.commit()
+
+    def log_request_mysql_conn(self, chat_id: str):
+        """
+        Insert base request info to DB
+        (don't use. use log_request instead)
+        :param chat_id: person chat_id
+        :return:
+        """
         with self.connection.cursor() as cursor:
             query = f"insert into {self.db_name}.log_requests" \
                     f"(chat_id) values ('{chat_id}')"
@@ -344,6 +360,7 @@ class DBLoader(Loader):
     def get_poem_msql_conn(self, text: str, **kwargs) -> dict:
         """
         Get poem from DB
+        (Not in use) use get_poem instead
         :param:
         :return: poesy string
         """
