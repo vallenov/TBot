@@ -22,7 +22,7 @@ class Users(db.Model):
     chat_id = db.Column(db.String(20), primary_key=True)
     login = db.Column(db.String(100))
     first_name = db.Column(db.String(100))
-    privileges_id = db.Column(db.Integer, db.ForeignKey('lib_privileges.p_id'))
+    privileges_id = db.Column(db.Integer, db.ForeignKey(LibPrivileges.p_id))
     date_ins = db.Column(db.DateTime(timezone=True),
                          server_default=func.now())
 
@@ -37,3 +37,15 @@ class Poems(db.Model):
     author = db.Column(db.String(100))
     name = db.Column(db.String(200))
     text = db.Column(db.Text)
+
+
+class LogRequests(db.Model):
+    __tablename__ = 'log_requests'
+    __table_args__ = {
+        'schema': 'TBot'
+    }
+
+    lr_id = db.Column(db.Integer, primary_key=True)
+    chat_id = db.Column(db.String(20), db.ForeignKey(Users.chat_id))
+    date_ins = db.Column(db.DateTime(timezone=True),
+                         server_default=func.now())
