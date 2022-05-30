@@ -203,6 +203,23 @@ class DBLoader(Loader):
         """
         logger.info('update_user')
         if self.use_db:
+            user = md.Users.query.filter(md.Users.chat_id == chat_id).one_or_none()
+            user.login = login
+            user.first_name = first_name
+            db.session.commit()
+        Loader.users[chat_id]['login'] = login
+        Loader.users[chat_id]['first_name'] = first_name
+        logger.info('User info updated')
+
+    def update_user_mysql_conn(self, chat_id: str, login: str, first_name: str):
+        """
+        Update user info in DB and memory
+        :param chat_id: unique user_id
+        :param login: login
+        :param first_name: first_name
+        """
+        logger.info('update_user')
+        if self.use_db:
             with self.connection.cursor() as cursor:
                 chat_id_db = f"'{chat_id}'"
                 login_db = 'NULL' if not login else f"'{login}'"
