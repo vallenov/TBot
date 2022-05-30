@@ -25,3 +25,15 @@ class Users(db.Model):
     privileges_id = db.Column(db.Integer, db.ForeignKey('lib_privileges.p_id'))
     date_ins = db.Column(db.DateTime(timezone=True),
                          server_default=func.now())
+
+
+class Poems(db.Model):
+    __tablename__ = 'poems'
+    __table_args__ = {
+        'schema': 'TBot'
+    }
+
+    p_id = db.Column(db.Integer, primary_key=True)
+    author = db.Column(db.String(100))
+    name = db.Column(db.String(200))
+    text = db.Column(db.Text)
