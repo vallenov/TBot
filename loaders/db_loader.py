@@ -65,7 +65,24 @@ class DBLoader(Loader):
                     pass
             time.sleep(60 * 60)
 
-    def get_users_fom_db(self):
+    @staticmethod
+    def get_users_fom_db():
+        """
+        Get all users' information from DB to memory
+        """
+        logger.info('get_users_fom_db')
+        users = md.Users.query\
+            .join(md.LibPrivileges, md.Users.privileges_id == md.LibPrivileges.p_id)\
+            .add_columns(md.Users.chat_id, md.Users.login, md.Users.first_name, md.LibPrivileges.value)\
+            .all()
+        for user in users:
+            user_data = dict()
+            user_data['login'] = user.login
+            user_data['first_name'] = user.first_name
+            user_data['value'] = user.value
+            Loader.users[user.chat_id] = user_data
+
+    def get_users_fom_db_mysql_conn(self):
         """
         Get all users' information from DB to memory
         """
