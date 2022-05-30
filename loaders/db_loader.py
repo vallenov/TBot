@@ -9,8 +9,9 @@ import threading
 import matplotlib.pyplot as plt
 
 from loaders.loader import Loader, check_permission
-from models import *
-from sqlalchemy.sql import func, or_
+import models as md
+from sqlalchemy.sql import func
+from extentions import db
 
 logger = logging.getLogger(__name__)
 handler = logging.FileHandler('run.log')
@@ -317,25 +318,24 @@ class DBLoader(Loader):
         if self.use_db:
             lst = text.split()
             if len(lst) == 1:
-                max_id = db.session.query(func.max(Poems.p_id)).scalar()
-                min_id = db.session.query(func.min(Poems.p_id)).scalar()
+                max_id = db.session.query(func.max(md.Poems.p_id)).scalar()
+                min_id = db.session.query(func.min(md.Poems.p_id)).scalar()
                 random_id = random.randint(min_id, max_id + 1)
-                poem = Poems.query.filter(
-                    Poems.p_id == random_id
+                poem = md.Poems.query.filter(
+                    md.Poems.p_id == random_id
                 ).one_or_none()
                 if not poem:
                     Loader.error_resp('Something wrong')
-                resp['text'] = f"{poem.author}\n\n{poem.name}\n\n{poem.text}"
             else:
                 search_string = ' '.join(lst[1:])
-                poems = Poems.query.filter(
-                    Poems.author.like(f'%{search_string}%') | Poems.name.like(f'%{search_string}%')
+                poems = md.Poems.query.filter(
+                    md.Poems.author.like(f'%{search_string}%') | md.Poems.name.like(f'%{search_string}%')
                 ).all()
                 if poems:
                     poem = random.choice(poems)
                 else:
                     return Loader.error_resp('Poem not found')
-                resp['text'] = f"{poem.author}\n\n{poem.name}\n\n{poem.text}"
+            resp['text'] = f"{poem.author}\n\n{poem.name}\n\n{poem.text}"
             return resp
         else:
             return Loader.error_resp('DB does not using')
