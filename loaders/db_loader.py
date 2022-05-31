@@ -508,6 +508,50 @@ class DBLoader(Loader):
                                                           ['Today', 'Week', 'Month', 'All'],
                                                           '📋')
                 return resp
+            # if lst[1] != 'today':
+            #     resp['photo'] = self.get_graph(lst[1])
+            interval = {'today': 1,
+                        'week': 7,
+                        'month': 30,
+                        'all': ''}
+            if lst[1] not in interval.keys():
+                return Loader.error_resp('Interval is not valid')
+            stat_data = md.LogRequests.query \
+                .join(md.Users, md.LogRequests.chat_id == md.Users.chat_id) \
+                .with_entities(func.count(md.Users.chat_id), md.Users.login, md.Users.first_name) \
+                .group_by(md.Users.chat_id) \
+                .all()
+            to_sort = []
+            for cur in stat_data:
+                to_sort.append([cur[0], cur[1], cur[2]])
+            for index_i in range(len(to_sort)):
+                for index_j in range(len(to_sort) - 1):
+                    if index_i == index_j:
+                        continue
+                    elif to_sort[index_j][0] < to_sort[index_j + 1][0]:
+                        to_sort[index_j], to_sort[index_j + 1] = to_sort[index_j + 1], to_sort[index_j]
+            for cur in to_sort:
+                resp['text'] += f'{cur[0]} {cur[1]} {cur[2]}\n'
+            return resp
+        else:
+            return Loader.error_resp('DB is not used')
+
+    @check_permission(needed_level='root')
+    def get_statistic_mysql_conn(self, text, **kwargs) -> dict:
+        """
+        Get statistic
+        :param text: command string
+        :return: statistic
+        """
+        resp = {'text': ''}
+        lst = text.split()
+        if self.use_db:
+            if len(lst) == 1:
+                resp['text'] = 'Выберите интервал'
+                resp['markup'] = Loader.gen_custom_markup('statistic',
+                                                          ['Today', 'Week', 'Month', 'All'],
+                                                          '📋')
+                return resp
             if lst[1] != 'today':
                 resp['photo'] = self.get_graph(lst[1])
             interval = {'today': 'where lr.date_ins > current_date() - interval 1 day ',
