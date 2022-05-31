@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 
 from loaders.loader import Loader, check_permission
 import models as md
+from sqlalchemy import cast, Date
 from sqlalchemy.sql import func
 from extentions import db
 
@@ -460,7 +461,41 @@ class DBLoader(Loader):
         else:
             return Loader.error_resp('DB does not using')
 
-    def get_graph(self, interval: str) -> str:
+    @staticmethod
+    def get_graph(interval: str) -> str:
+        """
+        Create graph image
+        :param interval: graph interval
+        :return: path to image
+        """
+        dt = []
+        cnt = []
+        interval_plot = {'week': 7,
+                         'month': 30,
+                         'all': 10000}
+        interval = datetime.datetime.now() - datetime.timedelta(days=interval_plot[interval])
+        plot_data = md.LogRequests.query \
+            .with_entities(cast(md.LogRequests.date_ins, Date), func.count(md.LogRequests.chat_id)) \
+            .group_by(cast(md.LogRequests.date_ins, Date)) \
+            .filter(md.LogRequests.date_ins >= interval) \
+            .all()
+        for cur in plot_data:
+            dt.append(cur[0])
+            cnt.append(cur[1])
+        if not os.path.exists('tmp'):
+            os.mkdir('tmp')
+        unique_name = str(datetime.datetime.now()).replace(':', '').replace(' ', '')[:16]
+        img_path = os.path.join('tmp', f'graph_{unique_name}.png')
+        plt.figure(figsize=(15, 5))
+        plt.plot(dt, cnt)
+        plt.xlabel('Date', fontsize=14)
+        plt.ylabel('Count of requests', fontsize=14)
+        plt.grid()
+        plt.savefig(img_path)
+        plt.close()
+        return img_path
+
+    def get_graph_mysql_conn(self, interval: str) -> str:
         """
         Create graph image
         :param interval: graph interval
@@ -508,16 +543,18 @@ class DBLoader(Loader):
                                                           ['Today', 'Week', 'Month', 'All'],
                                                           '📋')
                 return resp
-            # if lst[1] != 'today':
-            #     resp['photo'] = self.get_graph(lst[1])
-            interval = {'today': 1,
-                        'week': 7,
-                        'month': 30,
-                        'all': ''}
-            if lst[1] not in interval.keys():
+            interval_map = {'today': 1,
+                            'week': 7,
+                            'month': 30,
+                            'all': 100000}
+            if lst[1] not in interval_map.keys():
                 return Loader.error_resp('Interval is not valid')
+            if lst[1] != 'today':
+                resp['photo'] = self.get_graph(lst[1])
+            interval = datetime.datetime.now() - datetime.timedelta(days=interval_map[lst[1]])
             stat_data = md.LogRequests.query \
                 .join(md.Users, md.LogRequests.chat_id == md.Users.chat_id) \
+                .filter(md.LogRequests.date_ins >= interval) \
                 .with_entities(func.count(md.Users.chat_id), md.Users.login, md.Users.first_name) \
                 .group_by(md.Users.chat_id) \
                 .all()
