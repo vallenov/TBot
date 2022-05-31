@@ -4,8 +4,8 @@ import time
 import traceback
 import os
 import datetime
-from mysql.connector import connect, Error
-import threading
+# from mysql.connector import connect, Error
+# import threading
 import matplotlib.pyplot as plt
 
 from loaders.loader import Loader, check_permission
@@ -30,10 +30,10 @@ class DBLoader(Loader):
         super().__init__(name)
         self.db_name = 'TBot'
         if self.use_db:
-            self.get_connect()
+            # self.get_connect()
             self.get_users_fom_db()
-            cwu = threading.Thread(target=self.connection_warming_up)
-            cwu.start()
+            # cwu = threading.Thread(target=self.connection_warming_up)
+            # cwu.start()
         else:
             self.get_users_fom_config()
 
