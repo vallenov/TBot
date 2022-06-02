@@ -12,9 +12,10 @@ import requests
 import urllib3.exceptions
 import math
 
+import config
+
 from TBotClass import TBotClass
 
-MAX_TRY = 5
 MAX_LEN = 4000
 
 DOWNLOADS = 'downloads'
@@ -46,9 +47,9 @@ def tbot():
     """
     Main func
     """
-    config = configparser.ConfigParser()
-    config.read('TBot.ini', encoding='windows-1251')
-    token = config['MAIN']['token']
+    # config = configparser.ConfigParser()
+    # config.read('TBot.ini', encoding='windows-1251')
+    token = config.MAIN.get('token')
     bot = telebot.TeleBot(token)
     check_bot_connection(bot)
 
@@ -84,7 +85,7 @@ def tbot():
         cnt_message = math.ceil(len(replace) / MAX_LEN) if text is not None else 1
         photo = replace.get('photo', None)
         for cnt in range(cnt_message):
-            while current_try < MAX_TRY:
+            while current_try < config.CONSTANTS.get('MAX_TRY'):
                 current_try += 1
                 try:
                     if photo is not None:

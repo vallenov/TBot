@@ -1,10 +1,13 @@
 import logging
 import random
 import os
+import time
+
 import pandas as pd
 import subprocess as sb
 import datetime
 
+import config
 from loaders.loader import Loader, check_permission
 
 logger = logging.getLogger(__name__)
@@ -145,5 +148,11 @@ class FileLoader(Loader):
         path = os.path.join('tmp', unique_name)
         cmd = f"raspistill -o {path} -rot 180 -w 640 -h 480"
         os.system(cmd)
-        resp['photo'] = path
-        return resp
+        i = 0
+        while i < config.CONSTANTS.get('MAX_TRY'):
+            if os.path.exists(path):
+                resp['photo'] = path
+                return resp
+            time.sleep(1)
+            i += 1
+        return Loader.error_resp('Something wrong')

@@ -7,12 +7,12 @@ import requests
 import inspect
 from functools import wraps
 
+import config
+
 from loaders.loader import Loader, check_permission
 from loaders.internet_loader import InternetLoader
 from loaders.file_loader import FileLoader
 from loaders.db_loader import DBLoader
-
-MAX_TRY = 15
 
 logger = logging.getLogger(__name__)
 handler = logging.FileHandler('run.log')
@@ -214,11 +214,11 @@ class TBotClass:
             logger.error(resp['descr'])
             return resp
         if by == 'mail':
-            data.update({'to': self.config.get('MAIL', 'address')})
+            data.update({'to': config.MAIL.get('address')})
         else:
-            data.update({'to': self.config.get('DB', 'login')})
+            data.update({'to': config.MAIL.get('login')})
         current_try = 0
-        while current_try < MAX_TRY:
+        while current_try < config.CONSTANTS.get('MAX_TRY'):
             current_try += 1
             try:
                 res = requests.post(self.config.get('MAIL', 'message_server_address') + '/' + by, data=data,

@@ -4,9 +4,11 @@ import time
 import traceback
 import os
 import datetime
-# from mysql.connector import connect, Error
+from mysql.connector import connect, Error
 # import threading
 import matplotlib.pyplot as plt
+
+import config
 
 from loaders.loader import Loader, check_permission
 import models as md
@@ -45,9 +47,9 @@ class DBLoader(Loader):
         try:
             logger.info(f'Try to connect to DB')
             self.connection = connect(
-                host=self.config['DB']['host'],
-                user=self.config['DB']['login'],
-                password=self.config['DB']['password'])
+                host=config.DB['host'],
+                user=config.DB['login'],
+                password=config.DB['password'])
         except Error as e:
             logger.exception(f'Connection error {e}\nTraceback: {traceback.format_exc()}')
         else:
