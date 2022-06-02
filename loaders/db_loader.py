@@ -85,19 +85,19 @@ class DBLoader(Loader):
             user_data['value'] = user.value
             Loader.users[user.chat_id] = user_data
 
-    def get_users_fom_config(self):
+    @staticmethod
+    def get_users_fom_config():
         """
         Get all users' information from config to memory
         """
         logger.info('get_users_fom_config')
-        users = self.config['USERS']
+        users = config.USERS
         for value in users.values():
-            lst = value.split(',')
-            user_data = dict()
-            user_data['login'] = lst[1]
-            user_data['first_name'] = lst[2]
-            user_data['value'] = int(lst[3])
-            Loader.users[lst[0]] = user_data
+            Loader.users[value['chat_id']] = {
+                'login': value['login'],
+                'first_name': value['first_name'],
+                'value': value['privileges']
+            }
 
     @staticmethod
     def get_p_id(privileges: int) -> int or None:
