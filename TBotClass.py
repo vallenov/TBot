@@ -216,7 +216,7 @@ class TBotClass:
         if by == 'mail':
             data.update({'to': config.MAIL.get('address')})
         else:
-            data.update({'to': config.MAIL.get('login')})
+            data.update({'to': config.DB.get('login')})
         current_try = 0
         while current_try < config.CONSTANTS.get('MAX_TRY'):
             current_try += 1
