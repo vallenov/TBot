@@ -3,6 +3,8 @@ import logging
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from functools import wraps
 
+import config
+
 logger = logging.getLogger(__name__)
 handler = logging.FileHandler('run.log')
 handler.setLevel(logging.INFO)
@@ -61,7 +63,7 @@ class Loader:
         self.name = name
         Loader.loaders.append(self.name)
         self._get_config()
-        self.use_db = True if int(self.config['MAIN']['USE_DB']) else False
+        self.use_db = True if config.MAIN.get('USE_DB') else False
 
     def _get_config(self):
         """
