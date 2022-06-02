@@ -46,7 +46,7 @@ class TBotClass:
         self.db_loader = DBLoader('DBLoader')
         self.file_loader = FileLoader('FLoader')
         self.get_config()
-        self.is_prod = int(self.config.get('MAIN', 'PROD'))
+        self.is_prod = config.MAIN.get('PROD')
         if self.is_prod:
             logger.info(f'Send start message to root users')
             self.send_dev_message({'text': 'TBot is started'}, 'telegram')
@@ -216,7 +216,7 @@ class TBotClass:
         if by == 'mail':
             data.update({'to': config.MAIL.get('address')})
         else:
-            data.update({'to': config.MAIL.get('login')})
+            data.update({'to': config.DB.get('login')})
         current_try = 0
         while current_try < config.CONSTANTS.get('MAX_TRY'):
             current_try += 1
