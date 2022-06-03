@@ -209,8 +209,7 @@ class TBotClass:
         """
         resp = {}
         if by not in ('mail', 'telegram'):
-            resp['res'] = 'ERROR'
-            resp['descr'] = f'Wrong parameter by ({by}) in send_dev_message'
+            Loader.error_resp(f'Wrong parameter by ({by}) in send_dev_message')
             logger.error(resp['descr'])
             return resp
         if by == 'mail':
