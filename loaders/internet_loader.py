@@ -6,6 +6,8 @@ from bs4 import BeautifulSoup
 import asyncio
 import aiohttp
 
+import config
+
 from loaders.loader import Loader, check_permission
 
 logger = logging.getLogger(__name__)
@@ -58,8 +60,8 @@ class InternetLoader(Loader):
         :return: string like {'USD': '73,6059', 'EUR':'83,1158'}
         """
         resp = {}
-        if self.config.has_option('URL', 'exchange_url'):
-            exchange_url = self.config['URL']['exchange_url']
+        if config.LINKS.get('exchange_url', None):
+            exchange_url = config.LINKS['exchange_url']
         else:
             return Loader.error_resp("I can't do this yet😔")
         ex = ['USD', 'EUR']
@@ -85,8 +87,8 @@ class InternetLoader(Loader):
         :return: dict like {'Сегодня': '10°/15°', 'ср 12': '11°/18°'}
         """
         resp = {}
-        if self.config.has_option('URL', 'weather_url'):
-            weather_url = self.config['URL']['weather_url']
+        if config.LINKS.get('weather_url', None):
+            weather_url = config.LINKS['weather_url']
         else:
             return Loader.error_resp("I can't do this yet😔")
         soup = InternetLoader._site_to_lxml(weather_url)
@@ -112,8 +114,8 @@ class InternetLoader(Loader):
         :return: dict like {'quote1': 'author1', 'quote2: 'author2'}
         """
         resp = {}
-        if self.config.has_option('URL', 'quote_url'):
-            quote_url = self.config['URL']['quote_url']
+        if config.LINKS.get('quote_url', None):
+            quote_url = config.LINKS['quote_url']
         else:
             return Loader.error_resp("I can't do this yet😔")
         soup = InternetLoader._site_to_lxml(quote_url)
@@ -137,8 +139,8 @@ class InternetLoader(Loader):
         :return: wish string
         """
         resp = {}
-        if self.config.has_option('URL', 'wish_url'):
-            wish_url = self.config['URL']['wish_url']
+        if config.LINKS.get('wish_url', None):
+            wish_url = config.LINKS['wish_url']
         else:
             return Loader.error_resp("I can't do this yet😔")
         soup = InternetLoader._site_to_lxml(wish_url)
@@ -165,8 +167,8 @@ class InternetLoader(Loader):
                 count = int(lst[1])
             except ValueError:
                 return Loader.error_resp('Count of news is not number')
-        if self.config.has_option('URL', 'news_url'):
-            news_url = self.config['URL']['news_url']
+        if config.LINKS.get('news_url', None):
+            news_url = config.LINKS['news_url']
         else:
             return Loader.error_resp("I can't do this yet😔")
         soup = InternetLoader._site_to_lxml(news_url)
@@ -193,8 +195,8 @@ class InternetLoader(Loader):
         :return: affirmation string
         """
         resp = {}
-        if self.config.has_option('URL', 'affirmation_url'):
-            affirmation_url = self.config['URL']['affirmation_url']
+        if config.LINKS.get('affirmation_url', None):
+            affirmation_url = config.LINKS['affirmation_url']
         else:
             return Loader.error_resp("I can't do this yet😔")
         soup = InternetLoader._site_to_lxml(affirmation_url)
@@ -233,8 +235,8 @@ class InternetLoader(Loader):
         self.async_url_data = []
         tasks = []
         resp = {}
-        if self.config.has_option('URL', 'events_url'):
-            events_url = self.config['URL']['events_url']
+        if config.LINKS.get('events_url', None):
+            events_url = config.LINKS['events_url']
         else:
             return Loader.error_resp("I can't do this yet😔")
         async with aiohttp.ClientSession() as session:
@@ -275,8 +277,8 @@ class InternetLoader(Loader):
         :return: events digest
         """
         resp = {}
-        if self.config.has_option('URL', 'events_url'):
-            events_url = self.config['URL']['events_url']
+        if config.LINKS.get('events_url', None):
+            events_url = config.LINKS['events_url']
         else:
             return Loader.error_resp("I can't do this yet😔")
         soup = InternetLoader._site_to_lxml(events_url)
@@ -310,8 +312,8 @@ class InternetLoader(Loader):
         :return: restaurant string
         """
         resp = {}
-        if self.config.has_option('URL', 'restaurant_url'):
-            restaurant_url = self.config['URL']['restaurant_url']
+        if config.LINKS.get('restaurant_url', None):
+            restaurant_url = config.LINKS['restaurant_url']
         else:
             return Loader.error_resp("I can't do this yet😔")
         soup = InternetLoader._site_to_lxml(restaurant_url + '/msk/catalog/restaurants/all/')
@@ -328,7 +330,7 @@ class InternetLoader(Loader):
                                                 + f'?page={rand_page}')
         names = soup.find_all('a', class_='name')
         restaurant = random.choice(names)
-        soup = InternetLoader._site_to_lxml(self.config['URL']['restaurant_url'] + restaurant.get('href'))
+        soup = InternetLoader._site_to_lxml(config.LINKS['restaurant_url'] + restaurant.get('href'))
         div_raw = soup.find('div', class_='props one-line-props')
         final_restaurant = dict()
         final_restaurant[0] = restaurant.text
@@ -341,7 +343,7 @@ class InternetLoader(Loader):
                 value = value.text.strip().replace('\n', '')
             if name is not None and value is not None:
                 final_restaurant[name] = value
-        final_restaurant[1] = self.config['URL']['restaurant_url'] + restaurant.get('href')
+        final_restaurant[1] = config.LINKS['restaurant_url'] + restaurant.get('href')
         resp['text'] = Loader.dict_to_str(final_restaurant, ' ')
         return resp
 
@@ -353,8 +355,8 @@ class InternetLoader(Loader):
         :return: poesy string
         """
         resp = {}
-        if self.config.has_option('URL', 'poesy_url'):
-            poesy_url = self.config['URL']['poesy_url']
+        if config.LINKS.get('poesy_url', None):
+            poesy_url = config.LINKS['poesy_url']
         else:
             return Loader.error_resp("I can't do this yet😔")
         soup = InternetLoader._site_to_lxml(poesy_url)
@@ -366,12 +368,12 @@ class InternetLoader(Loader):
         count = int(a_raw[-1].text)
         rand = random.randint(1, count)
         if rand > 1:
-            soup = InternetLoader._site_to_lxml(self.config['URL']['poesy_url'] + f'?page={rand}')
+            soup = InternetLoader._site_to_lxml(config.LINKS['poesy_url'] + f'?page={rand}')
         poems_raw = soup.find('div', class_='_2VELq')
         poems_raw = poems_raw.find_all('div', class_='_1jGw_')
         rand_poem_raw = random.choice(poems_raw)
         href = rand_poem_raw.find('a', class_='_2A3Np').get('href')
-        link = '/'.join(self.config['URL']['poesy_url'].split('/')[:-3]) + href
+        link = '/'.join(config.LINKS['poesy_url'].split('/')[:-3]) + href
 
         soup = InternetLoader._site_to_lxml(link)
 
@@ -407,8 +409,8 @@ class InternetLoader(Loader):
         :return: poesy string
         """
         resp = {}
-        if self.config.has_option('URL', 'kodi_url'):
-            kodi_url = self.config['URL']['kodi_url']
+        if config.LINKS.get('kodi_url', None):
+            kodi_url = config.LINKS['kodi_url']
         else:
             return Loader.error_resp("I can't do this yet😔")
         lst = text.split()
@@ -477,8 +479,8 @@ class InternetLoader(Loader):
                     year_to = year_from
                 except ValueError as e:
                     return Loader.error_resp('Format of data is not valid')
-        if self.config.has_option('URL', 'random_movie_url'):
-            random_movie_url = self.config['URL']['random_movie_url'].format(year_from, year_to)
+        if config.LINKS.get('random_movie_url', None):
+            random_movie_url = config.LINKS['random_movie_url'].format(year_from, year_to)
         else:
             return Loader.error_resp("I can't do this yet😔")
         soup = InternetLoader._site_to_lxml(random_movie_url)
@@ -537,8 +539,8 @@ class InternetLoader(Loader):
         """
         if self.book_genres:
             return
-        if self.config.has_option('URL', 'book_url'):
-            book_url = self.config['URL']['book_url']
+        if config.LINKS.get('book_url', None):
+            book_url = config.LINKS['book_url']
         else:
             return Loader.error_resp("I can't do this yet😔")
         soup = InternetLoader._site_to_lxml(book_url)
@@ -573,7 +575,7 @@ class InternetLoader(Loader):
                 category = self.book_genres[genre]
         if not category:
             return Loader.error_resp('Genre is not valid')
-        site = '/'.join(self.config['URL']['book_url'].split('/')[:3])
+        site = '/'.join(config.LINKS['book_url'].split('/')[:3])
         soup = InternetLoader._site_to_lxml(f'{site}{category}/listview/biglist/~6')
         if soup is None:
             logger.error(f'Empty soup data')
@@ -602,8 +604,8 @@ class InternetLoader(Loader):
         :return: dict
         """
         resp = {}
-        if self.config.has_option('URL', 'russian_painting_url'):
-            russian_painting_url = self.config['URL']['russian_painting_url']
+        if config.LINKS.get('russian_painting_url', None):
+            russian_painting_url = config.LINKS['russian_painting_url']
         else:
             return Loader.error_resp("I can't do this yet😔")
         soup = InternetLoader._site_to_lxml(russian_painting_url)
@@ -614,7 +616,7 @@ class InternetLoader(Loader):
         random_painting = random.choice(div_raw)
         a_raw = random_painting.find('a')
         href = a_raw.get('href')
-        site = '/'.join(self.config['URL']['russian_painting_url'].split('/')[:3])
+        site = '/'.join(config.LINKS['russian_painting_url'].split('/')[:3])
         link = site + href
         soup = InternetLoader._site_to_lxml(link)
         p_raw = soup.find('p', class_='xpic')
