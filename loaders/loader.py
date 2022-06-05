@@ -62,15 +62,15 @@ class Loader:
     def __init__(self, name):
         self.name = name
         Loader.loaders.append(self.name)
-        self._get_config()
+        # self._get_config()
         self.use_db = True if config.MAIN.get('USE_DB') else False
 
-    def _get_config(self):
-        """
-        Get config from file
-        """
-        self.config = configparser.ConfigParser()
-        self.config.read('TBot.ini', encoding='windows-1251')
+    # def _get_config(self):
+    #     """
+    #     Get config from file
+    #     """
+    #     self.config = configparser.ConfigParser()
+    #     self.config.read('TBot.ini', encoding='windows-1251')
 
     @staticmethod
     def get_loaders():

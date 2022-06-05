@@ -325,7 +325,7 @@ class InternetLoader(Loader):
         page_count = int(a_raw.get('data-nav-page-count'))
         rand_page = random.choice(range(1, page_count + 1))
         if rand_page > 1:
-            soup = InternetLoader._site_to_lxml(self.config['URL']['restaurant_url']
+            soup = InternetLoader._site_to_lxml(config.LINKS['restaurant_url']
                                                 + '/msk/catalog/restaurants/all/'
                                                 + f'?page={rand_page}')
         names = soup.find_all('a', class_='name')
