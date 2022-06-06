@@ -110,7 +110,7 @@ def tbot():
                 except Exception as _ex:
                     logger.exception(f'Unrecognized exception: {traceback.format_exc()}')
                     if not is_send:
-                        tb.send_dev_message({'subject': 'TBot EXCEPTION', 'text': f'{traceback.format_exc()}'})
+                        tb.send_dev_message({'subject': _ex, 'text': f'{traceback.format_exc()}'})
                         is_send = True
                 else:
                     if text is not None:

@@ -45,7 +45,7 @@ class TBotClass:
         self.internet_loader = InternetLoader('ILoader')
         self.db_loader = DBLoader('DBLoader')
         self.file_loader = FileLoader('FLoader')
-        self.get_config()
+        # self.get_config()
         self.is_prod = config.MAIN.get('PROD')
         if self.is_prod:
             logger.info(f'Send start message to root users')
@@ -88,7 +88,7 @@ class TBotClass:
         :return: replace dict
         """
         resp = {}
-        self.get_config()
+        # self.get_config()
         chat_id = str(message.json['chat']['id'])
         if self.internet_loader.use_db:
             login = message.json['chat'].get('username', None)
@@ -175,9 +175,9 @@ class TBotClass:
                            f'Send_other "chat_id" "text"\n')
         return resp
 
-    def get_config(self):
-        self.config = configparser.ConfigParser()
-        self.config.read('TBot.ini', encoding='windows-1251')
+    # def get_config(self):
+    #     self.config = configparser.ConfigParser()
+    #     self.config.read('TBot.ini', encoding='windows-1251')
 
     @check_permission(needed_level='root')
     def send_other(self, text: str, **kwargs):
@@ -201,7 +201,8 @@ class TBotClass:
         resp['text'] = ' '.join(lst[2:])
         return resp
 
-    def send_dev_message(self, data: dict, by: str = 'mail') -> dict:
+    @staticmethod
+    def send_dev_message(data: dict, by: str = 'mail') -> dict:
         """
         Send message to admin
         :param data: {'to': name or email, 'subject': 'subject' (unnecessary), 'text': 'text'}
@@ -209,8 +210,7 @@ class TBotClass:
         """
         resp = {}
         if by not in ('mail', 'telegram'):
-            resp['res'] = 'ERROR'
-            resp['descr'] = f'Wrong parameter by ({by}) in send_dev_message'
+            Loader.error_resp(f'Wrong parameter by ({by}) in send_dev_message')
             logger.error(resp['descr'])
             return resp
         if by == 'mail':
@@ -221,7 +221,7 @@ class TBotClass:
         while current_try < config.CONSTANTS.get('MAX_TRY'):
             current_try += 1
             try:
-                res = requests.post(self.config.get('MAIL', 'message_server_address') + '/' + by, data=data,
+                res = requests.post(config.MAIL.get(f'message_server_address/{by}'), data=data,
                                     headers={'Connection': 'close'})
             except Exception as _ex:
                 logger.exception(_ex)
