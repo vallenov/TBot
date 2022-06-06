@@ -221,7 +221,7 @@ class TBotClass:
         while current_try < config.CONSTANTS.get('MAX_TRY'):
             current_try += 1
             try:
-                res = requests.post(config.MAIL.get(f'message_server_address/{by}'), data=data,
+                res = requests.post(config.MAIL.get('message_server_address') + '/' + by, data=data,
                                     headers={'Connection': 'close'})
             except Exception as _ex:
                 logger.exception(_ex)
