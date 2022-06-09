@@ -151,7 +151,7 @@ def tbot():
         :return:
         """
         file_info = None
-        file_extention = None
+        file_extension = None
         curdir = os.curdir
         if message.content_type == 'text':
             logger.info(f'Request: '
@@ -166,22 +166,22 @@ def tbot():
                                      f'RAW - {message.chat}')
             return
         if message.content_type == 'photo':
-            file_extention = '.jpg'
+            file_extension = '.jpg'
             file_info = bot.get_file(message.photo[-1].file_id)
         if message.content_type == 'audio':
-            file_extention = '.mp3'
+            file_extension = '.mp3'
             file_info = bot.get_file(message.audio.file_id)
         if message.content_type == 'voice':
-            file_extention = '.mp3'
+            file_extension = '.mp3'
             file_info = bot.get_file(message.voice.file_id)
         if message.content_type == 'video':
-            file_extention = '.mp4'
+            file_extension = '.mp4'
             file_info = bot.get_file(message.video.file_id)
         if not os.path.exists(os.path.join(curdir, DOWNLOADS, message.content_type)):
             os.mkdir(os.path.join(curdir, DOWNLOADS, message.content_type))
             os.chown(os.path.join(curdir, DOWNLOADS, message.content_type), 1000, 1000)
         file_name = os.path.join(curdir, DOWNLOADS, message.content_type,
-                                 f'{now_time()}{_get_hash_name()}{file_extention}')
+                                 f'{now_time()}{_get_hash_name()}{file_extension}')
         downloaded_info = bot.download_file(file_info.file_path)
         with open(file_name, 'wb') as new_file:
             new_file.write(downloaded_info)
