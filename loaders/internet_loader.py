@@ -669,3 +669,38 @@ class InternetLoader(Loader):
                 return resp
         except Exception as ex:
             logger.exception(f'Exception: {ex}')
+
+    @check_permission()
+    def ngrok_db(self, text: str, **kwargs) -> dict:
+        """
+        Actions with ngrok_db
+        :param:
+        :return: operation status
+        """
+        resp = {}
+        if config.LINKS.get('system-monitor', None):
+            system_monitor = config.LINKS['system-monitor']
+        else:
+            return Loader.error_resp("I can't do this yet😔")
+        command = text.split(' ')
+        valid_actions = ['start', 'stop', 'restart']
+        if len(command) > 2:
+            return Loader.error_resp('Format of data is not valid')
+        if len(command) == 1:
+            resp['text'] = 'Выберите действие'
+            resp['markup'] = Loader.gen_custom_markup('ngrok_db',
+                                                      valid_actions,
+                                                      '🖥')
+            return resp
+        if command[1] not in valid_actions:
+            return Loader.error_resp('Command is not valid')
+        try:
+            data = requests.get(system_monitor + f'{command[1]}_ngrok_db')
+            if data.status_code != 200:
+                logger.error(f'requests status is not valid: {data.status_code}')
+                return Loader.error_resp('Someting wrong')
+            else:
+                resp['text'] = data['msg']
+                return resp
+        except Exception as ex:
+            logger.exception(f'Exception: {ex}')
