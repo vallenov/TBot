@@ -88,7 +88,6 @@ class TBotClass:
         :param message: message from user
         :return: replace dict
         """
-        resp = {}
         # self.get_config()
         chat_id = str(message.json['chat']['id'])
         if self.internet_loader.use_db:
@@ -116,7 +115,6 @@ class TBotClass:
             self.db_loader.log_request(chat_id)
 
         if message.content_type == 'text':
-            resp['status'] = 'OK'
             form_text = message.text.lower().strip()
             sptext = form_text.split()
             default_func = self.mapping.get('default')
