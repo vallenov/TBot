@@ -5,6 +5,7 @@ import requests
 from bs4 import BeautifulSoup
 import asyncio
 import aiohttp
+import json
 
 import config
 
@@ -648,7 +649,7 @@ class InternetLoader(Loader):
         else:
             return Loader.error_resp("I can't do this yet😔")
         command = text.split(' ')
-        valid_actions = ['start', 'stop', 'restart']
+        valid_actions = ['start', 'stop', 'restart', 'tunnels']
         if len(command) > 2:
             return Loader.error_resp('Format of data is not valid')
         if len(command) == 1:
@@ -660,12 +661,52 @@ class InternetLoader(Loader):
         if command[1] not in valid_actions:
             return Loader.error_resp('Command is not valid')
         try:
-            data = requests.get(system_monitor + f'{command[1]}_ngrok')
+            data = requests.get(system_monitor + f'ngrok_{command[1]}')
             if data.status_code != 200:
                 logger.error(f'requests status is not valid: {data.status_code}')
                 return Loader.error_resp('Someting wrong')
             else:
-                resp['text'] = data['msg']
+                sys_mon_res = json.loads(data.text)
+                if isinstance(sys_mon_res['msg'], str):
+                    resp['text'] = sys_mon_res['msg']
+                elif isinstance(sys_mon_res['msg'], list):
+                    resp['text'] = '\n'.join(sys_mon_res['msg'])
+                return resp
+        except Exception as ex:
+            logger.exception(f'Exception: {ex}')
+
+    @check_permission()
+    def ngrok_db(self, text: str, **kwargs) -> dict:
+        """
+        Actions with ngrok_db
+        :param:
+        :return: operation status
+        """
+        resp = {}
+        if config.LINKS.get('system-monitor', None):
+            system_monitor = config.LINKS['system-monitor']
+        else:
+            return Loader.error_resp("I can't do this yet😔")
+        command = text.split(' ')
+        valid_actions = ['start', 'stop', 'restart']
+        if len(command) > 2:
+            return Loader.error_resp('Format of data is not valid')
+        if len(command) == 1:
+            resp['text'] = 'Выберите действие'
+            resp['markup'] = Loader.gen_custom_markup('ngrok_db',
+                                                      valid_actions,
+                                                      '📦')
+            return resp
+        if command[1] not in valid_actions:
+            return Loader.error_resp('Command is not valid')
+        try:
+            data = requests.get(system_monitor + f'ngrok_db_{command[1]}')
+            if data.status_code != 200:
+                logger.error(f'requests status is not valid: {data.status_code}')
+                return Loader.error_resp('Someting wrong')
+            else:
+                sys_mon_res = json.loads(data.text)
+                resp['text'] = sys_mon_res['msg']
                 return resp
         except Exception as ex:
             logger.exception(f'Exception: {ex}')

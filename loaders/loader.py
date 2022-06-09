@@ -167,10 +167,11 @@ class Loader:
         if Loader.privileges_levels['root'] <= privileges:
             markup.add(InlineKeyboardButton("🛠 Admins help/Руководство админу", callback_data="admins_help"),
                        InlineKeyboardButton("🖥 Ngrok", callback_data="ngrok"),
+                       InlineKeyboardButton("📦 Ngrok DB", callback_data="ngrok_db"),
                        InlineKeyboardButton("📷 Camera/Камера", callback_data="camera"),
                        InlineKeyboardButton("👥 Users/Пользователи", callback_data="users"),
                        InlineKeyboardButton("🌐 Server IP/IP-адрес сервера", callback_data="ip"),
-                       InlineKeyboardButton("📋 Statistic/Статистика", callback_data="statistic"))
+                       InlineKeyboardButton("📊 Statistic/Статистика", callback_data="statistic"))
         return markup
 
     @staticmethod
