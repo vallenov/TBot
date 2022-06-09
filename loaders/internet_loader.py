@@ -451,9 +451,9 @@ class InternetLoader(Loader):
         if len(command) == 1:
             resp['text'] = 'Выберите промежуток'
             resp['markup'] = Loader.gen_custom_markup('movie',
-                                     ['1950-1960', '1960-1970', '1970-1980',
-                                      '1980-1990', '1990-2000', '2000-2010', '2010-2020'],
-                                     '🎞')
+                                                      ['1950-1960', '1960-1970', '1970-1980',
+                                                       '1980-1990', '1990-2000', '2000-2010', '2010-2020'],
+                                                      '🎞')
             return resp
         elif len(command) == 2:
             if '-' not in command[1]:
@@ -670,7 +670,16 @@ class InternetLoader(Loader):
                 if isinstance(sys_mon_res['msg'], str):
                     resp['text'] = sys_mon_res['msg']
                 elif isinstance(sys_mon_res['msg'], list):
-                    resp['text'] = '\n'.join(sys_mon_res['msg'])
+                    if len(sys_mon_res['msg']) == 0:
+                        resp['text'] = 'Отсутствуют открытые туннели'
+                        return resp
+                    resp['text'] = '\n\n'.join(
+                        ['\n'.join([f"url: {i['url']}",
+                                    f"port: {i['port']}",
+                                    f"protocol: {i['protocol']}",
+                                    f"forwards_to: {i['forwards_to']}"]) for i in sys_mon_res['msg']
+                         ]
+                    )
                 return resp
         except Exception as ex:
             logger.exception(f'Exception: {ex}')
