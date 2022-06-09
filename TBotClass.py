@@ -74,6 +74,7 @@ class TBotClass:
             'phone': self.internet_loader.get_phone_number_info,
             'camera': self.file_loader.get_camera_capture,
             'ngrok': self.internet_loader.ngrok,
+            'ngrok_db': self.internet_loader.ngrok_db,
             'default': self.get_hello
         }
 
