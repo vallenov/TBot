@@ -692,7 +692,7 @@ class InternetLoader(Loader):
             resp['text'] = 'Выберите действие'
             resp['markup'] = Loader.gen_custom_markup('ngrok_db',
                                                       valid_actions,
-                                                      '🖥')
+                                                      '📦')
             return resp
         if command[1] not in valid_actions:
             return Loader.error_resp('Command is not valid')
