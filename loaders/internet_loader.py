@@ -661,7 +661,7 @@ class InternetLoader(Loader):
         if command[1] not in valid_actions:
             return Loader.error_resp('Command is not valid')
         try:
-            data = requests.get(system_monitor + f'{command[1]}_ngrok')
+            data = requests.get(system_monitor + f'ngrok_{command[1]}')
             if data.status_code != 200:
                 logger.error(f'requests status is not valid: {data.status_code}')
                 return Loader.error_resp('Someting wrong')
@@ -697,7 +697,7 @@ class InternetLoader(Loader):
         if command[1] not in valid_actions:
             return Loader.error_resp('Command is not valid')
         try:
-            data = requests.get(system_monitor + f'{command[1]}_ngrok_db')
+            data = requests.get(system_monitor + f'ngrok_db_{command[1]}')
             if data.status_code != 200:
                 logger.error(f'requests status is not valid: {data.status_code}')
                 return Loader.error_resp('Someting wrong')
