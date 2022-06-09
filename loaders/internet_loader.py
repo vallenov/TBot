@@ -5,6 +5,7 @@ import requests
 from bs4 import BeautifulSoup
 import asyncio
 import aiohttp
+import json
 
 import config
 
@@ -665,7 +666,8 @@ class InternetLoader(Loader):
                 logger.error(f'requests status is not valid: {data.status_code}')
                 return Loader.error_resp('Someting wrong')
             else:
-                resp['text'] = data['msg']
+                sys_mon_res = json.loads(data.text)
+                resp['text'] = sys_mon_res['msg']
                 return resp
         except Exception as ex:
             logger.exception(f'Exception: {ex}')
@@ -700,7 +702,8 @@ class InternetLoader(Loader):
                 logger.error(f'requests status is not valid: {data.status_code}')
                 return Loader.error_resp('Someting wrong')
             else:
-                resp['text'] = data['msg']
+                sys_mon_res = json.loads(data.text)
+                resp['text'] = sys_mon_res['msg']
                 return resp
         except Exception as ex:
             logger.exception(f'Exception: {ex}')
