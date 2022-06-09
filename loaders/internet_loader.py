@@ -649,7 +649,7 @@ class InternetLoader(Loader):
         else:
             return Loader.error_resp("I can't do this yet😔")
         command = text.split(' ')
-        valid_actions = ['start', 'stop', 'restart']
+        valid_actions = ['start', 'stop', 'restart', 'tunnels']
         if len(command) > 2:
             return Loader.error_resp('Format of data is not valid')
         if len(command) == 1:
@@ -667,7 +667,10 @@ class InternetLoader(Loader):
                 return Loader.error_resp('Someting wrong')
             else:
                 sys_mon_res = json.loads(data.text)
-                resp['text'] = sys_mon_res['msg']
+                if isinstance(sys_mon_res['msg'], str):
+                    resp['text'] = sys_mon_res['msg']
+                elif isinstance(sys_mon_res['msg'], list):
+                    resp['text'] = '\n'.join(sys_mon_res['msg'])
                 return resp
         except Exception as ex:
             logger.exception(f'Exception: {ex}')
