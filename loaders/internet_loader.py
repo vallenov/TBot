@@ -641,7 +641,7 @@ class InternetLoader(Loader):
         """
         Actions with ngrok
         :param:
-        :return: operation status
+        :return: operation status or tunnel's info
         """
         resp = {}
         if config.LINKS.get('system-monitor', None):
