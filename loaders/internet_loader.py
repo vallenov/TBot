@@ -636,7 +636,7 @@ class InternetLoader(Loader):
         resp['text'] = text
         return resp
 
-    @check_permission()
+    @check_permission(needed_level='root')
     def ngrok(self, text: str, **kwargs) -> dict:
         """
         Actions with ngrok
@@ -684,7 +684,7 @@ class InternetLoader(Loader):
         except Exception as ex:
             logger.exception(f'Exception: {ex}')
 
-    @check_permission()
+    @check_permission(needed_level='root')
     def ngrok_db(self, text: str, **kwargs) -> dict:
         """
         Actions with ngrok_db
