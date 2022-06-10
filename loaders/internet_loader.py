@@ -664,7 +664,7 @@ class InternetLoader(Loader):
             data = requests.get(system_monitor + f'ngrok_{command[1]}')
             if data.status_code != 200:
                 logger.error(f'requests status is not valid: {data.status_code}')
-                return Loader.error_resp('Someting wrong')
+                return Loader.error_resp('Something wrong')
             else:
                 sys_mon_res = json.loads(data.text)
                 if isinstance(sys_mon_res['msg'], str):
@@ -712,7 +712,7 @@ class InternetLoader(Loader):
             data = requests.get(system_monitor + f'ngrok_db_{command[1]}')
             if data.status_code != 200:
                 logger.error(f'requests status is not valid: {data.status_code}')
-                return Loader.error_resp('Someting wrong')
+                return Loader.error_resp('Something wrong')
             else:
                 sys_mon_res = json.loads(data.text)
                 resp['text'] = sys_mon_res['msg']
