@@ -79,9 +79,13 @@ class DBLoader(Loader):
         try:
             users = md.Users.query \
                 .join(md.LibPrivileges, md.Users.privileges_id == md.LibPrivileges.p_id) \
-                .add_columns(md.Users.chat_id, md.Users.login, md.Users.first_name, md.LibPrivileges.value) \
+                .add_columns(md.Users.chat_id,
+                             md.Users.login,
+                             md.Users.first_name,
+                             md.LibPrivileges.value,
+                             md.Users.description) \
                 .all()
-        except exc.DatabaseError as db_err:
+        except exc.DatabaseError:
             send_dev_message(data={'text': f'Ошибка подключения к БД'}, by='telegram')
             exit()
         for user in users:
@@ -89,6 +93,7 @@ class DBLoader(Loader):
             user_data['login'] = user.login
             user_data['first_name'] = user.first_name
             user_data['value'] = user.value
+            user_data['description'] = user.description
             Loader.users[user.chat_id] = user_data
 
     @staticmethod
