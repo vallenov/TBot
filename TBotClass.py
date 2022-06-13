@@ -13,6 +13,7 @@ from loaders.loader import Loader, check_permission
 from loaders.internet_loader import InternetLoader
 from loaders.file_loader import FileLoader
 from loaders.db_loader import DBLoader
+from send_service import send_dev_message
 
 logger = logging.getLogger(__name__)
 handler = logging.FileHandler('run.log')
@@ -49,7 +50,7 @@ class TBotClass:
         self.is_prod = config.MAIN.get('PROD')
         if self.is_prod:
             logger.info(f'Send start message to root users')
-            self.send_dev_message({'text': 'TBot is started'}, 'telegram')
+            send_dev_message({'text': 'TBot is started'}, 'telegram')
         self.mapping = {
             'exchange': self.internet_loader.get_exchange,
             'weather': self.internet_loader.get_weather,
@@ -103,8 +104,8 @@ class TBotClass:
                 send_data = dict()
                 send_data['subject'] = 'TBot NEW USER'
                 send_data['text'] = f'New user added. Chat_id: {chat_id}, login: {login}, first_name: {first_name}'
-                mail_resp = self.send_dev_message(send_data, 'mail')
-                telegram_resp = self.send_dev_message(send_data, 'telegram')
+                mail_resp = send_dev_message(send_data, 'mail')
+                telegram_resp = send_dev_message(send_data, 'telegram')
                 if mail_resp['res'] == 'ERROR' or telegram_resp['res'] == 'ERROR':
                     logger.warning(f'Message do not received. MAIL = {mail_resp}, Telegram = {telegram_resp}')
             else:
@@ -200,33 +201,3 @@ class TBotClass:
         resp['chat_id'] = chat_id
         resp['text'] = ' '.join(lst[2:])
         return resp
-
-    @staticmethod
-    def send_dev_message(data: dict, by: str = 'mail') -> dict:
-        """
-        Send message to admin
-        :param data: {'to': name or email, 'subject': 'subject' (unnecessary), 'text': 'text'}
-        :param by: by what (mail or telegram)
-        """
-        resp = {}
-        if by not in ('mail', 'telegram'):
-            Loader.error_resp(f'Wrong parameter by ({by}) in send_dev_message')
-            logger.error(resp['descr'])
-            return resp
-        if by == 'mail':
-            data.update({'to': config.MAIL.get('address')})
-        else:
-            data.update({'to': config.DB.get('login')})
-        current_try = 0
-        while current_try < config.CONSTANTS.get('MAX_TRY'):
-            current_try += 1
-            try:
-                res = requests.post(config.MAIL.get('message_server_address') + '/' + by, data=data,
-                                    headers={'Connection': 'close'})
-            except Exception as _ex:
-                logger.exception(_ex)
-            else:
-                logger.info('Send successful')
-                resp['res'] = res.text
-                return resp
-        logger.error('Max try exceeded')
