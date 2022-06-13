@@ -12,9 +12,10 @@ import config
 
 from loaders.loader import Loader, check_permission
 import models as md
-from sqlalchemy import cast, Date
+from sqlalchemy import cast, Date, exc
 from sqlalchemy.sql import func
 from extentions import db
+from send_service import send_dev_message
 
 logger = logging.getLogger(__name__)
 handler = logging.FileHandler('run.log')
@@ -38,6 +39,7 @@ class DBLoader(Loader):
             # cwu.start()
         else:
             self.get_users_fom_config()
+        logger.info('Connection success')
 
     def get_connect(self):
         """
@@ -74,10 +76,14 @@ class DBLoader(Loader):
         Get all users' information from DB to memory
         """
         logger.info('get_users_fom_db')
-        users = md.Users.query \
-            .join(md.LibPrivileges, md.Users.privileges_id == md.LibPrivileges.p_id) \
-            .add_columns(md.Users.chat_id, md.Users.login, md.Users.first_name, md.LibPrivileges.value) \
-            .all()
+        try:
+            users = md.Users.query \
+                .join(md.LibPrivileges, md.Users.privileges_id == md.LibPrivileges.p_id) \
+                .add_columns(md.Users.chat_id, md.Users.login, md.Users.first_name, md.LibPrivileges.value) \
+                .all()
+        except exc.DatabaseError as db_err:
+            send_dev_message(data={'text': f'Ошибка подключения к БД'}, by='telegram')
+            exit()
         for user in users:
             user_data = dict()
             user_data['login'] = user.login
