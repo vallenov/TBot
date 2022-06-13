@@ -16,6 +16,7 @@ import socket
 import config
 
 from TBotClass import TBotClass
+from send_service import send_dev_message
 
 MAX_LEN = 4000
 
@@ -112,7 +113,7 @@ def tbot():
                     except Exception as _ex:
                         logger.exception(f'Unrecognized exception: {traceback.format_exc()}')
                         if not is_send:
-                            tb.send_dev_message({'subject': _ex, 'text': f'{traceback.format_exc()}'})
+                            send_dev_message({'subject': _ex, 'text': f'{traceback.format_exc()}'})
                             is_send = True
                     else:
                         if text is not None:
