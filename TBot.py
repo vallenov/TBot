@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import configparser
 import time
 import traceback
 import telebot
@@ -32,10 +31,8 @@ class Msg:
 
 class TBot:
     """
-    Main func
+    Main class
     """
-    # config = configparser.ConfigParser()
-    # config.read('TBot.ini', encoding='windows-1251')
     token = config.MAIN.get('token')
     bot = telebot.TeleBot(token)
 
