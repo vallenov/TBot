@@ -148,6 +148,7 @@ class TBot:
                     self.logger.exception(f'Unrecognized exception during a send: {traceback.format_exc()}')
                     if not is_send:
                         send_dev_message({'subject': _ex, 'text': f'{traceback.format_exc()}'})
+                        TBot.bot = telebot.TeleBot(TBot.token)
                         is_send = True
                 else:
                     if text is not None:
