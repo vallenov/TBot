@@ -78,8 +78,8 @@ class TBot:
         conv_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
         self.conversation_logger.addHandler(conv_handler)
 
-        self.logger.info('TBot is started')
         self.check_bot_connection(TBot.bot)
+        self.logger.info('TBot is started')
 
         self.tb = TBotClass()
 
@@ -170,15 +170,15 @@ class TBot:
         curdir = os.curdir
         if message.content_type == 'text':
             self.logger.info(f'Request: '
-                        f'ID - {message.chat.id}, '
-                        f'Login - {message.chat.username}, '
-                        f'FirstName - {message.chat.first_name}')
+                             f'ID - {message.chat.id}, '
+                             f'Login - {message.chat.username}, '
+                             f'FirstName - {message.chat.first_name}')
             self.conversation_logger.info(f'Request: '
-                                     f'ID - {message.chat.id}, '
-                                     f'Login - {message.chat.username}, '
-                                     f'FirstName - {message.chat.first_name}, '
-                                     f'Text - {message.text}, '
-                                     f'RAW - {message.chat}')
+                                          f'ID - {message.chat.id}, '
+                                          f'Login - {message.chat.username}, '
+                                          f'FirstName - {message.chat.first_name}, '
+                                          f'Text - {message.text}, '
+                                          f'RAW - {message.chat}')
             return
         if message.content_type == 'photo':
             file_extension = '.jpg'
