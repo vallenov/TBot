@@ -1,9 +1,7 @@
-import configparser
 import logging
 import traceback
 import datetime
 import asyncio
-import requests
 import inspect
 from functools import wraps
 
