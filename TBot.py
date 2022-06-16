@@ -11,10 +11,15 @@ import requests
 import urllib3.exceptions
 import math
 import socket
+import inspect
+import asyncio
 
 import config
 
-from BotFunctions import BotFunctions
+from loaders.loader import Loader
+from loaders.internet_loader import InternetLoader
+from loaders.file_loader import FileLoader
+from loaders.db_loader import DBLoader
 from send_service import send_dev_message
 
 
@@ -32,7 +37,9 @@ class TBot:
     logger = None
     conversation_logger = None
     bot = None
-    bot_func = None
+    internet_loader = None
+    file_loader = None
+    db_loader = None
 
     @staticmethod
     def init_loggers():
@@ -60,7 +67,7 @@ class TBot:
             """
             TBot.save_file(call.message)
             call.message.text = call.data
-            replace = TBot.bot_func.replace(call.message)
+            replace = TBot.replace(call.message)
             TBot.safe_send(call.message.json['chat']['id'], replace, reply_markup=replace.get('markup', None))
 
         @TBot.bot.message_handler(func=lambda message: True, content_types=config.CONTENT_TYPES)
@@ -69,7 +76,7 @@ class TBot:
             Text reaction
             """
             TBot.save_file(message)
-            replace = TBot.bot_func.replace(message)
+            replace = TBot.replace(message)
             chat_id = replace.get('chat_id', None)
             if chat_id is not None:
                 message.chat.id = chat_id
@@ -88,6 +95,12 @@ class TBot:
         if not os.path.exists(os.path.join('downloads', 'text')):
             os.mkdir(os.path.join('downloads', 'text'))
             os.chown(os.path.join('downloads', 'text'), 1000, 1000)
+
+    @staticmethod
+    def init_loaders():
+        TBot.internet_loader = InternetLoader('ILoader')
+        TBot.db_loader = DBLoader('DBLoader')
+        TBot.file_loader = FileLoader('FLoader')
 
     @staticmethod
     def check_bot_connection(bot_obj) -> None:
@@ -161,6 +174,54 @@ class TBot:
                     break
 
     @staticmethod
+    def replace(message) -> dict:
+        """
+        Send result message to chat
+        :param message: message from user
+        :return: replace dict
+        """
+        start = datetime.datetime.now()
+        res = {}
+        chat_id = str(message.json['chat']['id'])
+        if config.USE_DB:
+            login = message.json['chat'].get('username', None)
+            first_name = message.json['chat'].get('first_name', None)
+            if chat_id not in Loader.users.keys():
+                privileges = Loader.privileges_levels['regular']
+                TBot.db_loader.add_user(chat_id=chat_id,
+                                        privileges=privileges,
+                                        login=login,
+                                        first_name=first_name)
+                send_data = dict()
+                send_data['subject'] = 'TBot NEW USER'
+                send_data['text'] = f'New user added. Chat_id: {chat_id}, login: {login}, first_name: {first_name}'
+                mail_resp = send_dev_message(send_data, 'mail')
+                telegram_resp = send_dev_message(send_data, 'telegram')
+                if mail_resp['res'] == 'ERROR' or telegram_resp['res'] == 'ERROR':
+                    TBot.logger.warning(f'Message do not received. MAIL = {mail_resp}, Telegram = {telegram_resp}')
+            else:
+                if Loader.users[chat_id]['login'] != login or \
+                        Loader.users[chat_id]['first_name'] != first_name:
+                    DBLoader.update_user(chat_id, login, first_name)
+        privileges = Loader.users[chat_id]['value']
+        if config.USE_DB:
+            TBot.db_loader.log_request(chat_id)
+
+        if message.content_type == 'text':
+            form_text = message.text.lower().strip()
+            sptext = form_text.split()
+            default_func = TBot.mapping.get('default')
+            func = TBot.mapping.get(sptext[0], default_func)
+            if not inspect.iscoroutinefunction(func.__wrapped__):
+                res = func(privileges=privileges, text=form_text)
+            else:
+                res = asyncio.run(func(privileges=privileges, text=form_text))
+        duration = datetime.datetime.now() - start
+        dur = float(str(duration.seconds) + '.' + str(duration.microseconds)[:3])
+        TBot.logger.info(f'Duration: {dur} sec')
+        return res
+
+    @staticmethod
     def save_file(message) -> None:
         """
         Save file
@@ -229,8 +290,37 @@ class TBot:
         TBot.init_loggers()
         TBot.init_bot()
         TBot.init_dirs()
-
-        TBot.bot_func = BotFunctions()
+        TBot.init_loaders()
+        if config.PROD:
+            TBot.logger.info(f'Send start message to root users')
+            send_dev_message({'text': 'TBot is started'}, 'telegram')
+        TBot.mapping = {
+            'exchange': TBot.internet_loader.get_exchange,
+            'weather': TBot.internet_loader.get_weather,
+            'quote': TBot.internet_loader.get_quote,
+            'wish': TBot.internet_loader.get_wish,
+            'news': TBot.internet_loader.get_news,
+            'affirmation': TBot.internet_loader.get_affirmation,
+            'events': TBot.internet_loader.async_events,
+            'food': TBot.internet_loader.get_restaurant,
+            'poem': TBot.db_loader.get_poem if config.USE_DB else TBot.file_loader.get_poem,
+            'movie': TBot.internet_loader.get_random_movie,
+            'book': TBot.internet_loader.get_book,
+            'update': TBot.db_loader.update_user_privileges,
+            'users': TBot.db_loader.show_users,
+            'hidden_functions': TBot.file_loader.get_help,
+            'admins_help': TBot.file_loader.get_admins_help,
+            'send_other': TBot.db_loader.send_other,
+            'metaphorical_card': TBot.file_loader.get_metaphorical_card,
+            'russian_painting': TBot.internet_loader.get_russian_painting,
+            'ip': TBot.file_loader.get_server_ip,
+            'statistic': TBot.db_loader.get_statistic,
+            'phone': TBot.internet_loader.get_phone_number_info,
+            'camera': TBot.file_loader.get_camera_capture,
+            'ngrok': TBot.internet_loader.ngrok,
+            'ngrok_db': TBot.internet_loader.ngrok_db,
+            'default': TBot.file_loader.get_hello
+        }
         try:
             TBot.bot.infinity_polling(none_stop=True)
         except (requests.exceptions.ReadTimeout,
