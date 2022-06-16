@@ -17,10 +17,6 @@ import config
 from BotFunctions import BotFunctions
 from send_service import send_dev_message
 
-MAX_LEN = 4000
-
-DOWNLOADS = 'downloads'
-
 
 class Msg:
     def __init__(self, text: str, chat: dict, content_type: str = 'text'):
@@ -49,7 +45,7 @@ class TBot:
 
         TBot.conversation_logger = logging.getLogger('conversation')
         TBot.conversation_logger.setLevel(logging.INFO)
-        conv_handler = logging.FileHandler(os.path.join(DOWNLOADS, 'text', 'run_conv.log'))
+        conv_handler = logging.FileHandler(os.path.join('downloads', 'text', 'run_conv.log'))
         conv_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
         TBot.conversation_logger.addHandler(conv_handler)
 
@@ -86,12 +82,12 @@ class TBot:
     @staticmethod
     def init_dirs():
         curdir = os.curdir
-        if not os.path.exists(os.path.join(curdir, DOWNLOADS)):
-            os.mkdir(os.path.join(curdir, DOWNLOADS))
-            os.chown(os.path.join(curdir, DOWNLOADS), 1000, 1000)
-        if not os.path.exists(os.path.join(DOWNLOADS, 'text')):
-            os.mkdir(os.path.join(DOWNLOADS, 'text'))
-            os.chown(os.path.join(DOWNLOADS, 'text'), 1000, 1000)
+        if not os.path.exists(os.path.join(curdir, 'downloads')):
+            os.mkdir(os.path.join(curdir, 'downloads'))
+            os.chown(os.path.join(curdir, 'downloads'), 1000, 1000)
+        if not os.path.exists(os.path.join('downloads', 'text')):
+            os.mkdir(os.path.join('downloads', 'text'))
+            os.chown(os.path.join('downloads', 'text'), 1000, 1000)
 
     @staticmethod
     def check_bot_connection(bot_obj) -> None:
@@ -122,7 +118,7 @@ class TBot:
         current_try = 0
         start = 0
         text = replace.get('text', None)
-        cnt_message = math.ceil(len(replace) / MAX_LEN) if text is not None else 1
+        cnt_message = math.ceil(len(replace) / config.CONSTANTS['MAX_LEN']) if text is not None else 1
         photo = replace.get('photo', None)
         for cnt in range(cnt_message):
             while current_try < config.CONSTANTS.get('MAX_TRY'):
@@ -133,11 +129,13 @@ class TBot:
                             photo = open(photo, 'rb')
                         TBot.bot.send_photo(chat_id, photo=photo, caption=text)
                     elif text is not None:
-                        if start + MAX_LEN >= len(replace):
+                        if start + config.CONSTANTS['MAX_LEN'] >= len(replace):
                             TBot.bot.send_message(chat_id, text[start:], reply_markup=reply_markup)
                         else:
-                            TBot.bot.send_message(chat_id, text[start:start + MAX_LEN], reply_markup=reply_markup)
-                        start += MAX_LEN
+                            TBot.bot.send_message(chat_id,
+                                                  text[start:start + config.CONSTANTS['MAX_LEN']],
+                                                  reply_markup=reply_markup)
+                        start += config.CONSTANTS['MAX_LEN']
                 except ConnectionResetError as cre:
                     TBot.logger.exception(f'ConnectionResetError exception: {cre}')
                 except requests.exceptions.ConnectionError as rec:
@@ -196,10 +194,10 @@ class TBot:
         if message.content_type == 'video':
             file_extension = '.mp4'
             file_info = TBot.bot.get_file(message.video.file_id)
-        if not os.path.exists(os.path.join(curdir, DOWNLOADS, message.content_type)):
-            os.mkdir(os.path.join(curdir, DOWNLOADS, message.content_type))
-            os.chown(os.path.join(curdir, DOWNLOADS, message.content_type), 1000, 1000)
-        file_name = os.path.join(curdir, DOWNLOADS, message.content_type,
+        if not os.path.exists(os.path.join(curdir, 'downloads', message.content_type)):
+            os.mkdir(os.path.join(curdir, 'downloads', message.content_type))
+            os.chown(os.path.join(curdir, 'downloads', message.content_type), 1000, 1000)
+        file_name = os.path.join(curdir, 'downloads', message.content_type,
                                  f'{TBot.now_time()}{TBot._get_hash_name()}{file_extension}')
         downloaded_info = TBot.bot.download_file(file_info.file_path)
         with open(file_name, 'wb') as new_file:
@@ -239,8 +237,9 @@ class TBot:
                 urllib3.exceptions.ReadTimeoutError,
                 socket.timeout,
                 Exception) as ex:
-            TBot.logger.exception(f'Infinity polling exception: {ex}\n{traceback.format_exc()}')
-            send_dev_message({'subject': repr(ex)[:-2], 'text': f'{traceback.format_exc()}'})
+            TBot.logger.exception(f'Infinity polling exception: {ex}\n{traceback.format_exc()}\nTBot stop')
+            send_dev_message({'subject': repr(ex)[:-2],
+                              'text': f'Infinity polling exception: {traceback.format_exc()}\nTBot stop'})
 
 
 if __name__ == '__main__':
