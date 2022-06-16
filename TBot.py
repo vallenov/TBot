@@ -33,36 +33,8 @@ class TBot:
     """
     Main class
     """
-    token = config.MAIN.get('token')
-    bot = telebot.TeleBot(token)
 
     def __init__(self):
-
-        @TBot.bot.callback_query_handler(func=lambda call: True)
-        def callback_query(call):
-            """
-            Callback reaction
-            """
-            self.save_file(call.message)
-            call.message.text = call.data
-            replace = self.tb.replace(call.message)
-            self.safe_send(call.message.json['chat']['id'], replace, reply_markup=replace.get('markup', None))
-
-        @TBot.bot.message_handler(func=lambda message: True, content_types=config.CONSTANTS['content_types'])
-        def send_text(message):
-            """
-            Text reaction
-            """
-            self.save_file(message)
-            replace = self.tb.replace(message)
-            chat_id = replace.get('chat_id', None)
-            if chat_id is not None:
-                message.chat.id = chat_id
-            if replace:
-                self.safe_send(message.chat.id, replace, reply_markup=replace.get('markup', None))
-
-        TBot.init_dirs()
-
         self.logger = logging.getLogger(__name__)
         handler = logging.FileHandler('run.log')
         handler.setLevel(logging.INFO)
@@ -75,10 +47,41 @@ class TBot:
         conv_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
         self.conversation_logger.addHandler(conv_handler)
 
-        self.check_bot_connection(TBot.bot)
+        self.bot = None
+        self.init_bot()
+        TBot.init_dirs()
+
         self.logger.info('TBot is started')
 
         self.tb = TBotClass()
+
+    def init_bot(self):
+        self.bot = telebot.TeleBot(config.MAIN.get('token'))
+
+        @self.bot.callback_query_handler(func=lambda call: True)
+        def callback_query(call):
+            """
+            Callback reaction
+            """
+            self.save_file(call.message)
+            call.message.text = call.data
+            replace = self.tb.replace(call.message)
+            self.safe_send(call.message.json['chat']['id'], replace, reply_markup=replace.get('markup', None))
+
+        @self.bot.message_handler(func=lambda message: True, content_types=config.CONSTANTS['content_types'])
+        def send_text(message):
+            """
+            Text reaction
+            """
+            self.save_file(message)
+            replace = self.tb.replace(message)
+            chat_id = replace.get('chat_id', None)
+            if chat_id is not None:
+                message.chat.id = chat_id
+            if replace:
+                self.safe_send(message.chat.id, replace, reply_markup=replace.get('markup', None))
+
+        self.check_bot_connection(self.bot)
 
     @staticmethod
     def init_dirs():
@@ -101,6 +104,7 @@ class TBot:
             self.logger.exception(f'{taa}')
         if not hasattr(is_bot, 'id'):
             self.logger.exception('Bot not found')
+            send_dev_message({'subject': 'Bot not found', 'text': f'{is_bot}'})
         else:
             self.logger.info(f'Connection to bot success')
 
@@ -125,12 +129,12 @@ class TBot:
                     if photo is not None:
                         if 'http' not in photo:
                             photo = open(photo, 'rb')
-                        TBot.bot.send_photo(chat_id, photo=photo, caption=text)
+                        self.bot.send_photo(chat_id, photo=photo, caption=text)
                     elif text is not None:
                         if start + MAX_LEN >= len(replace):
-                            TBot.bot.send_message(chat_id, text[start:], reply_markup=reply_markup)
+                            self.bot.send_message(chat_id, text[start:], reply_markup=reply_markup)
                         else:
-                            TBot.bot.send_message(chat_id, text[start:start + MAX_LEN], reply_markup=reply_markup)
+                            self.bot.send_message(chat_id, text[start:start + MAX_LEN], reply_markup=reply_markup)
                         start += MAX_LEN
                 except ConnectionResetError as cre:
                     self.logger.exception(f'ConnectionResetError exception: {cre}')
@@ -141,11 +145,11 @@ class TBot:
                 except TypeError as te:
                     self.logger.exception(f'file not ready yet: {te}')
                     time.sleep(1)
-                except Exception as _ex:
+                except Exception as ex:
                     self.logger.exception(f'Unrecognized exception during a send: {traceback.format_exc()}')
                     if not is_send:
-                        send_dev_message({'subject': _ex, 'text': f'{traceback.format_exc()}'})
-                        TBot.bot = telebot.TeleBot(TBot.token)
+                        send_dev_message({'subject': repr(ex)[:-2], 'text': f'{traceback.format_exc()}'})
+                        self.init_bot()
                         is_send = True
                 else:
                     if text is not None:
@@ -179,22 +183,22 @@ class TBot:
             return
         if message.content_type == 'photo':
             file_extension = '.jpg'
-            file_info = TBot.bot.get_file(message.photo[-1].file_id)
+            file_info = self.bot.get_file(message.photo[-1].file_id)
         if message.content_type == 'audio':
             file_extension = '.mp3'
-            file_info = TBot.bot.get_file(message.audio.file_id)
+            file_info = self.bot.get_file(message.audio.file_id)
         if message.content_type == 'voice':
             file_extension = '.mp3'
-            file_info = TBot.bot.get_file(message.voice.file_id)
+            file_info = self.bot.get_file(message.voice.file_id)
         if message.content_type == 'video':
             file_extension = '.mp4'
-            file_info = TBot.bot.get_file(message.video.file_id)
+            file_info = self.bot.get_file(message.video.file_id)
         if not os.path.exists(os.path.join(curdir, DOWNLOADS, message.content_type)):
             os.mkdir(os.path.join(curdir, DOWNLOADS, message.content_type))
             os.chown(os.path.join(curdir, DOWNLOADS, message.content_type), 1000, 1000)
         file_name = os.path.join(curdir, DOWNLOADS, message.content_type,
                                  f'{self.now_time()}{self._get_hash_name()}{file_extension}')
-        downloaded_info = TBot.bot.download_file(file_info.file_path)
+        downloaded_info = self.bot.download_file(file_info.file_path)
         with open(file_name, 'wb') as new_file:
             new_file.write(downloaded_info)
         os.chown(file_name, 1000, 1000)
@@ -221,15 +225,14 @@ class TBot:
 
     def run(self):
         try:
-            TBot.bot.infinity_polling(none_stop=True)
-        except requests.exceptions.ReadTimeout as rt:
-            self.logger.exception(f'Infinity polling exception: {rt}\n{traceback.format_exc()}')
-        except urllib3.exceptions.ReadTimeoutError as rte:
-            self.logger.exception(f'Infinity polling exception: {rte}\n{traceback.format_exc()}')
-        except socket.timeout as st:
-            self.logger.exception(f'Infinity polling exception: {st}\n{traceback.format_exc()}')
-        except Exception as ex:
+            self.bot.infinity_polling(none_stop=True)
+        except (requests.exceptions.ReadTimeout,
+                urllib3.exceptions.ReadTimeoutError,
+                socket.timeout,
+                Exception) as ex:
             self.logger.exception(f'Infinity polling exception: {ex}\n{traceback.format_exc()}')
+            send_dev_message({'subject': repr(ex)[:-2], 'text': f'{traceback.format_exc()}'})
+            self.init_bot()
 
 
 if __name__ == '__main__':
