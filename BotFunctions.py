@@ -40,13 +40,10 @@ class BotFunctions:
     permission = False
 
     def __init__(self):
-        logger.info('TBotClass init')
         self.internet_loader = InternetLoader('ILoader')
         self.db_loader = DBLoader('DBLoader')
         self.file_loader = FileLoader('FLoader')
-        # self.get_config()
-        self.is_prod = config.MAIN.get('PROD')
-        if self.is_prod:
+        if config.PROD:
             logger.info(f'Send start message to root users')
             send_dev_message({'text': 'TBot is started'}, 'telegram')
         self.mapping = {
@@ -58,7 +55,7 @@ class BotFunctions:
             'affirmation': self.internet_loader.get_affirmation,
             'events': self.internet_loader.async_events,
             'food': self.internet_loader.get_restaurant,
-            'poem': self.db_loader.get_poem if self.internet_loader.use_db else self.file_loader.get_poem,
+            'poem': self.db_loader.get_poem if config.USE_DB else self.file_loader.get_poem,
             'movie': self.internet_loader.get_random_movie,
             'book': self.internet_loader.get_book,
             'update': self.db_loader.update_user_privileges,
@@ -90,7 +87,7 @@ class BotFunctions:
         """
         # self.get_config()
         chat_id = str(message.json['chat']['id'])
-        if self.internet_loader.use_db:
+        if config.USE_DB:
             login = message.json['chat'].get('username', None)
             first_name = message.json['chat'].get('first_name', None)
             if chat_id not in Loader.users.keys():
@@ -109,9 +106,9 @@ class BotFunctions:
             else:
                 if Loader.users[chat_id]['login'] != login or \
                    Loader.users[chat_id]['first_name'] != first_name:
-                    self.db_loader.update_user(chat_id, login, first_name)
+                    DBLoader.update_user(chat_id, login, first_name)
         privileges = Loader.users[chat_id]['value']
-        if self.internet_loader.use_db:
+        if config.USE_DB:
             self.db_loader.log_request(chat_id)
 
         if message.content_type == 'text':

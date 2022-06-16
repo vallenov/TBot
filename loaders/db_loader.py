@@ -31,8 +31,7 @@ class DBLoader(Loader):
 
     def __init__(self, name):
         super().__init__(name)
-        self.db_name = 'TBot'
-        if self.use_db:
+        if config.USE_DB:
             # self.get_connect()
             self.get_users_fom_db()
             # cwu = threading.Thread(target=self.connection_warming_up)
@@ -139,7 +138,7 @@ class DBLoader(Loader):
         Add new user to DB and memory
         """
         logger.info('add_user')
-        if self.use_db:
+        if config.USE_DB:
             p_id = self.get_p_id(privileges)
             db.session.add(md.Users(chat_id=chat_id,
                                     login=login,
@@ -152,7 +151,8 @@ class DBLoader(Loader):
         Loader.users[chat_id]['first_name'] = first_name
         Loader.users[chat_id]['value'] = privileges
 
-    def update_user(self, chat_id: str, login: str, first_name: str):
+    @staticmethod
+    def update_user(chat_id: str, login: str, first_name: str):
         """
         Update user info in DB and memory
         :param chat_id: unique user_id
@@ -160,7 +160,7 @@ class DBLoader(Loader):
         :param first_name: first_name
         """
         logger.info('update_user')
-        if self.use_db:
+        if config.USE_DB:
             user = md.Users.query.filter(md.Users.chat_id == chat_id).one_or_none()
             user.login = login
             user.first_name = first_name
@@ -191,7 +191,7 @@ class DBLoader(Loader):
                     else Loader.users[x]['first_name'], user_inf))]):
                 return Loader.error_resp('User not found')
             privileges = int(lst[2])
-        if self.use_db:
+        if config.USE_DB:
             user = md.Users.query.filter(
                 (md.Users.chat_id == chat_id) |
                 (md.Users.login == chat_id) |
@@ -261,7 +261,7 @@ class DBLoader(Loader):
             cnt += 1
         with self.connection.cursor() as cursor:
             logger.info('Upload to DB')
-            query = f"insert into {self.db_name}.tmp (author, name, text) values (%s, %s, %s)"
+            query = f"insert into TBot.tmp (author, name, text) values (%s, %s, %s)"
             cursor.executemany(query, lst)
             self.connection.commit()
             logger.info('Upload complete')
@@ -274,7 +274,7 @@ class DBLoader(Loader):
         :return: poesy string
         """
         resp = {}
-        if self.use_db:
+        if config.USE_DB:
             lst = text.split()
             if len(lst) == 1:
                 max_id = db.session.query(func.max(md.Poems.p_id)).scalar()
@@ -342,7 +342,7 @@ class DBLoader(Loader):
         """
         resp = {'text': ''}
         lst = text.split()
-        if self.use_db:
+        if config.USE_DB:
             if len(lst) == 1:
                 resp['text'] = 'Выберите интервал'
                 resp['markup'] = Loader.gen_custom_markup('statistic',
@@ -356,7 +356,7 @@ class DBLoader(Loader):
             if lst[1] not in interval_map.keys():
                 return Loader.error_resp('Interval is not valid')
             if lst[1] != 'today':
-                resp['photo'] = self.get_graph(lst[1])
+                resp['photo'] = DBLoader.get_graph(lst[1])
             interval = datetime.datetime.now() - datetime.timedelta(days=interval_map[lst[1]])
             stat_data = md.LogRequests.query \
                 .join(md.Users, md.LogRequests.chat_id == md.Users.chat_id) \

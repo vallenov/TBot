@@ -61,7 +61,6 @@ class Loader:
     def __init__(self, name):
         self.name = name
         Loader.loaders.append(self.name)
-        self.use_db = True if config.MAIN.get('USE_DB') else False
 
     @staticmethod
     def get_loaders():

@@ -51,7 +51,7 @@ class TBot:
 
     @staticmethod
     def init_bot():
-        TBot.bot = telebot.TeleBot(config.MAIN.get('token'))
+        TBot.bot = telebot.TeleBot(config.TOKEN)
 
         @TBot.bot.callback_query_handler(func=lambda call: True)
         def callback_query(call):
@@ -63,7 +63,7 @@ class TBot:
             replace = TBot.tb.replace(call.message)
             TBot.safe_send(call.message.json['chat']['id'], replace, reply_markup=replace.get('markup', None))
 
-        @TBot.bot.message_handler(func=lambda message: True, content_types=config.CONSTANTS['content_types'])
+        @TBot.bot.message_handler(func=lambda message: True, content_types=config.CONTENT_TYPES)
         def send_text(message):
             """
             Text reaction
@@ -118,10 +118,10 @@ class TBot:
         current_try = 0
         start = 0
         text = replace.get('text', None)
-        cnt_message = math.ceil(len(replace) / config.CONSTANTS['MAX_LEN']) if text is not None else 1
+        cnt_message = math.ceil(len(replace) / config.MESSAGE_MAX_LEN) if text is not None else 1
         photo = replace.get('photo', None)
         for cnt in range(cnt_message):
-            while current_try < config.CONSTANTS.get('MAX_TRY'):
+            while current_try < config.MAX_TRY:
                 current_try += 1
                 try:
                     if photo is not None:
@@ -129,13 +129,13 @@ class TBot:
                             photo = open(photo, 'rb')
                         TBot.bot.send_photo(chat_id, photo=photo, caption=text)
                     elif text is not None:
-                        if start + config.CONSTANTS['MAX_LEN'] >= len(replace):
+                        if start + config.MESSAGE_MAX_LEN >= len(replace):
                             TBot.bot.send_message(chat_id, text[start:], reply_markup=reply_markup)
                         else:
                             TBot.bot.send_message(chat_id,
-                                                  text[start:start + config.CONSTANTS['MAX_LEN']],
+                                                  text[start:start + config.MESSAGE_MAX_LEN],
                                                   reply_markup=reply_markup)
-                        start += config.CONSTANTS['MAX_LEN']
+                        start += config.MESSAGE_MAX_LEN
                 except ConnectionResetError as cre:
                     TBot.logger.exception(f'ConnectionResetError exception: {cre}')
                 except requests.exceptions.ConnectionError as rec:
