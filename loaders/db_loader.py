@@ -32,13 +32,11 @@ class DBLoader(Loader):
     def __init__(self, name):
         super().__init__(name)
         if config.USE_DB:
-            # self.get_connect()
             self.get_users_fom_db()
-            # cwu = threading.Thread(target=self.connection_warming_up)
-            # cwu.start()
+            logger.info('Connection to DB success')
         else:
             self.get_users_fom_config()
-        logger.info('Connection success')
+            logger.info('Load from config success')
 
     def get_connect(self):
         """
