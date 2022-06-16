@@ -26,7 +26,7 @@ def send_dev_message(data: dict, by: str = 'mail') -> dict:
     else:
         data.update({'to': config.DB.get('login')})
     current_try = 0
-    while current_try < config.CONSTANTS.get('MAX_TRY'):
+    while current_try < config.MAX_TRY:
         current_try += 1
         try:
             res = requests.post(config.MAIL.get('message_server_address') + '/' + by, data=data,
