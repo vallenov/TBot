@@ -7,7 +7,7 @@ from functools import wraps
 
 import config
 
-from loaders.loader import Loader, check_permission
+from loaders.loader import Loader
 from loaders.internet_loader import InternetLoader
 from loaders.file_loader import FileLoader
 from loaders.db_loader import DBLoader
@@ -59,8 +59,8 @@ class BotFunctions:
             'book': self.internet_loader.get_book,
             'update': self.db_loader.update_user_privileges,
             'users': self.db_loader.show_users,
-            'hidden_functions': self.get_help,
-            'admins_help': self.get_admins_help,
+            'hidden_functions': self.file_loader.get_help,
+            'admins_help': self.file_loader.get_admins_help,
             'send_other': self.db_loader.send_other,
             'metaphorical_card': self.file_loader.get_metaphorical_card,
             'russian_painting': self.internet_loader.get_russian_painting,
@@ -70,12 +70,8 @@ class BotFunctions:
             'camera': self.file_loader.get_camera_capture,
             'ngrok': self.internet_loader.ngrok,
             'ngrok_db': self.internet_loader.ngrok_db,
-            'default': self.get_hello
+            'default': self.file_loader.get_hello
         }
-
-    def __del__(self):
-        logger.error(f'Traceback: {traceback.format_exc()}')
-        logger.info('TBotClass deleted')
 
     @benchmark
     def replace(self, message) -> dict:
@@ -84,7 +80,6 @@ class BotFunctions:
         :param message: message from user
         :return: replace dict
         """
-        # self.get_config()
         chat_id = str(message.json['chat']['id'])
         if config.USE_DB:
             login = message.json['chat'].get('username', None)
@@ -119,53 +114,3 @@ class BotFunctions:
                 return func(privileges=privileges, text=form_text)
             else:
                 return asyncio.run(func(privileges=privileges, text=form_text))
-
-    @check_permission()
-    def get_help(self, privileges: int, **kwargs) -> dict:
-        """
-        Get bot functions
-        :param privileges: user privileges
-        :return: {'res': 'OK or ERROR', 'text': 'message'}
-        """
-        resp = dict()
-        resp['text'] = ''
-        if Loader.privileges_levels['regular'] <= privileges:
-            resp['text'] += str(f'Ты можешь написать "новости", "стих" и "фильм" с параметром\n'
-                                f'Новости "количество новостей"\n'
-                                f'Стих "имя автора или название"\n'
-                                f'Фильм "год выпуска" или "промежуток", например "фильм 2001-2005"\n'
-                                f'Так же, ты можешь написать phone и номер телефона, что бы узнать информацию о нем\n')
-        if Loader.privileges_levels['trusted'] <= privileges:
-            pass
-        if Loader.privileges_levels['root'] <= privileges:
-            pass
-        return resp
-
-    @check_permission()
-    def get_hello(self, privileges: int, **kwargs) -> dict:
-        """
-        Get hello from bot
-        :param privileges: user privileges
-        :return: {'res': 'OK or ERROR', 'text': 'message'}
-        """
-        resp = dict()
-        if Loader.privileges_levels['regular'] <= privileges:
-            resp['text'] = f'Привет! Меня зовут InfoBot\n'
-        if Loader.privileges_levels['trusted'] <= privileges:
-            pass
-        if Loader.privileges_levels['root'] <= privileges:
-            resp['text'] = f'You are a root user'
-        resp['markup'] = Loader.main_markup(privileges)
-        return resp
-
-    @check_permission(needed_level='root')
-    def get_admins_help(self, **kwargs) -> dict:
-        """
-        Get bot functions for admin
-        :param :
-        :return:
-        """
-        resp = dict()
-        resp['text'] = str(f'Update "chat_id" "privileges"\n'
-                           f'Send_other "chat_id" "text"\n')
-        return resp

@@ -151,3 +151,53 @@ class FileLoader(Loader):
             time.sleep(1)
             i += 1
         return Loader.error_resp('Something wrong')
+
+    @check_permission()
+    def get_help(self, privileges: int, **kwargs) -> dict:
+        """
+        Get bot functions
+        :param privileges: user privileges
+        :return: {'res': 'OK or ERROR', 'text': 'message'}
+        """
+        resp = dict()
+        resp['text'] = ''
+        if Loader.privileges_levels['regular'] <= privileges:
+            resp['text'] += str(f'Ты можешь написать "новости", "стих" и "фильм" с параметром\n'
+                                f'Новости "количество новостей"\n'
+                                f'Стих "имя автора или название"\n'
+                                f'Фильм "год выпуска" или "промежуток", например "фильм 2001-2005"\n'
+                                f'Так же, ты можешь написать phone и номер телефона, что бы узнать информацию о нем\n')
+        if Loader.privileges_levels['trusted'] <= privileges:
+            pass
+        if Loader.privileges_levels['root'] <= privileges:
+            pass
+        return resp
+
+    @check_permission()
+    def get_hello(self, privileges: int, **kwargs) -> dict:
+        """
+        Get hello from bot
+        :param privileges: user privileges
+        :return: {'res': 'OK or ERROR', 'text': 'message'}
+        """
+        resp = dict()
+        if Loader.privileges_levels['regular'] <= privileges:
+            resp['text'] = f'Привет! Меня зовут InfoBot\n'
+        if Loader.privileges_levels['trusted'] <= privileges:
+            pass
+        if Loader.privileges_levels['root'] <= privileges:
+            resp['text'] = f'You are a root user'
+        resp['markup'] = Loader.main_markup(privileges)
+        return resp
+
+    @check_permission(needed_level='root')
+    def get_admins_help(self, **kwargs) -> dict:
+        """
+        Get bot functions for admin
+        :param :
+        :return:
+        """
+        resp = dict()
+        resp['text'] = str(f'Update "chat_id" "privileges"\n'
+                           f'Send_other "chat_id" "text"\n')
+        return resp
