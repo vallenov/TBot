@@ -36,7 +36,7 @@ def benchmark(func):
     return wrap
 
 
-class TBotClass:
+class BotFunctions:
     permission = False
 
     def __init__(self):
@@ -173,10 +173,6 @@ class TBotClass:
         resp['text'] = str(f'Update "chat_id" "privileges"\n'
                            f'Send_other "chat_id" "text"\n')
         return resp
-
-    # def get_config(self):
-    #     self.config = configparser.ConfigParser()
-    #     self.config.read('TBot.ini', encoding='windows-1251')
 
     @check_permission(needed_level='root')
     def send_other(self, text: str, **kwargs):
