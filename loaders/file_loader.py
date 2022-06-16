@@ -10,6 +10,7 @@ import datetime
 import config
 from loaders.loader import Loader, check_permission
 from exceptions import FileDBNotFound
+from markup import main_markup
 
 logger = logging.getLogger(__name__)
 handler = logging.FileHandler('run.log')
@@ -187,7 +188,7 @@ class FileLoader(Loader):
             pass
         if Loader.privileges_levels['root'] <= privileges:
             resp['text'] = f'You are a root user'
-        resp['markup'] = Loader.main_markup(privileges)
+        resp['markup'] = main_markup(privileges)
         return resp
 
     @check_permission(needed_level='root')

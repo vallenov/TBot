@@ -10,6 +10,7 @@ import json
 import config
 
 from loaders.loader import Loader, check_permission
+from markup import custom_markup
 
 logger = logging.getLogger(__name__)
 handler = logging.FileHandler('run.log')
@@ -450,10 +451,10 @@ class InternetLoader(Loader):
             return Loader.error_resp('Format of data is not valid')
         if len(command) == 1:
             resp['text'] = 'Выберите промежуток'
-            resp['markup'] = Loader.gen_custom_markup('movie',
-                                                      ['1950-1960', '1960-1970', '1970-1980',
-                                                       '1980-1990', '1990-2000', '2000-2010', '2010-2020'],
-                                                      '🎞')
+            resp['markup'] = custom_markup('movie',
+                                           ['1950-1960', '1960-1970', '1970-1980',
+                                            '1980-1990', '1990-2000', '2000-2010', '2010-2020'],
+                                           '🎞')
             return resp
         elif len(command) == 2:
             if '-' not in command[1]:
@@ -568,7 +569,7 @@ class InternetLoader(Loader):
         lst = text.split()
         if len(lst) == 1:
             resp['text'] = 'Выберите жанр'
-            resp['markup'] = Loader.gen_custom_markup('book', self.book_genres, '📖')
+            resp['markup'] = custom_markup('book', self.book_genres, '📖')
             return resp
         category = ''
         for genre in self.book_genres.keys():
@@ -654,9 +655,9 @@ class InternetLoader(Loader):
             return Loader.error_resp('Format of data is not valid')
         if len(command) == 1:
             resp['text'] = 'Выберите действие'
-            resp['markup'] = Loader.gen_custom_markup('ngrok',
-                                                      valid_actions,
-                                                      '🖥')
+            resp['markup'] = custom_markup('ngrok',
+                                           valid_actions,
+                                           '🖥')
             return resp
         if command[1] not in valid_actions:
             return Loader.error_resp('Command is not valid')
@@ -702,9 +703,9 @@ class InternetLoader(Loader):
             return Loader.error_resp('Format of data is not valid')
         if len(command) == 1:
             resp['text'] = 'Выберите действие'
-            resp['markup'] = Loader.gen_custom_markup('ngrok_db',
-                                                      valid_actions,
-                                                      '📦')
+            resp['markup'] = custom_markup('ngrok_db',
+                                           valid_actions,
+                                           '📦')
             return resp
         if command[1] not in valid_actions:
             return Loader.error_resp('Command is not valid')
