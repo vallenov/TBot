@@ -37,7 +37,6 @@ def benchmark(func):
 
 
 class BotFunctions:
-    permission = False
 
     def __init__(self):
         self.internet_loader = InternetLoader('ILoader')
@@ -62,7 +61,7 @@ class BotFunctions:
             'users': self.db_loader.show_users,
             'hidden_functions': self.get_help,
             'admins_help': self.get_admins_help,
-            'send_other': self.send_other,
+            'send_other': self.db_loader.send_other,
             'metaphorical_card': self.file_loader.get_metaphorical_card,
             'russian_painting': self.internet_loader.get_russian_painting,
             'ip': self.file_loader.get_server_ip,
@@ -169,26 +168,4 @@ class BotFunctions:
         resp = dict()
         resp['text'] = str(f'Update "chat_id" "privileges"\n'
                            f'Send_other "chat_id" "text"\n')
-        return resp
-
-    @check_permission(needed_level='root')
-    def send_other(self, text: str, **kwargs):
-        """
-        Send message to other user
-        :param text: string "command chat_id message"
-        :return: dict {'chat_id': 1234567, 'text': 'some'}
-        """
-        resp = {}
-        lst = text.split()
-        if len(lst) < 3:
-            Loader.error_resp('Format is not valid')
-        chat_id = 0
-        try:
-            chat_id = int(lst[1])
-        except ValueError as e:
-            Loader.error_resp('Chat_id format is not valid')
-        if str(chat_id) not in Loader.users.keys():
-            return Loader.error_resp('User not found')
-        resp['chat_id'] = chat_id
-        resp['text'] = ' '.join(lst[2:])
         return resp
