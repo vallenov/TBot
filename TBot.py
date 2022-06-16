@@ -32,7 +32,7 @@ class TBot:
     logger = None
     conversation_logger = None
     bot = None
-    tb = None
+    bot_func = None
 
     @staticmethod
     def init_loggers():
@@ -60,7 +60,7 @@ class TBot:
             """
             TBot.save_file(call.message)
             call.message.text = call.data
-            replace = TBot.tb.replace(call.message)
+            replace = TBot.bot_func.replace(call.message)
             TBot.safe_send(call.message.json['chat']['id'], replace, reply_markup=replace.get('markup', None))
 
         @TBot.bot.message_handler(func=lambda message: True, content_types=config.CONTENT_TYPES)
@@ -69,7 +69,7 @@ class TBot:
             Text reaction
             """
             TBot.save_file(message)
-            replace = TBot.tb.replace(message)
+            replace = TBot.bot_func.replace(message)
             chat_id = replace.get('chat_id', None)
             if chat_id is not None:
                 message.chat.id = chat_id
@@ -230,7 +230,7 @@ class TBot:
         TBot.init_bot()
         TBot.init_dirs()
 
-        TBot.tb = BotFunctions()
+        TBot.bot_func = BotFunctions()
         try:
             TBot.bot.infinity_polling(none_stop=True)
         except (requests.exceptions.ReadTimeout,
