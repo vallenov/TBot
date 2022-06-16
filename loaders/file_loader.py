@@ -9,6 +9,7 @@ import datetime
 
 import config
 from loaders.loader import Loader, check_permission
+from exceptions import FileDBNotFound
 
 logger = logging.getLogger(__name__)
 handler = logging.FileHandler('run.log')
@@ -26,6 +27,7 @@ class FileLoader(Loader):
         super().__init__(name)
         self.files_list = ['poems.xlsx']
         self._check_file_db()
+        self.poems = []
 
     def _check_file_db(self):
         """
@@ -41,16 +43,11 @@ class FileLoader(Loader):
         """
         Load poems from file to memory
         """
-        try:
-            file_path = self.fife_db.get('poems.xlsx', False)
-        except Exception as e:
-            return False
-        self.poems = []
+        file_path = self.fife_db.get('poems.xlsx', False)
         if file_path:
             file_raw = pd.read_excel(file_path)
             file = pd.DataFrame(file_raw, columns=['Author', 'Name', 'Poem'])
             dict_file = file.to_dict()
-            poems = []
             for author, name, text in zip(dict_file['Author'].values(),
                                           dict_file['Name'].values(),
                                           dict_file['Poem'].values()):
@@ -66,10 +63,9 @@ class FileLoader(Loader):
                 poem['name'] = name
                 poem['text'] = text
                 self.poems.append(poem)
-            logger.info(f'{file_path} download. len = {len(poems)}')
-            return True
+            logger.info(f'{file_path} download. len = {len(self.poems)}')
         else:
-            return False
+            raise FileDBNotFound('poems.xlsx')
 
     @check_permission()
     def get_poem(self, text: str, **kwargs) -> dict:
@@ -80,25 +76,24 @@ class FileLoader(Loader):
         """
         lst = text.split()
         resp = {}
-        is_load = False
-        if not hasattr(self, 'poems'):
-            is_load = self.load_poems()
-        if is_load:
-            if len(lst) == 1:
-                random_poem = random.choice(self.poems)
-            else:
-                search_string = ' '.join(lst[1:])
-                authors_poems_list = []
-                for poem in self.poems:
-                    if search_string.lower() in poem['author'].lower() or search_string.lower() in poem['name'].lower():
-                        authors_poems_list.append(poem)
-                if authors_poems_list:
-                    random_poem = random.choice(authors_poems_list)
-                else:
-                    return Loader.error_resp('Poem not found')
+        if not len(self.poems):
+            try:
+                self.load_poems()
+            except FileDBNotFound:
+                logger.exception('File poems.xlsx not found')
+                return Loader.error_resp()
+        if len(lst) == 1:
+            random_poem = random.choice(self.poems)
         else:
-            logger.error('File poems.xlsx not found')
-            return Loader.error_resp()
+            search_string = ' '.join(lst[1:])
+            authors_poems_list = []
+            for poem in self.poems:
+                if search_string.lower() in poem['author'].lower() or search_string.lower() in poem['name'].lower():
+                    authors_poems_list.append(poem)
+            if authors_poems_list:
+                random_poem = random.choice(authors_poems_list)
+            else:
+                return Loader.error_resp('Poem not found')
         author = random_poem['author']
         name = random_poem['name']
         text = random_poem['text']
