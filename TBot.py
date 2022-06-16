@@ -23,6 +23,20 @@ from loaders.db_loader import DBLoader
 from send_service import send_dev_message
 
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+handler = logging.FileHandler('run.log')
+handler.setLevel(logging.INFO)
+handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+logger.addHandler(handler)
+
+conversation_logger = logging.getLogger('conversation')
+conversation_logger.setLevel(logging.INFO)
+conv_handler = logging.FileHandler(os.path.join('downloads', 'text', 'run_conv.log'))
+conv_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+conversation_logger.addHandler(conv_handler)
+
+
 class Msg:
     def __init__(self, text: str, chat: dict, content_type: str = 'text'):
         self.content_type = content_type
@@ -34,27 +48,11 @@ class TBot:
     """
     Main class
     """
-    logger = None
-    conversation_logger = None
     bot = None
     internet_loader = None
     file_loader = None
     db_loader = None
-
-    @staticmethod
-    def init_loggers():
-        logging.basicConfig(level=logging.INFO)
-        TBot.logger = logging.getLogger(__name__)
-        handler = logging.FileHandler('run.log')
-        handler.setLevel(logging.INFO)
-        handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-        TBot.logger.addHandler(handler)
-
-        TBot.conversation_logger = logging.getLogger('conversation')
-        TBot.conversation_logger.setLevel(logging.INFO)
-        conv_handler = logging.FileHandler(os.path.join('downloads', 'text', 'run_conv.log'))
-        conv_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-        TBot.conversation_logger.addHandler(conv_handler)
+    mapping = None
 
     @staticmethod
     def init_bot():
@@ -84,7 +82,13 @@ class TBot:
                 TBot.safe_send(message.chat.id, replace, reply_markup=replace.get('markup', None))
 
         TBot.check_bot_connection(TBot.bot)
-        TBot.logger.info('TBot is started')
+        logger.info('TBot is started')
+
+    @staticmethod
+    def init_loaders():
+        TBot.internet_loader = InternetLoader('ILoader')
+        TBot.db_loader = DBLoader('DBLoader')
+        TBot.file_loader = FileLoader('FLoader')
 
     @staticmethod
     def init_dirs():
@@ -97,12 +101,6 @@ class TBot:
             os.chown(os.path.join('downloads', 'text'), 1000, 1000)
 
     @staticmethod
-    def init_loaders():
-        TBot.internet_loader = InternetLoader('ILoader')
-        TBot.db_loader = DBLoader('DBLoader')
-        TBot.file_loader = FileLoader('FLoader')
-
-    @staticmethod
     def check_bot_connection(bot_obj) -> None:
         """
         Check bot connection
@@ -111,12 +109,12 @@ class TBot:
         try:
             is_bot = bot_obj.get_me()
         except telebot.apihelper.ApiException as taa:
-            TBot.logger.exception(f'{taa}')
+            logger.exception(f'{taa}')
         if not hasattr(is_bot, 'id'):
-            TBot.logger.exception('Bot not found')
+            logger.exception('Bot not found')
             send_dev_message({'subject': 'Bot not found', 'text': f'{is_bot}'})
         else:
-            TBot.logger.info(f'Connection to bot success')
+            logger.info(f'Connection to bot success')
 
     @staticmethod
     def safe_send(chat_id: int, replace: dict, reply_markup=None):
@@ -150,27 +148,27 @@ class TBot:
                                                   reply_markup=reply_markup)
                         start += config.MESSAGE_MAX_LEN
                 except ConnectionResetError as cre:
-                    TBot.logger.exception(f'ConnectionResetError exception: {cre}')
+                    logger.exception(f'ConnectionResetError exception: {cre}')
                 except requests.exceptions.ConnectionError as rec:
-                    TBot.logger.exception(f'requests.exceptions.ConnectionError exception: {rec}')
+                    logger.exception(f'requests.exceptions.ConnectionError exception: {rec}')
                 except urllib3.exceptions.ProtocolError as uep:
-                    TBot.logger.exception(f'urllib3.exceptions.ProtocolError exception: {uep}')
+                    logger.exception(f'urllib3.exceptions.ProtocolError exception: {uep}')
                 except TypeError as te:
-                    TBot.logger.exception(f'file not ready yet: {te}')
+                    logger.exception(f'file not ready yet: {te}')
                     time.sleep(1)
                 except Exception as ex:
-                    TBot.logger.exception(f'Unrecognized exception during a send: {traceback.format_exc()}')
+                    logger.exception(f'Unrecognized exception during a send: {traceback.format_exc()}')
                     if not is_send:
                         send_dev_message({'subject': repr(ex)[:-2], 'text': f'{traceback.format_exc()}'})
                         TBot.init_bot()
                         is_send = True
                 else:
                     if text is not None:
-                        TBot.conversation_logger.info('Response: ' + text.replace('\n', ' '))
+                        conversation_logger.info('Response: ' + text.replace('\n', ' '))
                     else:
-                        TBot.conversation_logger.info(f'Response: {photo}')
-                    TBot.logger.info(f'Number of attempts: {current_try}')
-                    TBot.logger.info(f'Send successful')
+                        conversation_logger.info(f'Response: {photo}')
+                    logger.info(f'Number of attempts: {current_try}')
+                    logger.info(f'Send successful')
                     break
 
     @staticmethod
@@ -198,7 +196,7 @@ class TBot:
                 mail_resp = send_dev_message(send_data, 'mail')
                 telegram_resp = send_dev_message(send_data, 'telegram')
                 if mail_resp['res'] == 'ERROR' or telegram_resp['res'] == 'ERROR':
-                    TBot.logger.warning(f'Message do not received. MAIL = {mail_resp}, Telegram = {telegram_resp}')
+                    logger.warning(f'Message do not received. MAIL = {mail_resp}, Telegram = {telegram_resp}')
             else:
                 if Loader.users[chat_id]['login'] != login or \
                         Loader.users[chat_id]['first_name'] != first_name:
@@ -218,7 +216,7 @@ class TBot:
                 res = asyncio.run(func(privileges=privileges, text=form_text))
         duration = datetime.datetime.now() - start
         dur = float(str(duration.seconds) + '.' + str(duration.microseconds)[:3])
-        TBot.logger.info(f'Duration: {dur} sec')
+        logger.info(f'Duration: {dur} sec')
         return res
 
     @staticmethod
@@ -232,11 +230,11 @@ class TBot:
         file_extension = None
         curdir = os.curdir
         if message.content_type == 'text':
-            TBot.logger.info(f'Request: '
+            logger.info(f'Request: '
                              f'ID - {message.chat.id}, '
                              f'Login - {message.chat.username}, '
                              f'FirstName - {message.chat.first_name}')
-            TBot.conversation_logger.info(f'Request: '
+            conversation_logger.info(f'Request: '
                                           f'ID - {message.chat.id}, '
                                           f'Login - {message.chat.username}, '
                                           f'FirstName - {message.chat.first_name}, '
@@ -287,13 +285,9 @@ class TBot:
 
     @staticmethod
     def run():
-        TBot.init_loggers()
         TBot.init_bot()
         TBot.init_dirs()
         TBot.init_loaders()
-        if config.PROD:
-            TBot.logger.info(f'Send start message to root users')
-            send_dev_message({'text': 'TBot is started'}, 'telegram')
         TBot.mapping = {
             'exchange': TBot.internet_loader.get_exchange,
             'weather': TBot.internet_loader.get_weather,
@@ -321,13 +315,16 @@ class TBot:
             'ngrok_db': TBot.internet_loader.ngrok_db,
             'default': TBot.file_loader.get_hello
         }
+        if config.PROD:
+            logger.info(f'Send start message to root users')
+            send_dev_message({'text': 'TBot is started'}, 'telegram')
         try:
             TBot.bot.infinity_polling(none_stop=True)
         except (requests.exceptions.ReadTimeout,
                 urllib3.exceptions.ReadTimeoutError,
                 socket.timeout,
                 Exception) as ex:
-            TBot.logger.exception(f'Infinity polling exception: {ex}\n{traceback.format_exc()}\nTBot stop')
+            logger.exception(f'Infinity polling exception: {ex}\n{traceback.format_exc()}\nTBot stop')
             send_dev_message({'subject': repr(ex)[:-2],
                               'text': f'Infinity polling exception: {traceback.format_exc()}\nTBot stop'})
 
