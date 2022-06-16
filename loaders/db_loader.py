@@ -5,7 +5,6 @@ import traceback
 import os
 import datetime
 from mysql.connector import connect, Error
-# import threading
 import matplotlib.pyplot as plt
 
 import config
@@ -15,6 +14,7 @@ import models as md
 from sqlalchemy import cast, Date, exc
 from sqlalchemy.sql import func
 from extentions import db
+from markup import custom_markup
 from send_service import send_dev_message
 
 logger = logging.getLogger(__name__)
@@ -364,9 +364,9 @@ class DBLoader(Loader):
         if config.USE_DB:
             if len(lst) == 1:
                 resp['text'] = 'Выберите интервал'
-                resp['markup'] = Loader.gen_custom_markup('statistic',
-                                                          ['Today', 'Week', 'Month', 'All'],
-                                                          '📋')
+                resp['markup'] = custom_markup('statistic',
+                                               ['Today', 'Week', 'Month', 'All'],
+                                               '📋')
                 return resp
             interval_map = {'today': 1,
                             'week': 7,
