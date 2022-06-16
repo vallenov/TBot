@@ -35,6 +35,17 @@ class TBot:
     """
 
     def __init__(self):
+        self.logger = None
+        self.conversation_logger = None
+        self.bot = None
+
+        self.init_loggers()
+        self.init_bot()
+        TBot.init_dirs()
+
+        self.tb = TBotClass()
+
+    def init_loggers(self):
         self.logger = logging.getLogger(__name__)
         handler = logging.FileHandler('run.log')
         handler.setLevel(logging.INFO)
@@ -46,14 +57,6 @@ class TBot:
         conv_handler = logging.FileHandler(os.path.join(DOWNLOADS, 'text', 'run_conv.log'))
         conv_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
         self.conversation_logger.addHandler(conv_handler)
-
-        self.bot = None
-        self.init_bot()
-        TBot.init_dirs()
-
-        self.logger.info('TBot is started')
-
-        self.tb = TBotClass()
 
     def init_bot(self):
         self.bot = telebot.TeleBot(config.MAIN.get('token'))
@@ -82,6 +85,7 @@ class TBot:
                 self.safe_send(message.chat.id, replace, reply_markup=replace.get('markup', None))
 
         self.check_bot_connection(self.bot)
+        self.logger.info('TBot is started')
 
     @staticmethod
     def init_dirs():
