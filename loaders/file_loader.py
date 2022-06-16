@@ -149,7 +149,7 @@ class FileLoader(Loader):
         cmd = f"raspistill -o {path} -rot 180 -w 640 -h 480"
         os.system(cmd)
         i = 0
-        while i < config.CONSTANTS.get('MAX_TRY'):
+        while i < config.MAX_TRY:
             if os.path.exists(path):
                 resp['photo'] = path
                 return resp
