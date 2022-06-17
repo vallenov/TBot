@@ -1,8 +1,6 @@
 import logging
 from functools import wraps
 
-import config
-
 logger = logging.getLogger(__name__)
 handler = logging.FileHandler('run.log')
 handler.setLevel(logging.INFO)
@@ -80,62 +78,9 @@ class Loader:
         return resp
 
     @staticmethod
-    def dict_to_str(di: dict, delimiter: str = ' = ') -> str:
-        """
-        Turn dict to str
-        Digit not use
-        Keys "res" and "chat_id" is skipping
-        Example:
-             {1: 'text'} => 'text'
-             {'key': 'value'}, '=' => 'key = value'
-             {'key1': 'value1', 'key2': 'value2'}, ': ' => key1: value1\nkey2: value2
-        :param di: input dict
-        :param delimiter: delimiter string
-        :return: string
-        """
-        fin_str = ''
-        for key, value in di.items():
-            if isinstance(key, int):
-                fin_str += f'{value}\n'
-            else:
-                fin_str += f'{key}{delimiter}{value}\n'
-        return fin_str
-
-    @staticmethod
     def get_root_users() -> list:
         root_users = []
         for key, value in Loader.users.items():
             if value['value'] == Loader.privileges_levels['root']:
                 root_users.append(key)
         return root_users
-
-    @staticmethod
-    def is_phone_number(number: str) -> str or None:
-        """
-        Check string. If non phone number, return None. Else return formatted phone number
-        :param number: any format of phone number
-        :return: formatted phone number
-        """
-        resp = {}
-        if len(number) < 10 or len(number) > 18:
-            return None
-        allowed_simbols = '0123456789+()- '
-        for num in number:
-            if num not in allowed_simbols:
-                return None
-        raw_num = number
-        raw_num = raw_num.strip()
-        raw_num = raw_num.replace(' ', '')
-        raw_num = raw_num.replace('+', '')
-        raw_num = raw_num.replace('(', '')
-        raw_num = raw_num.replace(')', '')
-        raw_num = raw_num.replace('-', '')
-        if len(raw_num) < 11:
-            raw_num = '8' + raw_num
-        if raw_num.startswith('7'):
-            raw_num = '8' + raw_num[1:]
-        if not raw_num.startswith('89'):
-            resp['res'] = 'ERROR'
-            resp['descr'] = 'Number format is not valid'
-            return None
-        return raw_num

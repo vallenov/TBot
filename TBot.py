@@ -4,8 +4,6 @@ import traceback
 import telebot
 import logging
 import os
-import string
-import random
 import datetime
 import requests
 import urllib3.exceptions
@@ -21,6 +19,7 @@ from loaders.internet_loader import InternetLoader
 from loaders.file_loader import FileLoader
 from loaders.db_loader import DBLoader
 from send_service import send_dev_message
+from helpers import now_time, get_hash_name
 
 
 logging.basicConfig(level=logging.INFO)
@@ -257,31 +256,11 @@ class TBot:
             os.mkdir(os.path.join(curdir, 'downloads', message.content_type))
             os.chown(os.path.join(curdir, 'downloads', message.content_type), 1000, 1000)
         file_name = os.path.join(curdir, 'downloads', message.content_type,
-                                 f'{TBot.now_time()}{TBot._get_hash_name()}{file_extension}')
+                                 f'{now_time()}{get_hash_name()}{file_extension}')
         downloaded_info = TBot.bot.download_file(file_info.file_path)
         with open(file_name, 'wb') as new_file:
             new_file.write(downloaded_info)
         os.chown(file_name, 1000, 1000)
-
-    @staticmethod
-    def now_time() -> str:
-        """
-        Get nowtime like: 20222-01-18123458
-        """
-        return str(datetime.datetime.now()).replace(':', '').replace(' ', '')[:16]
-
-    @staticmethod
-    def _get_hash_name() -> str:
-        """
-        Generate hash name
-        :param:
-        :return name: name of file
-        """
-        simbols = string.ascii_lowercase + string.ascii_uppercase
-        name = ''
-        for _ in range(15):
-            name += random.choice(simbols)
-        return name
 
     @staticmethod
     def run():

@@ -11,6 +11,7 @@ import config
 
 from loaders.loader import Loader, check_permission
 from markup import custom_markup
+from helpers import dict_to_str, is_phone_number
 
 logger = logging.getLogger(__name__)
 handler = logging.FileHandler('run.log')
@@ -105,7 +106,7 @@ class InternetLoader(Loader):
             span = div.find_all('span')
             span = list(map(lambda x: x.text, span))
             weather[h2.text] = ''.join(span[:-1])
-        resp['text'] = Loader.dict_to_str(weather, ' = ')
+        resp['text'] = dict_to_str(weather, ' = ')
         return resp
 
     @check_permission()
@@ -130,7 +131,7 @@ class InternetLoader(Loader):
         text = random_quote.find('div', class_='quote_name')
         quote = dict()
         quote[text.text] = author.text
-        resp['text'] = Loader.dict_to_str(quote, '\n')
+        resp['text'] = dict_to_str(quote, '\n')
         return resp
 
     @check_permission()
@@ -186,7 +187,7 @@ class InternetLoader(Loader):
                 news[news_time.text] = text.get('data-title')
             if len(news) == count:
                 break
-        resp['text'] = Loader.dict_to_str(news, '\n')
+        resp['text'] = dict_to_str(news, '\n')
         return resp
 
     @check_permission()
@@ -268,7 +269,7 @@ class InternetLoader(Loader):
                         descr = a.text.replace('\n', '')
                         events_links.append(f"{descr}\n{a.get('href')}\n")
                 events[name] = random.choice(events_links)
-            resp['text'] = Loader.dict_to_str(events, '\n')
+            resp['text'] = dict_to_str(events, '\n')
             return resp
 
     @check_permission()
@@ -303,7 +304,7 @@ class InternetLoader(Loader):
                 descr = a.text.replace('\n', '')
                 events_links.append(f"{descr}\n{a.get('href')}\n")
             events[name] = random.choice(events_links)
-        resp['text'] = Loader.dict_to_str(events, ' ')
+        resp['text'] = dict_to_str(events, ' ')
         return resp
 
     @check_permission()
@@ -346,7 +347,7 @@ class InternetLoader(Loader):
             if name is not None and value is not None:
                 final_restaurant[name] = value
         final_restaurant[1] = config.LINKS['restaurant_url'] + restaurant.get('href')
-        resp['text'] = Loader.dict_to_str(final_restaurant, ' ')
+        resp['text'] = dict_to_str(final_restaurant, ' ')
         return resp
 
     @check_permission()
@@ -416,7 +417,7 @@ class InternetLoader(Loader):
         else:
             return Loader.error_resp("I can't do this yet😔")
         lst = text.split()
-        number = Loader.is_phone_number(lst[1])
+        number = is_phone_number(lst[1])
         res = requests.post(kodi_url, data={'number': number})
         if 'Ошибка: Номер не найден' in res.text:
             return Loader.error_resp('Number not found/Номер не найден')
@@ -433,7 +434,7 @@ class InternetLoader(Loader):
         p_raw = div_raw.find('p', style='')
         span_raw = p_raw.find_all('span')
         phone_info['Текущий оператор'] = span_raw[-1].text
-        resp['text'] = Loader.dict_to_str(phone_info, ': ')
+        resp['text'] = dict_to_str(phone_info, ': ')
         return resp
 
     @check_permission()
