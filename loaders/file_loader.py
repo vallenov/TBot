@@ -112,23 +112,6 @@ class FileLoader(Loader):
         return resp
 
     @check_permission(needed_level='root')
-    def get_server_ip(self, **kwargs) -> dict:
-        """
-        Get server ip
-        :param:
-        :return: dict with ip
-        """
-        resp = {}
-        output = sb.check_output("ifconfig | "
-                                 "grep `ifconfig -s | "
-                                 "grep '\<w.*' | "
-                                 "awk '{print $1}'` -A 1 | "
-                                 "grep inet | "
-                                 "awk '{print $2}'", shell=True)
-        resp['text'] = output.decode()
-        return resp
-
-    @check_permission(needed_level='root')
     def get_camera_capture(self, **kwargs) -> dict:
         """
         Get photo from camera
