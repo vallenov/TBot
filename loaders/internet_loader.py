@@ -635,6 +635,19 @@ class InternetLoader(Loader):
         return resp
 
     @check_permission(needed_level='root')
+    def get_server_ip(self, **kwargs) -> dict:
+        """
+        Get server ip
+        :param:
+        :return: dict with ip
+        """
+        resp = {}
+        data = requests.get(config.LINKS['system-monitor'] + 'ip')
+        data_dict = json.loads(data.text)
+        resp['text'] = data_dict.get('ip', 'Something wrong')
+        return resp
+
+    @check_permission(needed_level='root')
     def ngrok(self, text: str, **kwargs) -> dict:
         """
         Actions with ngrok
