@@ -275,7 +275,7 @@ class TBot:
             'send_other': TBot.db_loader.send_other,
             'metaphorical_card': TBot.file_loader.get_metaphorical_card,
             'russian_painting': TBot.internet_loader.get_russian_painting,
-            'ip': TBot.file_loader.get_server_ip,
+            'ip': TBot.internet_loader.get_server_ip,
             'statistic': TBot.db_loader.get_statistic,
             'phone': TBot.internet_loader.get_phone_number_info,
             'camera': TBot.file_loader.get_camera_capture,
