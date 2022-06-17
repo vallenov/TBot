@@ -1,4 +1,3 @@
-import logging
 import random
 import os
 import time
@@ -11,12 +10,9 @@ import config
 from loaders.loader import Loader, check_permission
 from exceptions import FileDBNotFound
 from markup import main_markup
+from loggers import get_logger
 
-logger = logging.getLogger(__name__)
-handler = logging.FileHandler('run.log')
-handler.setLevel(logging.INFO)
-handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-logger.addHandler(handler)
+logger = get_logger(__name__)
 
 
 class FileLoader(Loader):

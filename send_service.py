@@ -1,13 +1,9 @@
-import logging
 import requests
 from loaders.loader import Loader
 import config
+from loggers import get_logger
 
-logger = logging.getLogger(__name__)
-handler = logging.FileHandler('run.log')
-handler.setLevel(logging.INFO)
-handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-logger.addHandler(handler)
+logger = get_logger(__name__)
 
 
 def send_dev_message(data: dict, by: str = 'mail') -> dict:

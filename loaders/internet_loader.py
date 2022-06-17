@@ -1,6 +1,5 @@
 import datetime
 import random
-import logging
 import requests
 from bs4 import BeautifulSoup
 import asyncio
@@ -12,12 +11,9 @@ import config
 from loaders.loader import Loader, check_permission
 from markup import custom_markup
 from helpers import dict_to_str, is_phone_number
+from loggers import get_logger
 
-logger = logging.getLogger(__name__)
-handler = logging.FileHandler('run.log')
-handler.setLevel(logging.INFO)
-handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-logger.addHandler(handler)
+logger = get_logger(__name__)
 
 
 class InternetLoader(Loader):

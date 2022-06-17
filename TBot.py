@@ -2,7 +2,6 @@
 import time
 import traceback
 import telebot
-import logging
 import os
 import datetime
 import requests
@@ -20,20 +19,10 @@ from loaders.file_loader import FileLoader
 from loaders.db_loader import DBLoader
 from send_service import send_dev_message
 from helpers import now_time, get_hash_name
+from loggers import get_logger, get_conversation_logger
 
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-handler = logging.FileHandler('run.log')
-handler.setLevel(logging.INFO)
-handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-logger.addHandler(handler)
-
-conversation_logger = logging.getLogger('conversation')
-conversation_logger.setLevel(logging.INFO)
-conv_handler = logging.FileHandler(os.path.join('downloads', 'text', 'run_conv.log'))
-conv_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-conversation_logger.addHandler(conv_handler)
+logger = get_logger(__name__)
+conversation_logger = get_conversation_logger()
 
 
 class Msg:

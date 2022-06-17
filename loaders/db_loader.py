@@ -1,4 +1,3 @@
-import logging
 import random
 import time
 import traceback
@@ -16,12 +15,9 @@ from sqlalchemy.sql import func
 from extentions import db
 from markup import custom_markup
 from send_service import send_dev_message
+from loggers import get_logger
 
-logger = logging.getLogger(__name__)
-handler = logging.FileHandler('run.log')
-handler.setLevel(logging.INFO)
-handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-logger.addHandler(handler)
+logger = get_logger(__name__)
 
 
 class DBLoader(Loader):
