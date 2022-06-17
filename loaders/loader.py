@@ -17,7 +17,7 @@ def check_permission(needed_level: str = 'regular'):
     "check_id" when called
     @check permission(needed_level='level') ('untrusted', 'test', 'regular', 'trusted', 'root')
     function(self, **kwargs)
-    :param func: input function
+    :param needed_level: permission level needed to get func result
     :return: wrapped function
     """
     def decorator(func):
