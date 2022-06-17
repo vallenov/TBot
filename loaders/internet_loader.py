@@ -1,6 +1,5 @@
 import datetime
 import random
-import logging
 import requests
 from bs4 import BeautifulSoup
 import asyncio
@@ -10,12 +9,11 @@ import json
 import config
 
 from loaders.loader import Loader, check_permission
+from markup import custom_markup
+from helpers import dict_to_str, is_phone_number
+from loggers import get_logger
 
-logger = logging.getLogger(__name__)
-handler = logging.FileHandler('run.log')
-handler.setLevel(logging.INFO)
-handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-logger.addHandler(handler)
+logger = get_logger(__name__)
 
 
 class InternetLoader(Loader):
@@ -104,7 +102,7 @@ class InternetLoader(Loader):
             span = div.find_all('span')
             span = list(map(lambda x: x.text, span))
             weather[h2.text] = ''.join(span[:-1])
-        resp['text'] = Loader.dict_to_str(weather, ' = ')
+        resp['text'] = dict_to_str(weather, ' = ')
         return resp
 
     @check_permission()
@@ -129,7 +127,7 @@ class InternetLoader(Loader):
         text = random_quote.find('div', class_='quote_name')
         quote = dict()
         quote[text.text] = author.text
-        resp['text'] = Loader.dict_to_str(quote, '\n')
+        resp['text'] = dict_to_str(quote, '\n')
         return resp
 
     @check_permission()
@@ -185,7 +183,7 @@ class InternetLoader(Loader):
                 news[news_time.text] = text.get('data-title')
             if len(news) == count:
                 break
-        resp['text'] = Loader.dict_to_str(news, '\n')
+        resp['text'] = dict_to_str(news, '\n')
         return resp
 
     @check_permission()
@@ -267,7 +265,7 @@ class InternetLoader(Loader):
                         descr = a.text.replace('\n', '')
                         events_links.append(f"{descr}\n{a.get('href')}\n")
                 events[name] = random.choice(events_links)
-            resp['text'] = Loader.dict_to_str(events, '\n')
+            resp['text'] = dict_to_str(events, '\n')
             return resp
 
     @check_permission()
@@ -302,7 +300,7 @@ class InternetLoader(Loader):
                 descr = a.text.replace('\n', '')
                 events_links.append(f"{descr}\n{a.get('href')}\n")
             events[name] = random.choice(events_links)
-        resp['text'] = Loader.dict_to_str(events, ' ')
+        resp['text'] = dict_to_str(events, ' ')
         return resp
 
     @check_permission()
@@ -345,7 +343,7 @@ class InternetLoader(Loader):
             if name is not None and value is not None:
                 final_restaurant[name] = value
         final_restaurant[1] = config.LINKS['restaurant_url'] + restaurant.get('href')
-        resp['text'] = Loader.dict_to_str(final_restaurant, ' ')
+        resp['text'] = dict_to_str(final_restaurant, ' ')
         return resp
 
     @check_permission()
@@ -415,7 +413,7 @@ class InternetLoader(Loader):
         else:
             return Loader.error_resp("I can't do this yet😔")
         lst = text.split()
-        number = Loader.is_phone_number(lst[1])
+        number = is_phone_number(lst[1])
         res = requests.post(kodi_url, data={'number': number})
         if 'Ошибка: Номер не найден' in res.text:
             return Loader.error_resp('Number not found/Номер не найден')
@@ -432,7 +430,7 @@ class InternetLoader(Loader):
         p_raw = div_raw.find('p', style='')
         span_raw = p_raw.find_all('span')
         phone_info['Текущий оператор'] = span_raw[-1].text
-        resp['text'] = Loader.dict_to_str(phone_info, ': ')
+        resp['text'] = dict_to_str(phone_info, ': ')
         return resp
 
     @check_permission()
@@ -450,10 +448,10 @@ class InternetLoader(Loader):
             return Loader.error_resp('Format of data is not valid')
         if len(command) == 1:
             resp['text'] = 'Выберите промежуток'
-            resp['markup'] = Loader.gen_custom_markup('movie',
-                                                      ['1950-1960', '1960-1970', '1970-1980',
-                                                       '1980-1990', '1990-2000', '2000-2010', '2010-2020'],
-                                                      '🎞')
+            resp['markup'] = custom_markup('movie',
+                                           ['1950-1960', '1960-1970', '1970-1980',
+                                            '1980-1990', '1990-2000', '2000-2010', '2010-2020'],
+                                           '🎞')
             return resp
         elif len(command) == 2:
             if '-' not in command[1]:
@@ -568,7 +566,7 @@ class InternetLoader(Loader):
         lst = text.split()
         if len(lst) == 1:
             resp['text'] = 'Выберите жанр'
-            resp['markup'] = Loader.gen_custom_markup('book', self.book_genres, '📖')
+            resp['markup'] = custom_markup('book', self.book_genres, '📖')
             return resp
         category = ''
         for genre in self.book_genres.keys():
@@ -654,9 +652,9 @@ class InternetLoader(Loader):
             return Loader.error_resp('Format of data is not valid')
         if len(command) == 1:
             resp['text'] = 'Выберите действие'
-            resp['markup'] = Loader.gen_custom_markup('ngrok',
-                                                      valid_actions,
-                                                      '🖥')
+            resp['markup'] = custom_markup('ngrok',
+                                           valid_actions,
+                                           '🖥')
             return resp
         if command[1] not in valid_actions:
             return Loader.error_resp('Command is not valid')
@@ -702,9 +700,9 @@ class InternetLoader(Loader):
             return Loader.error_resp('Format of data is not valid')
         if len(command) == 1:
             resp['text'] = 'Выберите действие'
-            resp['markup'] = Loader.gen_custom_markup('ngrok_db',
-                                                      valid_actions,
-                                                      '📦')
+            resp['markup'] = custom_markup('ngrok_db',
+                                           valid_actions,
+                                           '📦')
             return resp
         if command[1] not in valid_actions:
             return Loader.error_resp('Command is not valid')

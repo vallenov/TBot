@@ -1,11 +1,9 @@
-import logging
 import random
 import time
 import traceback
 import os
 import datetime
 from mysql.connector import connect, Error
-# import threading
 import matplotlib.pyplot as plt
 
 import config
@@ -15,13 +13,11 @@ import models as md
 from sqlalchemy import cast, Date, exc
 from sqlalchemy.sql import func
 from extentions import db
+from markup import custom_markup
 from send_service import send_dev_message
+from loggers import get_logger
 
-logger = logging.getLogger(__name__)
-handler = logging.FileHandler('run.log')
-handler.setLevel(logging.INFO)
-handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-logger.addHandler(handler)
+logger = get_logger(__name__)
 
 
 class DBLoader(Loader):
@@ -31,15 +27,12 @@ class DBLoader(Loader):
 
     def __init__(self, name):
         super().__init__(name)
-        self.db_name = 'TBot'
-        if self.use_db:
-            # self.get_connect()
+        if config.USE_DB:
             self.get_users_fom_db()
-            # cwu = threading.Thread(target=self.connection_warming_up)
-            # cwu.start()
+            logger.info('Connection to DB success')
         else:
             self.get_users_fom_config()
-        logger.info('Connection success')
+            logger.info('Load from config success')
 
     def get_connect(self):
         """
@@ -139,7 +132,7 @@ class DBLoader(Loader):
         Add new user to DB and memory
         """
         logger.info('add_user')
-        if self.use_db:
+        if config.USE_DB:
             p_id = self.get_p_id(privileges)
             db.session.add(md.Users(chat_id=chat_id,
                                     login=login,
@@ -152,7 +145,8 @@ class DBLoader(Loader):
         Loader.users[chat_id]['first_name'] = first_name
         Loader.users[chat_id]['value'] = privileges
 
-    def update_user(self, chat_id: str, login: str, first_name: str):
+    @staticmethod
+    def update_user(chat_id: str, login: str, first_name: str):
         """
         Update user info in DB and memory
         :param chat_id: unique user_id
@@ -160,7 +154,7 @@ class DBLoader(Loader):
         :param first_name: first_name
         """
         logger.info('update_user')
-        if self.use_db:
+        if config.USE_DB:
             user = md.Users.query.filter(md.Users.chat_id == chat_id).one_or_none()
             user.login = login
             user.first_name = first_name
@@ -191,7 +185,7 @@ class DBLoader(Loader):
                     else Loader.users[x]['first_name'], user_inf))]):
                 return Loader.error_resp('User not found')
             privileges = int(lst[2])
-        if self.use_db:
+        if config.USE_DB:
             user = md.Users.query.filter(
                 (md.Users.chat_id == chat_id) |
                 (md.Users.login == chat_id) |
@@ -261,10 +255,31 @@ class DBLoader(Loader):
             cnt += 1
         with self.connection.cursor() as cursor:
             logger.info('Upload to DB')
-            query = f"insert into {self.db_name}.tmp (author, name, text) values (%s, %s, %s)"
+            query = f"insert into TBot.tmp (author, name, text) values (%s, %s, %s)"
             cursor.executemany(query, lst)
             self.connection.commit()
             logger.info('Upload complete')
+
+    @check_permission(needed_level='root')
+    def send_other(self, text: str, **kwargs):
+        """
+        Send message to other user
+        :param text: string "command chat_id message"
+        :return: dict {'chat_id': 1234567, 'text': 'some'}
+        """
+        resp = {}
+        lst = text.split()
+        if len(lst) != 3:
+            return Loader.error_resp('Format is not valid')
+        try:
+            chat_id = int(lst[1])
+        except ValueError:
+            return Loader.error_resp('Chat_id format is not valid')
+        if str(chat_id) not in Loader.users.keys():
+            return Loader.error_resp('User not found')
+        resp['chat_id'] = chat_id
+        resp['text'] = ' '.join(lst[2:])
+        return resp
 
     @check_permission()
     def get_poem(self, text: str, **kwargs) -> dict:
@@ -274,7 +289,7 @@ class DBLoader(Loader):
         :return: poesy string
         """
         resp = {}
-        if self.use_db:
+        if config.USE_DB:
             lst = text.split()
             if len(lst) == 1:
                 max_id = db.session.query(func.max(md.Poems.p_id)).scalar()
@@ -342,12 +357,12 @@ class DBLoader(Loader):
         """
         resp = {'text': ''}
         lst = text.split()
-        if self.use_db:
+        if config.USE_DB:
             if len(lst) == 1:
                 resp['text'] = 'Выберите интервал'
-                resp['markup'] = Loader.gen_custom_markup('statistic',
-                                                          ['Today', 'Week', 'Month', 'All'],
-                                                          '📋')
+                resp['markup'] = custom_markup('statistic',
+                                               ['Today', 'Week', 'Month', 'All'],
+                                               '📋')
                 return resp
             interval_map = {'today': 1,
                             'week': 7,
@@ -356,7 +371,7 @@ class DBLoader(Loader):
             if lst[1] not in interval_map.keys():
                 return Loader.error_resp('Interval is not valid')
             if lst[1] != 'today':
-                resp['photo'] = self.get_graph(lst[1])
+                resp['photo'] = DBLoader.get_graph(lst[1])
             interval = datetime.datetime.now() - datetime.timedelta(days=interval_map[lst[1]])
             stat_data = md.LogRequests.query \
                 .join(md.Users, md.LogRequests.chat_id == md.Users.chat_id) \
