@@ -8,7 +8,7 @@ def check_permission(needed_level: str = 'regular'):
     """
     Decorator, which check user permission
     Each function with this decorator need consist "**kwargs" in its attributions and receive the parameter
-    "check_id" when called
+    "privileges" when called
     @check permission(needed_level='level') ('untrusted', 'test', 'regular', 'trusted', 'root')
     function(self, **kwargs)
     :param needed_level: permission level needed to get func result
@@ -18,7 +18,7 @@ def check_permission(needed_level: str = 'regular'):
         @wraps(func)
         def wrap(self, *args, **kwargs):
             logger.info(func.__qualname__)
-            logger.info(f'check permission')
+            logger.info(f'Check permission')
             if needed_level not in Loader.privileges_levels.keys():
                 logger.error(f'{needed_level} is not permission level name')
             user_permission = kwargs['privileges']
