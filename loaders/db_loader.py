@@ -1,9 +1,6 @@
 import random
-import time
-import traceback
 import os
 import datetime
-from mysql.connector import connect, Error
 import matplotlib.pyplot as plt
 
 import config
@@ -33,35 +30,6 @@ class DBLoader(Loader):
         else:
             self.get_users_fom_config()
             logger.info('Load from config success')
-
-    def get_connect(self):
-        """
-        Initiate connection to DB
-        """
-        logger.info('get_connect')
-        try:
-            logger.info(f'Try to connect to DB')
-            self.connection = connect(
-                host=config.DB['host'],
-                user=config.DB['login'],
-                password=config.DB['password'])
-        except Error as e:
-            logger.exception(f'Connection error {e}\nTraceback: {traceback.format_exc()}')
-        else:
-            logger.info(f'Connection to DB success')
-
-    def connection_warming_up(self):
-        """
-        Periodic connection warming up
-        """
-        while True:
-            logger.info('Connection warming up')
-            with self.connection.cursor() as cursor:
-                query = 'select 1 from dual'
-                cursor.execute(query)
-                for _ in cursor:
-                    pass
-            time.sleep(60 * 60)
 
     @staticmethod
     def get_users_fom_db():
