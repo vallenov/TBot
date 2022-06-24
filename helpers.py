@@ -1,6 +1,12 @@
 import random
 import datetime
 import string
+import config
+
+from loaders.loader import Loader
+from exceptions import (
+    ConfigAttributeNotFound,
+)
 
 
 def now_time() -> str:
@@ -74,3 +80,10 @@ def is_phone_number(number: str) -> str or None:
         resp['descr'] = 'Number format is not valid'
         return None
     return raw_num
+
+
+def check_config_attribute(attr):
+    if config.LINKS.get(attr, None):
+        return config.LINKS[attr]
+    else:
+        raise ConfigAttributeNotFound(attr)
