@@ -12,6 +12,12 @@ from loaders.loader import Loader, check_permission
 from markup import custom_markup
 from helpers import dict_to_str, is_phone_number
 from loggers import get_logger
+from helpers import check_config_attribute
+from exceptions import (
+    ConfigAttributeNotFoundError,
+    EmptySoupDataError,
+    BadResponseStatusError,
+)
 
 logger = get_logger(__name__)
 
@@ -26,7 +32,7 @@ class InternetLoader(Loader):
         self.book_genres = {}
 
     @staticmethod
-    def _site_to_lxml(url: str) -> BeautifulSoup or None:
+    def site_to_lxml(url: str) -> BeautifulSoup or None:
         """
         Get site and convert it to the lxml
         :param url: https://site.com/
@@ -37,16 +43,23 @@ class InternetLoader(Loader):
             'Connection': 'close'
         }
         try:
+            logger.info(f'Try to get info from {url}')
             resp = requests.get(url, headers=headers)
             if resp.status_code == 200:
                 resp.encoding = 'utf-8'
                 soup = BeautifulSoup(resp.text, 'lxml')
+                if soup is None:
+                    raise EmptySoupDataError(url)
             else:
                 logger.error(f'Status of response: {resp.status_code}')
-                return None
+                raise BadResponseStatusError(resp.status_code)
+        except EmptySoupDataError:
+            raise
+        except BadResponseStatusError:
+            raise
         except Exception as _ex:
             logger.exception(f'Exception in {__name__}:\n{_ex}')
-            return None
+            raise
         else:
             logger.info(f'Get successful ({url})')
         return soup
@@ -59,24 +72,29 @@ class InternetLoader(Loader):
         :return: string like {'USD': '73,6059', 'EUR':'83,1158'}
         """
         resp = {}
-        if config.LINKS.get('exchange_url', None):
-            exchange_url = config.LINKS['exchange_url']
-        else:
+        try:
+            url = check_config_attribute('exchange_url')
+            ex = ['USD', 'EUR']
+            soup = InternetLoader.site_to_lxml(url)
+            parse = soup.find_all('tr')
+            exchange = {}
+            for item in parse[1:]:
+                inf = item.find_all('td')
+                if inf[1].text not in ex:
+                    continue
+                exchange[inf[1].text] = inf[4].text
+            resp['text'] = dict_to_str(exchange, ' = ')
+        except ConfigAttributeNotFoundError:
+            logger.exception('Config attribute not found')
             return Loader.error_resp("I can't do this yet😔")
-        ex = ['USD', 'EUR']
-        soup = InternetLoader._site_to_lxml(exchange_url)
-        if soup is None:
-            logger.error('Empty soup data')
+        except EmptySoupDataError:
+            logger.exception('Empty soup data')
             return Loader.error_resp("Empty soup data")
-        parse = soup.find_all('tr')
-        exchange = {}
-        for item in parse[1:]:
-            inf = item.find_all('td')
-            if inf[1].text not in ex:
-                continue
-            exchange[inf[1].text] = inf[4].text
-        resp['text'] = Loader.dict_to_str(exchange, ' = ')
-        return resp
+        except BadResponseStatusError:
+            logger.exception('Bad response status')
+            return Loader.error_resp()
+        else:
+            return resp
 
     @check_permission()
     def get_weather(self, **kwargs) -> dict:
@@ -86,24 +104,30 @@ class InternetLoader(Loader):
         :return: dict like {'Сегодня': '10°/15°', 'ср 12': '11°/18°'}
         """
         resp = {}
-        if config.LINKS.get('weather_url', None):
-            weather_url = config.LINKS['weather_url']
-        else:
+        try:
+            url = check_config_attribute('weather_url')
+            soup = InternetLoader.site_to_lxml(url)
+            parse = soup.find_all('div',
+                                  class_='DetailsSummary--DetailsSummary--2HluQ DetailsSummary--fadeOnOpen--vFCc_')
+            weather = {}
+            for i in parse:
+                h2 = i.find('h2')
+                div = i.find('div')
+                span = div.find_all('span')
+                span = list(map(lambda x: x.text, span))
+                weather[h2.text] = ''.join(span[:-1])
+            resp['text'] = dict_to_str(weather, ' = ')
+        except ConfigAttributeNotFoundError:
+            logger.exception('Config attribute not found')
             return Loader.error_resp("I can't do this yet😔")
-        soup = InternetLoader._site_to_lxml(weather_url)
-        if soup is None:
-            logger.error('Empty soup data')
-            return Loader.error_resp("Empty soup data")
-        parse = soup.find_all('div', class_='DetailsSummary--DetailsSummary--2HluQ DetailsSummary--fadeOnOpen--vFCc_')
-        weather = {}
-        for i in parse:
-            h2 = i.find('h2')
-            div = i.find('div')
-            span = div.find_all('span')
-            span = list(map(lambda x: x.text, span))
-            weather[h2.text] = ''.join(span[:-1])
-        resp['text'] = dict_to_str(weather, ' = ')
-        return resp
+        except EmptySoupDataError:
+            logger.exception('Empty soup data')
+            return Loader.error_resp()
+        except BadResponseStatusError:
+            logger.exception('Bad response status')
+            return Loader.error_resp()
+        else:
+            return resp
 
     @check_permission()
     def get_quote(self, **kwargs) -> dict:

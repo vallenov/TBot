@@ -5,7 +5,7 @@ import config
 
 from loaders.loader import Loader
 from exceptions import (
-    ConfigAttributeNotFound,
+    ConfigAttributeNotFoundError,
 )
 
 
@@ -86,4 +86,4 @@ def check_config_attribute(attr):
     if config.LINKS.get(attr, None):
         return config.LINKS[attr]
     else:
-        raise ConfigAttributeNotFound(attr)
+        raise ConfigAttributeNotFoundError(attr)

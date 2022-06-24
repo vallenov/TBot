@@ -8,7 +8,7 @@ import datetime
 
 import config
 from loaders.loader import Loader, check_permission
-from exceptions import FileDBNotFound
+from exceptions import FileDBNotFoundError
 from markup import main_markup
 from loggers import get_logger
 
@@ -40,7 +40,7 @@ class FileLoader(Loader):
         """
         Load poems from file to memory
         """
-        file_path = self.fife_db.get('poems.xlsx', False)
+        file_path = self.fife_db.get('poemss.xlsx', False)
         if file_path:
             file_raw = pd.read_excel(file_path)
             file = pd.DataFrame(file_raw, columns=['Author', 'Name', 'Poem'])
@@ -62,7 +62,7 @@ class FileLoader(Loader):
                 self.poems.append(poem)
             logger.info(f'{file_path} download. len = {len(self.poems)}')
         else:
-            raise FileDBNotFound('poems.xlsx')
+            raise FileDBNotFoundError('poems.xlsx')
 
     @check_permission()
     def get_poem(self, text: str, **kwargs) -> dict:
@@ -76,8 +76,8 @@ class FileLoader(Loader):
         if not len(self.poems):
             try:
                 self.load_poems()
-            except FileDBNotFound:
-                logger.exception('File poems.xlsx not found')
+            except FileDBNotFoundError:
+                logger.exception('File not found')
                 return Loader.error_resp()
         if len(lst) == 1:
             random_poem = random.choice(self.poems)
