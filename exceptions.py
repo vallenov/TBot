@@ -15,7 +15,7 @@ class ConfigAttributeNotFoundError(TBotException):
 
 
 class EmptySoupDataError(TBotException):
-    def __init__(self, url):
+    def __init__(self, url=''):
         self.url = url
         super().__init__(url)
 
