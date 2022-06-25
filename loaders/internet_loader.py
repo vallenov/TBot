@@ -140,9 +140,6 @@ class InternetLoader(Loader):
         try:
             url = check_config_attribute('quote_url')
             soup = InternetLoader.site_to_lxml(url)
-            if soup is None:
-                logger.error('Empty soup data')
-                return Loader.error_resp("Empty soup data")
             quotes = soup.find_all('div', class_='quote')
             random_quote = random.choice(quotes)
             author = random_quote.find('a')
@@ -173,9 +170,6 @@ class InternetLoader(Loader):
         try:
             url = check_config_attribute('wish_url')
             soup = InternetLoader.site_to_lxml(url)
-            if soup is None:
-                logger.error(f'Empty soup data')
-                return Loader.error_resp()
             wishes = soup.find_all('ol')
             wish_list = wishes[0].find_all('li')
             resp['text'] = random.choice(wish_list).text
