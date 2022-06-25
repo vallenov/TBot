@@ -61,7 +61,7 @@ class InternetLoader(Loader):
             logger.exception(f'Exception in {__name__}:\n{_ex}')
             raise
         else:
-            logger.info(f'Get successful ({url})')
+            logger.info(f'Get successful')
         return soup
 
     @check_permission()
@@ -137,22 +137,30 @@ class InternetLoader(Loader):
         :return: dict like {'quote1': 'author1', 'quote2: 'author2'}
         """
         resp = {}
-        if config.LINKS.get('quote_url', None):
-            quote_url = config.LINKS['quote_url']
-        else:
+        try:
+            url = check_config_attribute('quote_url')
+            soup = InternetLoader.site_to_lxml(url)
+            if soup is None:
+                logger.error('Empty soup data')
+                return Loader.error_resp("Empty soup data")
+            quotes = soup.find_all('div', class_='quote')
+            random_quote = random.choice(quotes)
+            author = random_quote.find('a')
+            text = random_quote.find('div', class_='quote_name')
+            quote = dict()
+            quote[text.text] = author.text
+            resp['text'] = dict_to_str(quote, '\n')
+        except ConfigAttributeNotFoundError:
+            logger.exception('Config attribute not found')
             return Loader.error_resp("I can't do this yet😔")
-        soup = InternetLoader._site_to_lxml(quote_url)
-        if soup is None:
-            logger.error('Empty soup data')
-            return Loader.error_resp("Empty soup data")
-        quotes = soup.find_all('div', class_='quote')
-        random_quote = random.choice(quotes)
-        author = random_quote.find('a')
-        text = random_quote.find('div', class_='quote_name')
-        quote = dict()
-        quote[text.text] = author.text
-        resp['text'] = dict_to_str(quote, '\n')
-        return resp
+        except EmptySoupDataError:
+            logger.exception('Empty soup data')
+            return Loader.error_resp()
+        except BadResponseStatusError:
+            logger.exception('Bad response status')
+            return Loader.error_resp()
+        else:
+            return resp
 
     @check_permission()
     def get_wish(self, **kwargs) -> dict:
@@ -162,18 +170,26 @@ class InternetLoader(Loader):
         :return: wish string
         """
         resp = {}
-        if config.LINKS.get('wish_url', None):
-            wish_url = config.LINKS['wish_url']
-        else:
+        try:
+            url = check_config_attribute('wish_url')
+            soup = InternetLoader.site_to_lxml(url)
+            if soup is None:
+                logger.error(f'Empty soup data')
+                return Loader.error_resp()
+            wishes = soup.find_all('ol')
+            wish_list = wishes[0].find_all('li')
+            resp['text'] = random.choice(wish_list).text
+        except ConfigAttributeNotFoundError:
+            logger.exception('Config attribute not found')
             return Loader.error_resp("I can't do this yet😔")
-        soup = InternetLoader._site_to_lxml(wish_url)
-        if soup is None:
-            logger.error(f'Empty soup data')
+        except EmptySoupDataError:
+            logger.exception('Empty soup data')
             return Loader.error_resp()
-        wishes = soup.find_all('ol')
-        wish_list = wishes[0].find_all('li')
-        resp['text'] = random.choice(wish_list).text
-        return resp
+        except BadResponseStatusError:
+            logger.exception('Bad response status')
+            return Loader.error_resp()
+        else:
+            return resp
 
     @check_permission()
     def get_news(self, text: str, **kwargs) -> dict:
