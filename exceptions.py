@@ -32,6 +32,12 @@ class WrongParameterTypeError(TBotException):
         super().__init__(param)
 
 
+class WrongParameterCountError(TBotException):
+    def __init__(self, cnt):
+        self.cnt = cnt
+        super().__init__(cnt)
+
+
 class UnknownError(TBotException):
     def __init__(self):
         super().__init__(f'Unknown error')
