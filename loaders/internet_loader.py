@@ -10,7 +10,7 @@ import config
 
 from loaders.loader import Loader, check_permission
 from markup import custom_markup
-from helpers import dict_to_str, is_phone_number
+from helpers import dict_to_str, is_phone_number, exception_catch
 from loggers import get_logger
 from helpers import check_config_attribute
 from exceptions import (
@@ -237,23 +237,31 @@ class InternetLoader(Loader):
         :return: affirmation string
         """
         resp = {}
-        if config.LINKS.get('affirmation_url', None):
-            affirmation_url = config.LINKS['affirmation_url']
-        else:
+        try:
+            url = check_config_attribute('affirmation_url')
+            soup = InternetLoader.site_to_lxml(url)
+            aff_list = []
+            ul = soup.find_all('ul')
+            for u in ul:
+                li = u.find_all('em')
+                for em in li:
+                    if em.text[0].isupper():
+                        aff_list.append(em.text)
+            resp['text'] = random.choice(aff_list)
+        except ConfigAttributeNotFoundError:
+            logger.exception('Config attribute not found')
             return Loader.error_resp("I can't do this yet😔")
-        soup = InternetLoader._site_to_lxml(affirmation_url)
-        if soup is None:
-            logger.error(f'Empty soup data')
+        except EmptySoupDataError:
+            logger.exception('Empty soup data')
             return Loader.error_resp()
-        aff_list = []
-        ul = soup.find_all('ul')
-        for u in ul:
-            li = u.find_all('em')
-            for em in li:
-                if em.text[0].isupper():
-                    aff_list.append(em.text)
-        resp['text'] = random.choice(aff_list)
-        return resp
+        except BadResponseStatusError:
+            logger.exception('Bad response status')
+            return Loader.error_resp()
+        except WrongParameterTypeError:
+            logger.exception('Count of news is not number')
+            return Loader.error_resp('Count of news is not number')
+        else:
+            return resp
 
     async def _get_url(self, session, url) -> None:
         """
@@ -265,6 +273,7 @@ class InternetLoader(Loader):
                 logger.info(f'Get successful ({url})')
             else:
                 logger.error(f'Get unsuccessful ({url})')
+                raise BadResponseStatusError(url)
             self.async_url_data.append(data)
 
     @check_permission()
@@ -277,74 +286,51 @@ class InternetLoader(Loader):
         self.async_url_data = []
         tasks = []
         resp = {}
-        if config.LINKS.get('events_url', None):
-            events_url = config.LINKS['events_url']
-        else:
+        try:
+            url = check_config_attribute('events_url')
+            async with aiohttp.ClientSession() as session:
+                tasks.append(asyncio.create_task(self._get_url(session, url)))
+                await asyncio.gather(*tasks)
+                tasks = []
+                soup = BeautifulSoup(self.async_url_data.pop(), 'lxml')
+                if not soup:
+                    raise EmptySoupDataError(url)
+                links = {}
+                div = soup.find_all('div', class_='site-nav-events')
+                raw_a = div[0].find_all('a')
+                for a in raw_a:
+                    links[a.text] = a.get('href')
+                for _, link in links.items():
+                    tasks.append(asyncio.create_task(self._get_url(session, link)))
+                await asyncio.gather(*tasks)
+                events = {}
+                for raw in self.async_url_data:
+                    events_links = []
+                    soup_curr = BeautifulSoup(raw, 'lxml')
+                    if not soup_curr:
+                        raise EmptySoupDataError
+                    name = soup_curr.find('title').text.split('.')[0]
+                    raw_div = soup_curr.find('div', class_='feed-container')
+                    article = raw_div.find_all('article', class_='post post-rect')
+                    for art in article:
+                        h2s = art.find_all('h2', class_='post-title')
+                        for raw_h2 in h2s:
+                            a = raw_h2.find('a')
+                            descr = a.text.replace('\n', '')
+                            events_links.append(f"{descr}\n{a.get('href')}\n")
+                    events[name] = random.choice(events_links)
+                resp['text'] = dict_to_str(events, '\n')
+        except ConfigAttributeNotFoundError:
+            logger.exception('Config attribute not found')
             return Loader.error_resp("I can't do this yet😔")
-        async with aiohttp.ClientSession() as session:
-            tasks.append(asyncio.create_task(self._get_url(session, events_url)))
-            await asyncio.gather(*tasks)
-            tasks = []
-            soup = BeautifulSoup(self.async_url_data.pop(), 'lxml')
-            links = {}
-            div = soup.find_all('div', class_='site-nav-events')
-            raw_a = div[0].find_all('a')
-            for a in raw_a:
-                links[a.text] = a.get('href')
-            for _, link in links.items():
-                tasks.append(asyncio.create_task(self._get_url(session, link)))
-            await asyncio.gather(*tasks)
-            events = {}
-            for raw in self.async_url_data:
-                events_links = []
-                soup_curr = BeautifulSoup(raw, 'lxml')
-                name = soup_curr.find('title').text.split('.')[0]
-                raw_div = soup_curr.find('div', class_='feed-container')
-                article = raw_div.find_all('article', class_='post post-rect')
-                for art in article:
-                    h2s = art.find_all('h2', class_='post-title')
-                    for raw_h2 in h2s:
-                        a = raw_h2.find('a')
-                        descr = a.text.replace('\n', '')
-                        events_links.append(f"{descr}\n{a.get('href')}\n")
-                events[name] = random.choice(events_links)
-            resp['text'] = dict_to_str(events, '\n')
-            return resp
-
-    @check_permission()
-    def get_events(self, **kwargs) -> dict:
-        """
-        Get events from internet
-        :param:
-        :return: events digest
-        """
-        resp = {}
-        if config.LINKS.get('events_url', None):
-            events_url = config.LINKS['events_url']
-        else:
-            return Loader.error_resp("I can't do this yet😔")
-        soup = InternetLoader._site_to_lxml(events_url)
-        if soup is None:
-            logger.error(f'Empty soup data')
+        except EmptySoupDataError:
+            logger.exception('Empty soup data')
             return Loader.error_resp()
-        links = {}
-        div = soup.find_all('div', class_='site-nav-events')
-        raw_a = div[0].find_all('a')
-        for a in raw_a:
-            links[a.text] = a.get('href')
-        events = {}
-        for name, link in links.items():
-            events_links = []
-            name = name.replace('\n', '')
-            raw_data = InternetLoader._site_to_lxml(link)
-            h2s = raw_data.find_all('h2', class_='post-title')
-            for raw_h2 in h2s:
-                a = raw_h2.find('a')
-                descr = a.text.replace('\n', '')
-                events_links.append(f"{descr}\n{a.get('href')}\n")
-            events[name] = random.choice(events_links)
-        resp['text'] = dict_to_str(events, ' ')
-        return resp
+        except BadResponseStatusError:
+            logger.exception('Bad response status')
+            return Loader.error_resp()
+        else:
+            return resp
 
     @check_permission()
     def get_restaurant(self, **kwargs) -> dict:
@@ -354,40 +340,45 @@ class InternetLoader(Loader):
         :return: restaurant string
         """
         resp = {}
-        if config.LINKS.get('restaurant_url', None):
-            restaurant_url = config.LINKS['restaurant_url']
-        else:
+        try:
+            url = check_config_attribute('restaurant_url')
+            soup = InternetLoader.site_to_lxml(url + '/msk/catalog/restaurants/all/')
+            div_nav_raw = soup.find('div', class_='pagination-wrapper')
+            a_raw = div_nav_raw.find('a')
+            page_count = int(a_raw.get('data-nav-page-count'))
+            rand_page = random.choice(range(1, page_count + 1))
+            if rand_page > 1:
+                soup = InternetLoader.site_to_lxml(config.LINKS['restaurant_url']
+                                                   + '/msk/catalog/restaurants/all/'
+                                                   + f'?page={rand_page}')
+            names = soup.find_all('a', class_='name')
+            restaurant = random.choice(names)
+            soup = InternetLoader.site_to_lxml(config.LINKS['restaurant_url'] + restaurant.get('href'))
+            div_raw = soup.find('div', class_='props one-line-props')
+            final_restaurant = dict()
+            final_restaurant[0] = restaurant.text
+            for d in div_raw:
+                name = d.find('div', class_='name')
+                if name:
+                    name = name.text
+                value = d.find('a')
+                if value:
+                    value = value.text.strip().replace('\n', '')
+                if name is not None and value is not None:
+                    final_restaurant[name] = value
+            final_restaurant[1] = config.LINKS['restaurant_url'] + restaurant.get('href')
+            resp['text'] = dict_to_str(final_restaurant, ' ')
+        except ConfigAttributeNotFoundError:
+            logger.exception('Config attribute not found')
             return Loader.error_resp("I can't do this yet😔")
-        soup = InternetLoader._site_to_lxml(restaurant_url + '/msk/catalog/restaurants/all/')
-        if soup is None:
-            logger.error(f'Empty soup data')
+        except EmptySoupDataError:
+            logger.exception('Empty soup data')
             return Loader.error_resp()
-        div_nav_raw = soup.find('div', class_='pagination-wrapper')
-        a_raw = div_nav_raw.find('a')
-        page_count = int(a_raw.get('data-nav-page-count'))
-        rand_page = random.choice(range(1, page_count + 1))
-        if rand_page > 1:
-            soup = InternetLoader._site_to_lxml(config.LINKS['restaurant_url']
-                                                + '/msk/catalog/restaurants/all/'
-                                                + f'?page={rand_page}')
-        names = soup.find_all('a', class_='name')
-        restaurant = random.choice(names)
-        soup = InternetLoader._site_to_lxml(config.LINKS['restaurant_url'] + restaurant.get('href'))
-        div_raw = soup.find('div', class_='props one-line-props')
-        final_restaurant = dict()
-        final_restaurant[0] = restaurant.text
-        for d in div_raw:
-            name = d.find('div', class_='name')
-            if name:
-                name = name.text
-            value = d.find('a')
-            if value:
-                value = value.text.strip().replace('\n', '')
-            if name is not None and value is not None:
-                final_restaurant[name] = value
-        final_restaurant[1] = config.LINKS['restaurant_url'] + restaurant.get('href')
-        resp['text'] = dict_to_str(final_restaurant, ' ')
-        return resp
+        except BadResponseStatusError:
+            logger.exception('Bad response status')
+            return Loader.error_resp()
+        else:
+            return resp
 
     @check_permission()
     def get_poem(self, **kwargs) -> dict:
