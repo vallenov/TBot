@@ -17,6 +17,7 @@ from exceptions import (
     ConfigAttributeNotFoundError,
     EmptySoupDataError,
     BadResponseStatusError,
+    WrongParameterTypeError,
 )
 
 logger = get_logger(__name__)
@@ -195,30 +196,38 @@ class InternetLoader(Loader):
         resp = {}
         count = 5
         lst = text.split(' ')
-        if len(lst) > 1:
-            try:
-                count = int(lst[1])
-            except ValueError:
-                return Loader.error_resp('Count of news is not number')
-        if config.LINKS.get('news_url', None):
-            news_url = config.LINKS['news_url']
-        else:
+        try:
+            if len(lst) > 1:
+                try:
+                    count = int(lst[1])
+                except ValueError:
+                    raise WrongParameterTypeError(lst[1])
+            url = check_config_attribute('news_url')
+            soup = InternetLoader.site_to_lxml(url)
+            div_raw = soup.find_all('div', class_='cell-list__item-info')
+            news = {}
+            for n in div_raw:
+                news_time = n.find('span', class_='elem-info__date')
+                text = n.find('span', class_='share')
+                if news_time and text:
+                    news[news_time.text] = text.get('data-title')
+                if len(news) == count:
+                    break
+            resp['text'] = dict_to_str(news, '\n')
+        except ConfigAttributeNotFoundError:
+            logger.exception('Config attribute not found')
             return Loader.error_resp("I can't do this yet😔")
-        soup = InternetLoader._site_to_lxml(news_url)
-        if soup is None:
-            logger.error(f'Empty soup data')
+        except EmptySoupDataError:
+            logger.exception('Empty soup data')
             return Loader.error_resp()
-        div_raw = soup.find_all('div', class_='cell-list__item-info')
-        news = {}
-        for n in div_raw:
-            news_time = n.find('span', class_='elem-info__date')
-            text = n.find('span', class_='share')
-            if news_time and text:
-                news[news_time.text] = text.get('data-title')
-            if len(news) == count:
-                break
-        resp['text'] = dict_to_str(news, '\n')
-        return resp
+        except BadResponseStatusError:
+            logger.exception('Bad response status')
+            return Loader.error_resp()
+        except WrongParameterTypeError:
+            logger.exception('Count of news is not number')
+            return Loader.error_resp('Count of news is not number')
+        else:
+            return resp
 
     @check_permission()
     def get_affirmation(self, **kwargs) -> dict:
