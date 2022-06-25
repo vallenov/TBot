@@ -18,6 +18,7 @@ from exceptions import (
     EmptySoupDataError,
     BadResponseStatusError,
     WrongParameterTypeError,
+    WrongParameterCountError,
 )
 
 logger = get_logger(__name__)
@@ -388,51 +389,56 @@ class InternetLoader(Loader):
         :return: poesy string
         """
         resp = {}
-        if config.LINKS.get('poesy_url', None):
-            poesy_url = config.LINKS['poesy_url']
-        else:
+        try:
+            url = check_config_attribute('poesy_url')
+            soup = InternetLoader.site_to_lxml(url)
+            div_raw = soup.find('div', class_='_2uPBE')
+            a_raw = div_raw.find_all('a', class_='GmJ5E')
+            count = int(a_raw[-1].text)
+            rand = random.randint(1, count)
+            if rand > 1:
+                soup = InternetLoader.site_to_lxml(config.LINKS['poesy_url'] + f'?page={rand}')
+            poems_raw = soup.find('div', class_='_2VELq')
+            poems_raw = poems_raw.find_all('div', class_='_1jGw_')
+            rand_poem_raw = random.choice(poems_raw)
+            href = rand_poem_raw.find('a', class_='_2A3Np').get('href')
+            link = '/'.join(config.LINKS['poesy_url'].split('/')[:-3]) + href
+
+            soup = InternetLoader.site_to_lxml(link)
+
+            div_raw = soup.find('div', class_='_1MTBU _3RpDE _47J4f _3IEeu')
+            author = div_raw.find('div', class_='_14JnI').text
+            name = div_raw.find('div', class_='_2jzeL').text
+            strings_raw = div_raw.find('div', class_='_3P9bi')
+            year = ''
+            year_raw = strings_raw.find('div')
+            if year_raw:
+                year = f'\n\n{year_raw.text}'
+            raw_p = strings_raw.find_all('p', class_='')
+            quatrains = []
+            for p in raw_p:
+                quatrain = p.decode()
+                quatrain = quatrain.replace('<p class="">', '')
+                quatrain = quatrain.replace('<strong>', '\t')
+                quatrain = quatrain.replace('</strong>', '')
+                quatrain = quatrain.replace('<em>', '')
+                quatrain = quatrain.replace('</em>', '')
+                quatrain = quatrain.replace('</p>', '')
+                quatrain = quatrain.replace('<br/>', '\n')
+                quatrains.append(quatrain)
+            poem = '\n\n'.join(quatrains)
+            resp['text'] = f'{author}\n\n{name}\n\n{poem}{year}'
+        except ConfigAttributeNotFoundError:
+            logger.exception('Config attribute not found')
             return Loader.error_resp("I can't do this yet😔")
-        soup = InternetLoader._site_to_lxml(poesy_url)
-        if soup is None:
-            logger.error(f'Empty soup data')
+        except EmptySoupDataError:
+            logger.exception('Empty soup data')
             return Loader.error_resp()
-        div_raw = soup.find('div', class_='_2uPBE')
-        a_raw = div_raw.find_all('a', class_='GmJ5E')
-        count = int(a_raw[-1].text)
-        rand = random.randint(1, count)
-        if rand > 1:
-            soup = InternetLoader._site_to_lxml(config.LINKS['poesy_url'] + f'?page={rand}')
-        poems_raw = soup.find('div', class_='_2VELq')
-        poems_raw = poems_raw.find_all('div', class_='_1jGw_')
-        rand_poem_raw = random.choice(poems_raw)
-        href = rand_poem_raw.find('a', class_='_2A3Np').get('href')
-        link = '/'.join(config.LINKS['poesy_url'].split('/')[:-3]) + href
-
-        soup = InternetLoader._site_to_lxml(link)
-
-        div_raw = soup.find('div', class_='_1MTBU _3RpDE _47J4f _3IEeu')
-        author = div_raw.find('div', class_='_14JnI').text
-        name = div_raw.find('div', class_='_2jzeL').text
-        strings_raw = div_raw.find('div', class_='_3P9bi')
-        year = ''
-        year_raw = strings_raw.find('div')
-        if year_raw:
-            year = f'\n\n{year_raw.text}'
-        raw_p = strings_raw.find_all('p', class_='')
-        quatrains = []
-        for p in raw_p:
-            quatrain = p.decode()
-            quatrain = quatrain.replace('<p class="">', '')
-            quatrain = quatrain.replace('<strong>', '\t')
-            quatrain = quatrain.replace('</strong>', '')
-            quatrain = quatrain.replace('<em>', '')
-            quatrain = quatrain.replace('</em>', '')
-            quatrain = quatrain.replace('</p>', '')
-            quatrain = quatrain.replace('<br/>', '\n')
-            quatrains.append(quatrain)
-        poem = '\n\n'.join(quatrains)
-        resp['text'] = f'{author}\n\n{name}\n\n{poem}{year}'
-        return resp
+        except BadResponseStatusError:
+            logger.exception('Bad response status')
+            return Loader.error_resp()
+        else:
+            return resp
 
     @check_permission()
     def get_phone_number_info(self, text: str, **kwargs) -> dict:
@@ -442,30 +448,38 @@ class InternetLoader(Loader):
         :return: poesy string
         """
         resp = {}
-        if config.LINKS.get('kodi_url', None):
-            kodi_url = config.LINKS['kodi_url']
-        else:
+        try:
+            url = check_config_attribute('kodi_url')
+            lst = text.split()
+            number = is_phone_number(lst[1])
+            res = requests.post(url, data={'number': number})
+            if 'Ошибка: Номер не найден' in res.text:
+                return Loader.error_resp('Number not found/Номер не найден')
+            soup = BeautifulSoup(res.text, 'lxml')
+            div_raw = soup.find('div', class_='content__in')
+            table = div_raw.find('table', class_='teltr tel-mobile')
+            tr_raw = table.find_all('tr', class_='')
+            td_raw = tr_raw[-1].find_all('td')
+            phone_info = dict()
+            phone_info['Страна'] = td_raw[0].find('strong').text
+            operator_info = td_raw[1].find('strong').text
+            phone_info['Регион'] = operator_info.split('[')[1].replace(']', '').replace(',', '')
+            phone_info['Изначальный оператор'] = operator_info.split(' ')[0]
+            p_raw = div_raw.find('p', style='')
+            span_raw = p_raw.find_all('span')
+            phone_info['Текущий оператор'] = span_raw[-1].text
+            resp['text'] = dict_to_str(phone_info, ': ')
+        except ConfigAttributeNotFoundError:
+            logger.exception('Config attribute not found')
             return Loader.error_resp("I can't do this yet😔")
-        lst = text.split()
-        number = is_phone_number(lst[1])
-        res = requests.post(kodi_url, data={'number': number})
-        if 'Ошибка: Номер не найден' in res.text:
-            return Loader.error_resp('Number not found/Номер не найден')
-        soup = BeautifulSoup(res.text, 'lxml')
-        div_raw = soup.find('div', class_='content__in')
-        table = div_raw.find('table', class_='teltr tel-mobile')
-        tr_raw = table.find_all('tr', class_='')
-        td_raw = tr_raw[-1].find_all('td')
-        phone_info = dict()
-        phone_info['Страна'] = td_raw[0].find('strong').text
-        operator_info = td_raw[1].find('strong').text
-        phone_info['Регион'] = operator_info.split('[')[1].replace(']', '').replace(',', '')
-        phone_info['Изначальный оператор'] = operator_info.split(' ')[0]
-        p_raw = div_raw.find('p', style='')
-        span_raw = p_raw.find_all('span')
-        phone_info['Текущий оператор'] = span_raw[-1].text
-        resp['text'] = dict_to_str(phone_info, ': ')
-        return resp
+        except EmptySoupDataError:
+            logger.exception('Empty soup data')
+            return Loader.error_resp()
+        except BadResponseStatusError:
+            logger.exception('Bad response status')
+            return Loader.error_resp()
+        else:
+            return resp
 
     @check_permission()
     def get_random_movie(self, text: str, **kwargs) -> dict:
@@ -478,91 +492,99 @@ class InternetLoader(Loader):
         command = text.split(' ')
         year_from = 0
         year_to = 0
-        if len(command) > 2:
-            return Loader.error_resp('Format of data is not valid')
-        if len(command) == 1:
-            resp['text'] = 'Выберите промежуток'
-            resp['markup'] = custom_markup('movie',
-                                           ['1950-1960', '1960-1970', '1970-1980',
-                                            '1980-1990', '1990-2000', '2000-2010', '2010-2020'],
-                                           '🎞')
-            return resp
-        elif len(command) == 2:
-            if '-' not in command[1]:
-                try:
-                    act_year_from = int(command[1])
-                    act_year_to = act_year_from
-                    year_from = act_year_from
-                    year_to = act_year_to
-                except ValueError as e:
-                    return Loader.error_resp('Format of data is not valid')
+        try:
+            if len(command) > 2:
+                raise WrongParameterCountError(len(command))
+            if len(command) == 1:
+                resp['text'] = 'Выберите промежуток'
+                resp['markup'] = custom_markup('movie',
+                                               ['1950-1960', '1960-1970', '1970-1980',
+                                                '1980-1990', '1990-2000', '2000-2010', '2010-2020'],
+                                               '🎞')
+                return resp
+            elif len(command) == 2:
+                if '-' not in command[1]:
+                    try:
+                        act_year_from = int(command[1])
+                        act_year_to = act_year_from
+                        year_from = act_year_from
+                        year_to = act_year_to
+                    except ValueError as e:
+                        return Loader.error_resp('Format of data is not valid')
+                    else:
+                        if act_year_from < 1890 or act_year_to > 2022:
+                            return Loader.error_resp(f'Year may be from 1890 to {datetime.datetime.now().year}')
                 else:
-                    if act_year_from < 1890 or act_year_to > 2022:
-                        return Loader.error_resp(f'Year may be from 1890 to {datetime.datetime.now().year}')
-            else:
-                try:
-                    split_years = command[1].split('-')
-                    act_year_from = int(split_years[0])
-                    act_year_to = int(split_years[1])
-                    if act_year_from < 1890 or act_year_to > 2022:
-                        return Loader.error_resp(f'Year may be from 1890 to {datetime.datetime.now().year}')
-                    elif act_year_from > act_year_to:
-                        return Loader.error_resp(f'Start year may be greater then finish year')
-                    year_from = random.choice(range(int(split_years[0]), int(split_years[1]) + 1))
-                    year_to = year_from
-                except ValueError as e:
-                    return Loader.error_resp('Format of data is not valid')
-        if config.LINKS.get('random_movie_url', None):
-            random_movie_url = config.LINKS['random_movie_url'].format(year_from, year_to)
-        else:
+                    try:
+                        split_years = command[1].split('-')
+                        act_year_from = int(split_years[0])
+                        act_year_to = int(split_years[1])
+                        if act_year_from < 1890 or act_year_to > 2022:
+                            return Loader.error_resp(f'Year may be from 1890 to {datetime.datetime.now().year}')
+                        elif act_year_from > act_year_to:
+                            return Loader.error_resp(f'Start year may be greater then finish year')
+                        year_from = random.choice(range(int(split_years[0]), int(split_years[1]) + 1))
+                        year_to = year_from
+                    except ValueError as e:
+                        return Loader.error_resp('Format of data is not valid')
+            url = check_config_attribute('random_movie_url')
+            soup = InternetLoader.site_to_lxml(url)
+            result_top = soup.find('div', class_='search_results_top')
+            span_raw = result_top.find('span')
+            is_result = int(span_raw.text.split(' ')[-1])
+            if not is_result:
+                return Loader.error_resp(f'Movies by {year_from}-{year_to} is not found')
+            div_raw = soup.find('div', class_='search_results search_results_last')
+            div_nav = div_raw.find('div', class_='navigator')
+            from_to = div_nav.find('div', class_='pagesFromTo').text.split(' ')[0].split('—')
+            per_page = int(from_to[1]) - int(from_to[0]) - 1
+            page_count = int(div_nav.find('div', class_='pagesFromTo').text.split(' ')[-1]) // per_page
+            current_try = 0
+            max_try = 5
+            while current_try < max_try:
+                current_try += 1
+                random_page_number = str(random.choice(range(1, page_count)))
+                movie_soup = InternetLoader.site_to_lxml(url + str(random_page_number))
+                movie_div_raw = movie_soup.find('div', class_='search_results search_results_last')
+                div_elements = movie_div_raw.find_all('div', class_='element')
+                div_elements = list(filter(lambda x: 'no-poster' not in x.find('img').get('title'), div_elements))
+                if not div_elements:
+                    logger.warning(f'No elements with poster')
+                    continue
+                try_count = 0
+                symbols = 'аоуыэяеёюибвгдйжзклмнпрстфхцчшщьъАОУЫЭЯЕЁЮИБВГДЙЖЗКЛМНПРСТФХЦЧШЩЬЪ'
+                while True:
+                    random_movie_raw = random.choice(div_elements)
+                    p_raw = random_movie_raw.find('p', class_='name')
+                    name = p_raw.text
+                    name = name.replace('видео', '')
+                    name = name.replace('ТВ', '')
+                    for simb in name:
+                        if simb in symbols:
+                            movie_id = p_raw.find('a').get('href')
+                            movie_url = '/'.join(url.split('/')[:3])
+                            text = f'Случайный фильм {act_year_from}-{act_year_to} годов'
+                            link = movie_url + movie_id
+                            resp['text'] = f'{text}\n{link}'
+                            return resp
+                    try_count += 1
+                    if try_count > per_page:
+                        logger.warning(f'No elements with cyrillic symbols')
+                        break
+        except ConfigAttributeNotFoundError:
+            logger.exception('Config attribute not found')
             return Loader.error_resp("I can't do this yet😔")
-        soup = InternetLoader._site_to_lxml(random_movie_url)
-        result_top = soup.find('div', class_='search_results_top')
-        span_raw = result_top.find('span')
-        is_result = int(span_raw.text.split(' ')[-1])
-        if not is_result:
-            return Loader.error_resp(f'Movies by {year_from}-{year_to} is not found')
-        if soup is None:
-            logger.error(f'Empty soup data')
+        except EmptySoupDataError:
+            logger.exception('Empty soup data')
             return Loader.error_resp()
-        div_raw = soup.find('div', class_='search_results search_results_last')
-        div_nav = div_raw.find('div', class_='navigator')
-        from_to = div_nav.find('div', class_='pagesFromTo').text.split(' ')[0].split('—')
-        per_page = int(from_to[1]) - int(from_to[0]) - 1
-        page_count = int(div_nav.find('div', class_='pagesFromTo').text.split(' ')[-1]) // per_page
-        current_try = 0
-        max_try = 5
-        while current_try < max_try:
-            current_try += 1
-            random_page_number = str(random.choice(range(1, page_count)))
-            movie_soup = InternetLoader._site_to_lxml(random_movie_url + str(random_page_number))
-            movie_div_raw = movie_soup.find('div', class_='search_results search_results_last')
-            div_elements = movie_div_raw.find_all('div', class_='element')
-            div_elements = list(filter(lambda x: 'no-poster' not in x.find('img').get('title'), div_elements))
-            if not div_elements:
-                logger.warning(f'No elements with poster')
-                continue
-            try_count = 0
-            symbols = 'аоуыэяеёюибвгдйжзклмнпрстфхцчшщьъАОУЫЭЯЕЁЮИБВГДЙЖЗКЛМНПРСТФХЦЧШЩЬЪ'
-            while True:
-                random_movie_raw = random.choice(div_elements)
-                p_raw = random_movie_raw.find('p', class_='name')
-                name = p_raw.text
-                name = name.replace('видео', '')
-                name = name.replace('ТВ', '')
-                for simb in name:
-                    if simb in symbols:
-                        movie_id = p_raw.find('a').get('href')
-                        movie_url = '/'.join(random_movie_url.split('/')[:3])
-                        text = f'Случайный фильм {act_year_from}-{act_year_to} годов'
-                        link = movie_url + movie_id
-                        resp['text'] = f'{text}\n{link}'
-                        return resp
-                try_count += 1
-                if try_count > per_page:
-                    logger.warning(f'No elements with cyrillic symbols')
-                    break
-        return Loader.error_resp(f'Movie {year_from}-{year_to} years not found')
+        except BadResponseStatusError:
+            logger.exception('Bad response status')
+            return Loader.error_resp()
+        except WrongParameterCountError:
+            logger.exception('Wrong parameter count')
+            return Loader.error_resp()
+        else:
+            return Loader.error_resp(f'Movie {year_from}-{year_to} years not found')
 
     def get_book_genres(self):
         """
@@ -576,7 +598,7 @@ class InternetLoader(Loader):
             book_url = config.LINKS['book_url']
         else:
             return Loader.error_resp("I can't do this yet😔")
-        soup = InternetLoader._site_to_lxml(book_url)
+        soup = InternetLoader.site_to_lxml(book_url)
         if soup is None:
             logger.error(f'Empty soup data')
             return Loader.error_resp()
