@@ -26,6 +26,12 @@ class BadResponseStatusError(TBotException):
         super().__init__(status_code)
 
 
+class WrongParameterTypeError(TBotException):
+    def __init__(self, param):
+        self.param = param
+        super().__init__(param)
+
+
 class UnknownError(TBotException):
     def __init__(self):
         super().__init__(f'Unknown error')
