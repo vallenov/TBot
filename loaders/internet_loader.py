@@ -594,19 +594,23 @@ class InternetLoader(Loader):
         """
         if self.book_genres:
             return
-        if config.LINKS.get('book_url', None):
-            book_url = config.LINKS['book_url']
-        else:
+        try:
+            url = check_config_attribute('book_url')
+            soup = InternetLoader.site_to_lxml(url)
+            genre_raw = soup.find_all('div', class_='card-white genre-block')
+            for genre in genre_raw:
+                title_raw = genre.find('a', class_='main-genre-title')
+                if title_raw.text:
+                    self.book_genres[title_raw.text] = title_raw.get('href')
+        except ConfigAttributeNotFoundError:
+            logger.exception('Config attribute not found')
             return Loader.error_resp("I can't do this yet😔")
-        soup = InternetLoader.site_to_lxml(book_url)
-        if soup is None:
-            logger.error(f'Empty soup data')
+        except EmptySoupDataError:
+            logger.exception('Empty soup data')
             return Loader.error_resp()
-        genre_raw = soup.find_all('div', class_='card-white genre-block')
-        for genre in genre_raw:
-            title_raw = genre.find('a', class_='main-genre-title')
-            if title_raw.text:
-                self.book_genres[title_raw.text] = title_raw.get('href')
+        except BadResponseStatusError:
+            logger.exception('Bad response status')
+            return Loader.error_resp()
 
     @check_permission()
     def get_book(self, text, **kwargs):
@@ -616,40 +620,48 @@ class InternetLoader(Loader):
         :return: book
         """
         resp = {}
-        err = self.get_book_genres()
-        if err:
-            return err
-        lst = text.split()
-        if len(lst) == 1:
-            resp['text'] = 'Выберите жанр'
-            resp['markup'] = custom_markup('book', self.book_genres, '📖')
+        try:
+            err = self.get_book_genres()
+            if err:
+                return err
+            lst = text.split()
+            if len(lst) == 1:
+                resp['text'] = 'Выберите жанр'
+                resp['markup'] = custom_markup('book', self.book_genres, '📖')
+                return resp
+            category = ''
+            for genre in self.book_genres.keys():
+                if genre.lower().startswith(lst[1]):
+                    category = self.book_genres[genre]
+            if not category:
+                return Loader.error_resp('Genre is not valid')
+            site = '/'.join(config.LINKS['book_url'].split('/')[:3])
+            soup = InternetLoader.site_to_lxml(f'{site}{category}/listview/biglist/~6')
+            if soup is None:
+                logger.error(f'Empty soup data')
+                return Loader.error_resp()
+            a_raw = soup.find_all('a', class_='pagination-page pagination-wide')
+            last_page_raw = a_raw[-1].get('href')
+            last_page = last_page_raw.split('~')[-1]
+            random_page = random.choice(range(1, int(last_page) + 1))
+            soup = InternetLoader.site_to_lxml(f'{site}{category}/listview/biglist/~{random_page}')
+            div_raw = soup.find('div', class_='blist-biglist')
+            book_list = div_raw.find_all('div', class_='book-item-manage')
+            random_book_raw = random.choice(book_list)
+            random_book = random_book_raw.find('a', class_='brow-book-name with-cycle')
+            resp['text'] = f"{random_book.get('title')}\n"
+            resp['text'] += f"{site}{random_book.get('href')}"
+        except ConfigAttributeNotFoundError:
+            logger.exception('Config attribute not found')
+            return Loader.error_resp("I can't do this yet😔")
+        except EmptySoupDataError:
+            logger.exception('Empty soup data')
+            return Loader.error_resp()
+        except BadResponseStatusError:
+            logger.exception('Bad response status')
+            return Loader.error_resp()
+        else:
             return resp
-        category = ''
-        for genre in self.book_genres.keys():
-            if genre.lower().startswith(lst[1]):
-                category = self.book_genres[genre]
-        if not category:
-            return Loader.error_resp('Genre is not valid')
-        site = '/'.join(config.LINKS['book_url'].split('/')[:3])
-        soup = InternetLoader._site_to_lxml(f'{site}{category}/listview/biglist/~6')
-        if soup is None:
-            logger.error(f'Empty soup data')
-            return Loader.error_resp()
-        a_raw = soup.find_all('a', class_='pagination-page pagination-wide')
-        last_page_raw = a_raw[-1].get('href')
-        last_page = last_page_raw.split('~')[-1]
-        random_page = random.choice(range(1, int(last_page) + 1))
-        soup = InternetLoader._site_to_lxml(f'{site}{category}/listview/biglist/~{random_page}')
-        if soup is None:
-            logger.error(f'Empty soup data')
-            return Loader.error_resp()
-        div_raw = soup.find('div', class_='blist-biglist')
-        book_list = div_raw.find_all('div', class_='book-item-manage')
-        random_book_raw = random.choice(book_list)
-        random_book = random_book_raw.find('a', class_='brow-book-name with-cycle')
-        resp['text'] = f"{random_book.get('title')}\n"
-        resp['text'] += f"{site}{random_book.get('href')}"
-        return resp
 
     @check_permission()
     def get_russian_painting(self, **kwargs) -> dict:
@@ -663,7 +675,7 @@ class InternetLoader(Loader):
             russian_painting_url = config.LINKS['russian_painting_url']
         else:
             return Loader.error_resp("I can't do this yet😔")
-        soup = InternetLoader._site_to_lxml(russian_painting_url)
+        soup = InternetLoader.site_to_lxml(russian_painting_url)
         if soup is None:
             logger.error(f'Empty soup data')
             return Loader.error_resp()
@@ -673,7 +685,7 @@ class InternetLoader(Loader):
         href = a_raw.get('href')
         site = '/'.join(config.LINKS['russian_painting_url'].split('/')[:3])
         link = site + href
-        soup = InternetLoader._site_to_lxml(link)
+        soup = InternetLoader.site_to_lxml(link)
         p_raw = soup.find('p', class_='xpic')
         img_raw = p_raw.find('img')
         picture = img_raw.get('src')
