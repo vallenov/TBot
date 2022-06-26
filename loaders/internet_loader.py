@@ -19,6 +19,7 @@ from exceptions import (
     BadResponseStatusError,
     WrongParameterTypeError,
     WrongParameterCountError,
+    WrongParameterValueError,
 )
 
 logger = get_logger(__name__)
@@ -582,7 +583,7 @@ class InternetLoader(Loader):
             return Loader.error_resp()
         except WrongParameterCountError:
             logger.exception('Wrong parameter count')
-            return Loader.error_resp()
+            return Loader.error_resp('Wrong parameter count')
         else:
             return Loader.error_resp(f'Movie {year_from}-{year_to} years not found')
 
@@ -671,36 +672,41 @@ class InternetLoader(Loader):
         :return: dict
         """
         resp = {}
-        if config.LINKS.get('russian_painting_url', None):
-            russian_painting_url = config.LINKS['russian_painting_url']
-        else:
+        try:
+            url = check_config_attribute('russian_painting_url')
+            soup = InternetLoader.site_to_lxml(url)
+            div_raw = soup.find_all('div', class_='pic')
+            random_painting = random.choice(div_raw)
+            a_raw = random_painting.find('a')
+            href = a_raw.get('href')
+            site = '/'.join(config.LINKS['russian_painting_url'].split('/')[:3])
+            link = site + href
+            soup = InternetLoader.site_to_lxml(link)
+            p_raw = soup.find('p', class_='xpic')
+            img_raw = p_raw.find('img')
+            picture = img_raw.get('src')
+            if picture:
+                resp['photo'] = picture
+            else:
+                logger.info('Picture not found')
+                Loader.error_resp()
+            text = img_raw.get('title')
+            if text:
+                text = text.split('900')[0]
+            else:
+                text = 'Picture'
+            resp['text'] = text
+        except ConfigAttributeNotFoundError:
+            logger.exception('Config attribute not found')
             return Loader.error_resp("I can't do this yet😔")
-        soup = InternetLoader.site_to_lxml(russian_painting_url)
-        if soup is None:
-            logger.error(f'Empty soup data')
+        except EmptySoupDataError:
+            logger.exception('Empty soup data')
             return Loader.error_resp()
-        div_raw = soup.find_all('div', class_='pic')
-        random_painting = random.choice(div_raw)
-        a_raw = random_painting.find('a')
-        href = a_raw.get('href')
-        site = '/'.join(config.LINKS['russian_painting_url'].split('/')[:3])
-        link = site + href
-        soup = InternetLoader.site_to_lxml(link)
-        p_raw = soup.find('p', class_='xpic')
-        img_raw = p_raw.find('img')
-        picture = img_raw.get('src')
-        if picture:
-            resp['photo'] = picture
+        except BadResponseStatusError:
+            logger.exception('Bad response status')
+            return Loader.error_resp()
         else:
-            logger.info('Picture not found')
-            Loader.error_resp()
-        text = img_raw.get('title')
-        if text:
-            text = text.split('900')[0]
-        else:
-            text = 'Picture'
-        resp['text'] = text
-        return resp
+            return resp
 
     @check_permission(needed_level='root')
     def get_server_ip(self, **kwargs) -> dict:
@@ -723,27 +729,23 @@ class InternetLoader(Loader):
         :return: operation status or tunnel's info
         """
         resp = {}
-        if config.LINKS.get('system-monitor', None):
-            system_monitor = config.LINKS['system-monitor']
-        else:
-            return Loader.error_resp("I can't do this yet😔")
-        command = text.split(' ')
-        valid_actions = ['start', 'stop', 'restart', 'tunnels']
-        if len(command) > 2:
-            return Loader.error_resp('Format of data is not valid')
-        if len(command) == 1:
-            resp['text'] = 'Выберите действие'
-            resp['markup'] = custom_markup('ngrok',
-                                           valid_actions,
-                                           '🖥')
-            return resp
-        if command[1] not in valid_actions:
-            return Loader.error_resp('Command is not valid')
         try:
-            data = requests.get(system_monitor + f'ngrok_{command[1]}')
+            url = check_config_attribute('system-monitor')
+            command = text.split(' ')
+            valid_actions = ['start', 'stop', 'restart', 'tunnels']
+            if len(command) > 2:
+                raise WrongParameterCountError(len(command))
+            if len(command) == 1:
+                resp['text'] = 'Выберите действие'
+                resp['markup'] = custom_markup('ngrok',
+                                               valid_actions,
+                                               '🖥')
+                return resp
+            if command[1] not in valid_actions:
+                raise WrongParameterValueError(command[1])
+            data = requests.get(url + f'ngrok_{command[1]}')
             if data.status_code != 200:
-                logger.error(f'requests status is not valid: {data.status_code}')
-                return Loader.error_resp('Something wrong')
+                raise BadResponseStatusError(data.status_code)
             else:
                 sys_mon_res = json.loads(data.text)
                 if isinstance(sys_mon_res['msg'], str):
@@ -759,9 +761,23 @@ class InternetLoader(Loader):
                                     f"forwards_to: {i['forwards_to']}"]) for i in sys_mon_res['msg']
                          ]
                     )
-                return resp
-        except Exception as ex:
-            logger.exception(f'Exception: {ex}')
+        except ConfigAttributeNotFoundError:
+            logger.exception('Config attribute not found')
+            return Loader.error_resp("I can't do this yet😔")
+        except EmptySoupDataError:
+            logger.exception('Empty soup data')
+            return Loader.error_resp()
+        except BadResponseStatusError:
+            logger.exception('Bad response status')
+            return Loader.error_resp()
+        except WrongParameterCountError:
+            logger.exception('Wrong parameter count')
+            return Loader.error_resp('Wrong parameter count')
+        except WrongParameterValueError as e:
+            logger.exception('Wrong parameter value')
+            return Loader.error_resp(f'Wrong parameter value: {e.val}')
+        else:
+            return resp
 
     @check_permission(needed_level='root')
     def ngrok_db(self, text: str, **kwargs) -> dict:
