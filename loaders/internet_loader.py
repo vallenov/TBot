@@ -787,30 +787,39 @@ class InternetLoader(Loader):
         :return: operation status
         """
         resp = {}
-        if config.LINKS.get('system-monitor', None):
-            system_monitor = config.LINKS['system-monitor']
-        else:
-            return Loader.error_resp("I can't do this yet😔")
-        command = text.split(' ')
-        valid_actions = ['start', 'stop', 'restart']
-        if len(command) > 2:
-            return Loader.error_resp('Format of data is not valid')
-        if len(command) == 1:
-            resp['text'] = 'Выберите действие'
-            resp['markup'] = custom_markup('ngrok_db',
-                                           valid_actions,
-                                           '📦')
-            return resp
-        if command[1] not in valid_actions:
-            return Loader.error_resp('Command is not valid')
         try:
-            data = requests.get(system_monitor + f'ngrok_db_{command[1]}')
+            url = check_config_attribute('system-monitor')
+            command = text.split(' ')
+            valid_actions = ['start', 'stop', 'restart']
+            if len(command) > 2:
+                raise WrongParameterCountError(len(command))
+            if len(command) == 1:
+                resp['text'] = 'Выберите действие'
+                resp['markup'] = custom_markup('ngrok_db',
+                                               valid_actions,
+                                               '📦')
+                return resp
+            if command[1] not in valid_actions:
+                raise WrongParameterValueError(command[1])
+            data = requests.get(url + f'ngrok_db_{command[1]}')
             if data.status_code != 200:
-                logger.error(f'requests status is not valid: {data.status_code}')
-                return Loader.error_resp('Something wrong')
+                raise BadResponseStatusError(data.status_code)
             else:
                 sys_mon_res = json.loads(data.text)
                 resp['text'] = sys_mon_res['msg']
                 return resp
-        except Exception as ex:
-            logger.exception(f'Exception: {ex}')
+        except ConfigAttributeNotFoundError:
+            logger.exception('Config attribute not found')
+            return Loader.error_resp("I can't do this yet😔")
+        except EmptySoupDataError:
+            logger.exception('Empty soup data')
+            return Loader.error_resp()
+        except BadResponseStatusError:
+            logger.exception('Bad response status')
+            return Loader.error_resp()
+        except WrongParameterCountError:
+            logger.exception('Wrong parameter count')
+            return Loader.error_resp('Wrong parameter count')
+        except WrongParameterValueError as e:
+            logger.exception('Wrong parameter value')
+            return Loader.error_resp(f'Wrong parameter value: {e.val}')
