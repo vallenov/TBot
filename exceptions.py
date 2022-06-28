@@ -1,8 +1,49 @@
-class TBotExeption(Exception):
+class TBotException(Exception):
     ...
 
 
-class FileDBNotFound(TBotExeption):
+class FileDBNotFoundError(TBotException):
     def __init__(self, file_name):
         self.file_name = file_name
-        super().__init__(f'File {file_name} not found')
+        super().__init__(file_name)
+
+
+class ConfigAttributeNotFoundError(TBotException):
+    def __init__(self, attr_name):
+        self.attr_name = attr_name
+        super().__init__(attr_name)
+
+
+class EmptySoupDataError(TBotException):
+    def __init__(self, url=''):
+        self.url = url
+        super().__init__(url)
+
+
+class BadResponseStatusError(TBotException):
+    def __init__(self, status_code):
+        self.status_code = status_code
+        super().__init__(status_code)
+
+
+class WrongParameterTypeError(TBotException):
+    def __init__(self, param):
+        self.param = param
+        super().__init__(param)
+
+
+class WrongParameterCountError(TBotException):
+    def __init__(self, cnt):
+        self.cnt = cnt
+        super().__init__(cnt)
+
+
+class WrongParameterValueError(TBotException):
+    def __init__(self, val):
+        self.val = val
+        super().__init__(val)
+
+
+class UnknownError(TBotException):
+    def __init__(self):
+        super().__init__(f'Unknown error')
