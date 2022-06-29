@@ -2,14 +2,16 @@ import random
 import os
 import datetime
 import matplotlib.pyplot as plt
+from mysql.connector.errors import OperationalError
 
 import config
 
 from loaders.loader import Loader, check_permission
+from helpers import dict_to_str
 import models as md
 from sqlalchemy import cast, Date, exc
 from sqlalchemy.sql import func
-from extentions import db
+from extentions import db, sqlalchemy_init
 from markup import custom_markup
 from send_service import send_dev_message
 from loggers import get_logger
@@ -92,8 +94,16 @@ class DBLoader(Loader):
         :param chat_id: person chat_id
         :return:
         """
-        db.session.add(md.LogRequests(chat_id=chat_id))
-        db.session.commit()
+        try:
+            db.session.add(md.LogRequests(chat_id=chat_id))
+            db.session.commit()
+        except OperationalError:
+            logger.exception('DB connection error')
+            send_data = dict()
+            send_data['subject'] = 'DB connection error'
+            send_data['text'] = f'Reconnect to DB'
+            send_dev_message(data=send_data, by='telegram')
+            sqlalchemy_init()
 
     def add_user(self, chat_id: str, privileges: int, login: str, first_name: str):
         """
@@ -202,7 +212,7 @@ class DBLoader(Loader):
                 for usr in range(len(usr_split)):
                     usr_split[usr] = usr_split[usr].center(max_rows_lens[usr + 1] + 1)
                 users[key] = ' '.join(usr_split)
-            resp['text'] = Loader.dict_to_str(users, '')
+            resp['text'] = dict_to_str(users, '')
         return resp
 
     def _poems_to_db(self, poems: list):

@@ -3,14 +3,16 @@ import os
 import time
 
 import pandas as pd
-import subprocess as sb
 import datetime
 
 import config
 from loaders.loader import Loader, check_permission
-from exceptions import FileDBNotFoundError
 from markup import main_markup
 from loggers import get_logger
+
+from exceptions import (
+    FileDBNotFoundError,
+)
 
 logger = get_logger(__name__)
 
@@ -40,7 +42,7 @@ class FileLoader(Loader):
         """
         Load poems from file to memory
         """
-        file_path = self.fife_db.get('poemss.xlsx', False)
+        file_path = self.fife_db.get('poems.xlsx', False)
         if file_path:
             file_raw = pd.read_excel(file_path)
             file = pd.DataFrame(file_raw, columns=['Author', 'Name', 'Poem'])
