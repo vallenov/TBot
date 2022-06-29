@@ -11,7 +11,7 @@ from helpers import dict_to_str
 import models as md
 from sqlalchemy import cast, Date, exc
 from sqlalchemy.sql import func
-from extentions import db, sqlalchemy_init
+from extentions import db
 from markup import custom_markup
 from send_service import send_dev_message
 from loggers import get_logger
@@ -103,7 +103,6 @@ class DBLoader(Loader):
             send_data['subject'] = 'DB connection error'
             send_data['text'] = f'Reconnect to DB'
             send_dev_message(data=send_data, by='telegram')
-            sqlalchemy_init()
 
     def add_user(self, chat_id: str, privileges: int, login: str, first_name: str):
         """
