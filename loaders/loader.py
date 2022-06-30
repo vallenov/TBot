@@ -17,7 +17,6 @@ def check_permission(needed_level: str = 'regular'):
     def decorator(func):
         @wraps(func)
         def wrap(self, *args, **kwargs):
-            logger.info(func.__qualname__)
             logger.info(f'Check permission')
             if needed_level not in Loader.privileges_levels.keys():
                 logger.error(f'{needed_level} is not permission level name')
@@ -29,6 +28,7 @@ def check_permission(needed_level: str = 'regular'):
                 return Loader.error_resp('Permission denied')
             else:
                 logger.info('Access allowed')
+                logger.info(func.__qualname__)
                 resp = func(self, *args, **kwargs)
             return resp
         return wrap
