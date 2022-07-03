@@ -837,22 +837,9 @@ class InternetLoader(Loader):
             data = requests.get(url + f'tbot_restart')
             if data.status_code != 200:
                 raise BadResponseStatusError(data.status_code)
-            else:
-                sys_mon_res = json.loads(data.text)
-                resp['text'] = sys_mon_res['msg']
-                return resp
         except ConfigAttributeNotFoundError:
             logger.exception('Config attribute not found')
             return Loader.error_resp("I can't do this yet😔")
-        except EmptySoupDataError:
-            logger.exception('Empty soup data')
-            return Loader.error_resp()
         except BadResponseStatusError:
             logger.exception('Bad response status')
             return Loader.error_resp()
-        except WrongParameterCountError:
-            logger.exception('Wrong parameter count')
-            return Loader.error_resp('Wrong parameter count')
-        except WrongParameterValueError as e:
-            logger.exception('Wrong parameter value')
-            return Loader.error_resp(f'Wrong parameter value: {e.val}')
