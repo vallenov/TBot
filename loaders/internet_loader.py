@@ -831,7 +831,6 @@ class InternetLoader(Loader):
         :param:
         :return:
         """
-        resp = {}
         try:
             url = check_config_attribute('system-monitor')
             data = requests.get(url + f'tbot_restart')
