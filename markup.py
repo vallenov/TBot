@@ -47,6 +47,7 @@ def main_markup(privileges: int):
         pass
     if Loader.privileges_levels['root'] <= privileges:
         markup.add(InlineKeyboardButton("🛠 Admins help/Руководство админу", callback_data="admins_help"),
+                   InlineKeyboardButton("🔁 Restart/Перезагрузка", callback_data="restart"),
                    InlineKeyboardButton("🖥 Ngrok", callback_data="ngrok"),
                    InlineKeyboardButton("📦 Ngrok DB", callback_data="ngrok_db"),
                    InlineKeyboardButton("📷 Camera/Камера", callback_data="camera"),
