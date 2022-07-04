@@ -823,3 +823,22 @@ class InternetLoader(Loader):
         except WrongParameterValueError as e:
             logger.exception('Wrong parameter value')
             return Loader.error_resp(f'Wrong parameter value: {e.val}')
+
+    @check_permission(needed_level='root')
+    def tbot_restart(self, **kwargs) -> dict:
+        """
+        Restart TBot
+        :param:
+        :return:
+        """
+        try:
+            url = check_config_attribute('system-monitor')
+            data = requests.get(url + f'tbot_restart')
+            if data.status_code != 200:
+                raise BadResponseStatusError(data.status_code)
+        except ConfigAttributeNotFoundError:
+            logger.exception('Config attribute not found')
+            return Loader.error_resp("I can't do this yet😔")
+        except BadResponseStatusError:
+            logger.exception('Bad response status')
+            return Loader.error_resp()
