@@ -219,15 +219,15 @@ class TBot:
         curdir = os.curdir
         if message.content_type == 'text':
             logger.info(f'Request: '
-                             f'ID - {message.chat.id}, '
-                             f'Login - {message.chat.username}, '
-                             f'FirstName - {message.chat.first_name}')
+                        f'ID - {message.chat.id}, '
+                        f'Login - {message.chat.username}, '
+                        f'FirstName - {message.chat.first_name}')
             conversation_logger.info(f'Request: '
-                                          f'ID - {message.chat.id}, '
-                                          f'Login - {message.chat.username}, '
-                                          f'FirstName - {message.chat.first_name}, '
-                                          f'Text - {message.text}, '
-                                          f'RAW - {message.chat}')
+                                     f'ID - {message.chat.id}, '
+                                     f'Login - {message.chat.username}, '
+                                     f'FirstName - {message.chat.first_name}, '
+                                     f'Text - {message.text}, '
+                                     f'RAW - {message.chat}')
             return
         if message.content_type == 'photo':
             file_extension = '.jpg'
