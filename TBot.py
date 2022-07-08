@@ -45,6 +45,7 @@ class TBot:
     @staticmethod
     def init_bot():
         TBot.bot = telebot.TeleBot(config.TOKEN)
+        TBot.check_bot_connection(TBot.bot)
 
         @TBot.bot.callback_query_handler(func=lambda call: True)
         def callback_query(call):
@@ -69,7 +70,6 @@ class TBot:
             if replace:
                 TBot.safe_send(message.chat.id, replace, reply_markup=replace.get('markup', None))
 
-        TBot.check_bot_connection(TBot.bot)
         logger.info('TBot is started')
 
     @staticmethod
