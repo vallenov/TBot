@@ -80,6 +80,9 @@ class TBot:
 
     @staticmethod
     def init_dirs():
+        """
+        Init downloads dir
+        """
         curdir = os.curdir
         if not os.path.exists(os.path.join(curdir, 'downloads')):
             os.mkdir(os.path.join(curdir, 'downloads'))
@@ -287,15 +290,8 @@ class TBot:
         if config.PROD:
             logger.info(f'Send start message to root users')
             send_dev_message({'text': 'TBot is started'}, 'telegram')
-        try:
-            TBot.bot.infinity_polling(none_stop=True)
-        except (requests.exceptions.ReadTimeout,
-                urllib3.exceptions.ReadTimeoutError,
-                socket.timeout,
-                Exception) as ex:
-            logger.exception(f'Infinity polling exception: {ex}\n{traceback.format_exc()}\nTBot stop')
-            send_dev_message({'subject': repr(ex)[:-2],
-                              'text': f'Infinity polling exception: {traceback.format_exc()}\nTBot stop'})
+        TBot.bot.infinity_polling(none_stop=True)
+
 
 
 if __name__ == '__main__':
