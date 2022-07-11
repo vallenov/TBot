@@ -151,7 +151,6 @@ class TBot:
                     logger.exception(f'Unrecognized exception during a send: {traceback.format_exc()}')
                     if not is_send:
                         send_dev_message({'subject': repr(ex)[:-2], 'text': f'{traceback.format_exc()}'})
-                        TBot.init_bot()
                         is_send = True
                 else:
                     if text is not None:
@@ -291,7 +290,6 @@ class TBot:
             logger.info(f'Send start message to root users')
             send_dev_message({'text': 'TBot is started'}, 'telegram')
         TBot.bot.infinity_polling(none_stop=True)
-
 
 
 if __name__ == '__main__':
