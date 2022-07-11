@@ -283,7 +283,8 @@ class TBot:
             'camera': TBot.file_loader.get_camera_capture,
             'ngrok': TBot.internet_loader.ngrok,
             'ngrok_db': TBot.internet_loader.ngrok_db,
-            'restart': TBot.internet_loader.tbot_restart,
+            'restart_bot': TBot.internet_loader.tbot_restart,
+            'restart_system': TBot.internet_loader.system_restart,
             'default': TBot.file_loader.get_hello
         }
         if config.PROD:
