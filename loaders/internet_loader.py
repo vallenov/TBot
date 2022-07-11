@@ -842,3 +842,22 @@ class InternetLoader(Loader):
         except BadResponseStatusError:
             logger.exception('Bad response status')
             return Loader.error_resp()
+
+    @check_permission(needed_level='root')
+    def system_restart(self, **kwargs) -> dict:
+        """
+        Restart system
+        :param:
+        :return:
+        """
+        try:
+            url = check_config_attribute('system-monitor')
+            data = requests.get(url + f'system_restart')
+            if data.status_code != 200:
+                raise BadResponseStatusError(data.status_code)
+        except ConfigAttributeNotFoundError:
+            logger.exception('Config attribute not found')
+            return Loader.error_resp("I can't do this yet😔")
+        except BadResponseStatusError:
+            logger.exception('Bad response status')
+            return Loader.error_resp()
