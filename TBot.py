@@ -285,6 +285,7 @@ class TBot:
             'ngrok_db': TBot.internet_loader.ngrok_db,
             'restart_bot': TBot.internet_loader.tbot_restart,
             'restart_system': TBot.internet_loader.system_restart,
+            'systemctl': TBot.internet_loader.systemctl,
             'default': TBot.file_loader.get_hello
         }
         if config.PROD:
