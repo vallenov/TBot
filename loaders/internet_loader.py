@@ -881,7 +881,7 @@ class InternetLoader(Loader):
             action = cmd[1]
             service = cmd[2]
             VALID_COMMANDS = ['start', 'stop', 'restart']
-            VALID_SERVICES = ['TBot', 'system_monitor', 'MailSender']
+            VALID_SERVICES = ['TBot', 'system_monitor', 'MailSender', 'ngrok', 'ngrok_db']
             if action not in VALID_COMMANDS or service not in VALID_SERVICES:
                 raise WrongParameterValueError(f'{action} + {service}')
             data = requests.get(url + f'systemctl?action={action}&service={service}')
