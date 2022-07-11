@@ -880,9 +880,8 @@ class InternetLoader(Loader):
                 raise WrongParameterCountError(len(cmd))
             action = cmd[1]
             service = cmd[2]
-            VALID_COMMANDS = ['start', 'stop', 'restart']
-            VALID_SERVICES = ['TBot', 'system_monitor', 'MailSender', 'ngrok', 'ngrok_db']
-            if action not in VALID_COMMANDS or service not in VALID_SERVICES:
+            if action not in ['start', 'stop', 'restart'] \
+                    or service not in ['TBot', 'system_monitor', 'MailSender', 'ngrok', 'ngrok_db']:
                 raise WrongParameterValueError(f'{action} + {service}')
             data = requests.get(url + f'systemctl?action={action}&service={service}')
             if data.status_code != 200:
