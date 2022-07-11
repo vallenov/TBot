@@ -861,3 +861,46 @@ class InternetLoader(Loader):
         except BadResponseStatusError:
             logger.exception('Bad response status')
             return Loader.error_resp()
+
+    class Data:
+        text = None
+        status_code = None
+
+    @check_permission(needed_level='root')
+    def systemctl(self, text: str, **kwargs) -> dict:
+        """
+        Services control
+        :param text: input command
+        :return:
+        """
+        try:
+            url = check_config_attribute('system-monitor')
+            cmd = text.split()
+            if len(cmd) != 3:
+                raise WrongParameterCountError(len(cmd))
+            action = cmd[1]
+            service = cmd[2]
+            VALID_COMMANDS = ['start', 'stop', 'restart']
+            VALID_SERVICES = ['TBot', 'system_monitor', 'MailSender', 'vpnagentd']
+            if action not in VALID_COMMANDS or service not in VALID_SERVICES:
+                raise WrongParameterValueError(f'{action} + {service}')
+            data = requests.get(url + f'systemctl?action={action}&service={service}')
+            if data.status_code != 200:
+                raise BadResponseStatusError(data.status_code)
+            text = json.loads(data.text)
+            resp = {
+                'text': text.get('msg', 'Complete')
+            }
+            return resp
+        except ConfigAttributeNotFoundError:
+            logger.exception('Config attribute not found')
+            return Loader.error_resp("I can't do this yet😔")
+        except BadResponseStatusError:
+            logger.exception('Bad response status')
+            return Loader.error_resp()
+        except WrongParameterCountError:
+            logger.exception('Wrong count of command')
+            return Loader.error_resp()
+        except WrongParameterValueError as e:
+            logger.exception(f'Wrong value: {e.val}')
+            return Loader.error_resp()
