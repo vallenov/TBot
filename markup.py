@@ -1,5 +1,5 @@
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
-from loaders.loader import Loader
+from TBot.loaders.loader import Loader
 
 
 def custom_markup(command, category, smile='🔹', row_width=1):

@@ -1,12 +1,12 @@
 import random
 import datetime
 import string
-import config
+import TBot.config as config
 from functools import wraps
 
-from loaders.loader import Loader
-from loggers import get_logger
-from exceptions import (
+from TBot.loaders.loader import Loader
+from TBot.loggers import get_logger
+from TBot.exceptions import (
     ConfigAttributeNotFoundError,
     EmptySoupDataError,
     BadResponseStatusError,

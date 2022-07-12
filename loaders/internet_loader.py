@@ -6,14 +6,14 @@ import asyncio
 import aiohttp
 import json
 
-import config
+import TBot.config as config
 
-from loaders.loader import Loader, check_permission
-from markup import custom_markup
-from helpers import dict_to_str, is_phone_number, exception_catch
-from loggers import get_logger
-from helpers import check_config_attribute
-from exceptions import (
+from TBot.loaders.loader import Loader, check_permission
+from TBot.markup import custom_markup
+from TBot.helpers import dict_to_str, is_phone_number
+from TBot.loggers import get_logger
+from TBot.helpers import check_config_attribute
+from TBot.exceptions import (
     ConfigAttributeNotFoundError,
     EmptySoupDataError,
     BadResponseStatusError,

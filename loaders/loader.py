@@ -1,5 +1,5 @@
 from functools import wraps
-from loggers import get_logger
+from TBot.loggers import get_logger
 
 logger = get_logger(__name__)
 
