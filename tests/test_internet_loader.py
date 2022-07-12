@@ -14,7 +14,3 @@ def test_ip():
         assert fnd
     else:
         assert False, f"Not ip in response ({res.get('text', '')})"
-
-
-if __name__ == '__main__':
-    test_ip()
