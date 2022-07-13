@@ -7,10 +7,8 @@ import datetime
 import requests
 import urllib3.exceptions
 import math
-import socket
 import inspect
 import asyncio
-
 import config
 
 from loaders.loader import Loader
