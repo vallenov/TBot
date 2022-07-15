@@ -49,6 +49,7 @@ class DBLoader(Loader):
                              md.Users.description) \
                 .all()
         except exc.DatabaseError:
+            logger.info('Error connection to DB')
             send_dev_message(data={'text': f'Ошибка подключения к БД'}, by='telegram')
             exit()
         for user in users:
