@@ -253,6 +253,9 @@ class TBot:
 
     @staticmethod
     def run():
+        """
+        Main method
+        """
         TBot.init_bot()
         TBot.init_dirs()
         TBot.init_loaders()
