@@ -196,8 +196,7 @@ class TBot:
         if message.content_type == 'text':
             form_text = message.text.lower().strip()
             sptext = form_text.split()
-            default_func = TBot.mapping.get('default')
-            func = TBot.mapping.get(sptext[0], default_func)
+            func = TBot.mapping.get(sptext[0], TBot.file_loader.get_hello)
             if not inspect.iscoroutinefunction(func.__wrapped__):
                 res = func(privileges=privileges, text=form_text)
             else:
