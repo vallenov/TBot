@@ -23,13 +23,6 @@ logger = get_logger(__name__)
 conversation_logger = get_conversation_logger()
 
 
-class Msg:
-    def __init__(self, text: str, chat: dict, content_type: str = 'text'):
-        self.content_type = content_type
-        self.json = {'chat': chat}
-        self.text = text
-
-
 class TBot:
     """
     Main class
