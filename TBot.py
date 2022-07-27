@@ -279,7 +279,8 @@ class TBot:
             'restart_bot': TBot.internet_loader.tbot_restart,
             'restart_system': TBot.internet_loader.system_restart,
             'systemctl': TBot.internet_loader.systemctl,
-            # 'default': TBot.file_loader.get_hello
+            # 'default': TBot.file_loader.get_hello,
+            'allow_connection': TBot.internet_loader.allow_connection
         }
         if config.PROD:
             logger.info(f'Send start message to root users')
