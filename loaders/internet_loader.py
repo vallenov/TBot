@@ -861,10 +861,6 @@ class InternetLoader(Loader):
             logger.exception('Bad response status')
             return Loader.error_resp()
 
-    class Data:
-        text = None
-        status_code = None
-
     @check_permission(needed_level='root')
     def systemctl(self, text: str, **kwargs) -> dict:
         """

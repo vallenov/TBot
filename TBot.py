@@ -23,13 +23,6 @@ logger = get_logger(__name__)
 conversation_logger = get_conversation_logger()
 
 
-class Msg:
-    def __init__(self, text: str, chat: dict, content_type: str = 'text'):
-        self.content_type = content_type
-        self.json = {'chat': chat}
-        self.text = text
-
-
 class TBot:
     """
     Main class
@@ -196,8 +189,7 @@ class TBot:
         if message.content_type == 'text':
             form_text = message.text.lower().strip()
             sptext = form_text.split()
-            default_func = TBot.mapping.get('default')
-            func = TBot.mapping.get(sptext[0], default_func)
+            func = TBot.mapping.get(sptext[0], TBot.file_loader.get_hello)
             if not inspect.iscoroutinefunction(func.__wrapped__):
                 res = func(privileges=privileges, text=form_text)
             else:
@@ -283,11 +275,11 @@ class TBot:
             'phone': TBot.internet_loader.get_phone_number_info,
             'camera': TBot.file_loader.get_camera_capture,
             'ngrok': TBot.internet_loader.ngrok,
-            'ngrok_db': TBot.internet_loader.ngrok_db,
+            # 'ngrok_db': TBot.internet_loader.ngrok_db,
             'restart_bot': TBot.internet_loader.tbot_restart,
             'restart_system': TBot.internet_loader.system_restart,
             'systemctl': TBot.internet_loader.systemctl,
-            'default': TBot.file_loader.get_hello
+            # 'default': TBot.file_loader.get_hello
         }
         if config.PROD:
             logger.info(f'Send start message to root users')
