@@ -50,7 +50,7 @@ def main_markup(privileges: int):
                    InlineKeyboardButton("🔁 Restart TBot/Перезагрузка бота", callback_data="restart_bot"),
                    InlineKeyboardButton("🔃 Restart system/Перезагрузка системы", callback_data="restart_system"),
                    InlineKeyboardButton("🖥 Ngrok", callback_data="ngrok"),
-                   InlineKeyboardButton("📦 Ngrok DB", callback_data="ngrok_db"),
+                   # InlineKeyboardButton("📦 Ngrok DB", callback_data="ngrok_db"),
                    InlineKeyboardButton("📷 Camera/Камера", callback_data="camera"),
                    InlineKeyboardButton("👥 Users/Пользователи", callback_data="users"),
                    InlineKeyboardButton("🌐 Server IP/IP-адрес сервера", callback_data="ip"),

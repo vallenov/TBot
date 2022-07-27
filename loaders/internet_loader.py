@@ -897,3 +897,27 @@ class InternetLoader(Loader):
         except WrongParameterValueError as e:
             logger.exception(f'Wrong value: {e.val}')
             return Loader.error_resp()
+
+    @check_permission(needed_level='root')
+    def allow_connection(self, **kwargs) -> dict:
+        """
+        Allow ssh connection
+        :return:
+        """
+        try:
+            url = check_config_attribute('system-monitor')
+            data = requests.get(url + f'allow_connection')
+            if data.status_code != 200:
+                raise BadResponseStatusError(data.status_code)
+            else:
+                text = json.loads(data.text)
+                resp = {
+                    'text': text.get('msg', 'Complete')
+                }
+                return resp
+        except ConfigAttributeNotFoundError:
+            logger.exception('Config attribute not found')
+            return Loader.error_resp("I can't do this yet😔")
+        except BadResponseStatusError:
+            logger.exception('Bad response status')
+            return Loader.error_resp()
