@@ -20,7 +20,7 @@ def send_dev_message(data: dict, by: str = 'mail') -> dict:
     if by == 'mail':
         data.update({'to': config.MAIL.get('address')})
     else:
-        data.update({'to': config.DB.get('login')})
+        data.update({'to': config.USERS.get('root_id').get('chat_id')})
     current_try = 0
     while current_try < config.MAX_TRY:
         current_try += 1
