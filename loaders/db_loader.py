@@ -15,6 +15,9 @@ from extentions import db
 from markup import custom_markup
 from send_service import send_dev_message
 from loggers import get_logger
+from exceptions import (
+    ConfigAttributeNotFoundError,
+)
 
 logger = get_logger(__name__)
 
@@ -66,14 +69,20 @@ class DBLoader(Loader):
         Get all users' information from config to memory
         """
         logger.info('get_users_fom_config')
-        users = config.USERS
-        for value in users.values():
-            Loader.users[value['chat_id']] = {
-                'login': value['login'],
-                'first_name': value['first_name'],
-                'value': value['privileges'],
-                'description': value['description']
-            }
+        try:
+            if not config.USERS:
+                raise ConfigAttributeNotFoundError('USERS')
+            users = config.USERS
+            for value in users.values():
+                Loader.users[value['chat_id']] = {
+                    'login': value['login'],
+                    'first_name': value['first_name'],
+                    'value': value['privileges'],
+                    'description': value['description']
+                }
+        except ConfigAttributeNotFoundError as e:
+            logger.exception(e)
+            exit()
 
     @staticmethod
     def get_p_id(privileges: int) -> int or None:
