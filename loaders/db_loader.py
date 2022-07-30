@@ -71,7 +71,8 @@ class DBLoader(Loader):
             Loader.users[value['chat_id']] = {
                 'login': value['login'],
                 'first_name': value['first_name'],
-                'value': value['privileges']
+                'value': value['privileges'],
+                'description': value['description']
             }
 
     @staticmethod
@@ -189,20 +190,22 @@ class DBLoader(Loader):
         resp = {}
         cnt = 1
         users = {}
-        max_rows_lens = [0] * 5
-        users[0] = 'chat_id login first_name privileges'
+        max_rows_lens = [0] * 6
+        users[0] = 'chat_id login first_name privileges description'
         for key, value in Loader.users.items():
             if value['value'] > Loader.privileges_levels['trusted']:
                 continue
             users[cnt] = f"{key} " \
                          f"{value['login']} " \
                          f"{value['first_name']} " \
-                         f"{value['value']}"
+                         f"{value['value']} " \
+                         f"{value['description']}"
             cur_rows_lens = list(map(lambda x: len(x), users[cnt].split()))
             max_rows_lens[1] = cur_rows_lens[0] if cur_rows_lens[0] > max_rows_lens[1] else max_rows_lens[1]
             max_rows_lens[2] = cur_rows_lens[1] if cur_rows_lens[1] > max_rows_lens[2] else max_rows_lens[2]
             max_rows_lens[3] = cur_rows_lens[2] if cur_rows_lens[2] > max_rows_lens[3] else max_rows_lens[3]
             max_rows_lens[4] = cur_rows_lens[3] if cur_rows_lens[3] > max_rows_lens[4] else max_rows_lens[4]
+            max_rows_lens[5] = cur_rows_lens[4] if cur_rows_lens[4] > max_rows_lens[5] else max_rows_lens[5]
             cnt += 1
         if not len(users):
             resp['text'] = Loader.error_resp('Users not found')
