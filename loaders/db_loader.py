@@ -17,6 +17,7 @@ from send_service import send_dev_message
 from loggers import get_logger
 from exceptions import (
     ConfigAttributeNotFoundError,
+    NotFoundInDatabaseError,
 )
 
 logger = get_logger(__name__)
@@ -42,6 +43,7 @@ class DBLoader(Loader):
         Get all users' information from DB to memory
         """
         logger.info('get_users_fom_db')
+        users = None
         try:
             users = md.Users.query \
                 .join(md.LibPrivileges, md.Users.privileges_id == md.LibPrivileges.p_id) \
@@ -51,9 +53,14 @@ class DBLoader(Loader):
                              md.LibPrivileges.value,
                              md.Users.description) \
                 .all()
+            if not users:
+                raise NotFoundInDatabaseError('Users')
         except exc.DatabaseError:
             logger.info('Error connection to DB')
             send_dev_message(data={'text': f'Ошибка подключения к БД'}, by='telegram')
+            exit()
+        except NotFoundInDatabaseError as e:
+            logger.exception(e)
             exit()
         for user in users:
             user_data = dict()
@@ -72,8 +79,7 @@ class DBLoader(Loader):
         try:
             if not config.USERS:
                 raise ConfigAttributeNotFoundError('USERS')
-            users = config.USERS
-            for value in users.values():
+            for value in config.USERS.values():
                 Loader.users[value['chat_id']] = {
                     'login': value['login'],
                     'first_name': value['first_name'],
