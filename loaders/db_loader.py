@@ -172,15 +172,6 @@ class DBLoader(Loader):
             return Loader.error_resp(f'Not valid data')
         else:
             chat_id = lst[1]
-            user_inf = Loader.users.keys()
-            if all([chat_id.lower() not in list(map(lambda x: x.lower(), user_inf)),
-                    chat_id.lower() not in list(map(lambda x: Loader.users[x]['login'].lower()
-                    if Loader.users[x]['login'] is not None
-                    else Loader.users[x]['login'], user_inf)),
-                    chat_id.lower() not in list(map(lambda x: Loader.users[x]['first_name'].lower()
-                    if Loader.users[x]['first_name'] is not None
-                    else Loader.users[x]['first_name'], user_inf))]):
-                return Loader.error_resp('User not found')
             privileges = int(lst[2])
         if config.USE_DB:
             user = md.Users.query.filter(
@@ -188,17 +179,57 @@ class DBLoader(Loader):
                 (md.Users.login == chat_id) |
                 (md.Users.first_name == chat_id)
             ).all()
+            if not len(user):
+                return Loader.error_resp('User not found')
             if len(user) > 1:
                 return Loader.error_resp('Count of founded data greater then 1')
             p_id = self.get_p_id(privileges)
             for u in user:
                 u.privileges_id = p_id
             db.session.commit()
-        logger.info(f'Updating memory')
-        Loader.users[chat_id]['value'] = privileges
-        logger.info(f'User {chat_id} updated')
-        resp['text'] = f'User {chat_id} updated'
-        return resp
+            chat_id = user.chat_id
+            logger.info(f'Updating memory')
+            Loader.users[chat_id]['value'] = privileges
+            logger.info(f'User {chat_id} updated')
+            resp['text'] = f'User {chat_id} updated'
+            return resp
+        else:
+            return Loader.error_resp('DB does not using')
+
+    @check_permission(needed_level='root')
+    def update_user_description(self, text: str, **kwargs) -> dict:
+        """
+        Update user privileges in DB and memory
+        """
+        resp = {}
+        lst = text.split()
+        if len(lst) < 3:
+            logger.error(f'Not valid data')
+            return Loader.error_resp(f'Not valid data')
+        else:
+            chat_id = lst[1]
+            description = ' '.join(lst[2:])
+        if config.USE_DB:
+            user = md.Users.query.filter(
+                (md.Users.chat_id == chat_id) |
+                (md.Users.login == chat_id) |
+                (md.Users.first_name == chat_id)
+            ).all()
+            if not len(user):
+                return Loader.error_resp('User not found')
+            if len(user) > 1:
+                return Loader.error_resp('Count of founded data greater then 1')
+            for u in user:
+                u.description = description
+            db.session.commit()
+            chat_id = user.chat_id
+            logger.info(f'Updating memory')
+            Loader.users[chat_id]['description'] = description
+            logger.info(f'User {chat_id} updated')
+            resp['text'] = f'User {chat_id} updated'
+            return resp
+        else:
+            return Loader.error_resp('DB does not using')
 
     @check_permission(needed_level='root')
     def show_users(self, **kwargs) -> dict:
