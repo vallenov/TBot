@@ -95,11 +95,14 @@ class DBLoader(Loader):
         """
         Get privileges id by privileges value
         """
-        data = md.LibPrivileges.query.filter(
-            md.LibPrivileges.value == privileges
-        ).one_or_none()
-        if not data:
-            logger.error(f'p_id not found')
+        try:
+            data = md.LibPrivileges.query.filter(
+                md.LibPrivileges.value == privileges
+            ).one_or_none()
+            if not data:
+                raise NotFoundInDatabaseError('LibPrivileges')
+        except NotFoundInDatabaseError as e:
+            logger.exception(e)
             return None
         else:
             return data.p_id
