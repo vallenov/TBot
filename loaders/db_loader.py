@@ -15,6 +15,10 @@ from extentions import db
 from markup import custom_markup
 from send_service import send_dev_message
 from loggers import get_logger
+from exceptions import (
+    ConfigAttributeNotFoundError,
+    NotFoundInDatabaseError,
+)
 
 logger = get_logger(__name__)
 
@@ -39,6 +43,7 @@ class DBLoader(Loader):
         Get all users' information from DB to memory
         """
         logger.info('get_users_fom_db')
+        users = None
         try:
             users = md.Users.query \
                 .join(md.LibPrivileges, md.Users.privileges_id == md.LibPrivileges.p_id) \
@@ -48,9 +53,14 @@ class DBLoader(Loader):
                              md.LibPrivileges.value,
                              md.Users.description) \
                 .all()
+            if not users:
+                raise NotFoundInDatabaseError('Users')
         except exc.DatabaseError:
             logger.info('Error connection to DB')
             send_dev_message(data={'text': f'Ошибка подключения к БД'}, by='telegram')
+            exit()
+        except NotFoundInDatabaseError as e:
+            logger.exception(e)
             exit()
         for user in users:
             user_data = dict()
@@ -66,24 +76,33 @@ class DBLoader(Loader):
         Get all users' information from config to memory
         """
         logger.info('get_users_fom_config')
-        users = config.USERS
-        for value in users.values():
-            Loader.users[value['chat_id']] = {
-                'login': value['login'],
-                'first_name': value['first_name'],
-                'value': value['privileges']
-            }
+        try:
+            if not config.USERS:
+                raise ConfigAttributeNotFoundError('USERS')
+            for value in config.USERS.values():
+                Loader.users[value['chat_id']] = {
+                    'login': value['login'],
+                    'first_name': value['first_name'],
+                    'value': value['privileges'],
+                    'description': value['description']
+                }
+        except ConfigAttributeNotFoundError as e:
+            logger.exception(e)
+            exit()
 
     @staticmethod
     def get_p_id(privileges: int) -> int or None:
         """
         Get privileges id by privileges value
         """
-        data = md.LibPrivileges.query.filter(
-            md.LibPrivileges.value == privileges
-        ).one_or_none()
-        if not data:
-            logger.error(f'p_id not found')
+        try:
+            data = md.LibPrivileges.query.filter(
+                md.LibPrivileges.value == privileges
+            ).one_or_none()
+            if not data:
+                raise NotFoundInDatabaseError('LibPrivileges')
+        except NotFoundInDatabaseError as e:
+            logger.exception(e)
             return None
         else:
             return data.p_id
@@ -153,15 +172,6 @@ class DBLoader(Loader):
             return Loader.error_resp(f'Not valid data')
         else:
             chat_id = lst[1]
-            user_inf = Loader.users.keys()
-            if all([chat_id.lower() not in list(map(lambda x: x.lower(), user_inf)),
-                    chat_id.lower() not in list(map(lambda x: Loader.users[x]['login'].lower()
-                    if Loader.users[x]['login'] is not None
-                    else Loader.users[x]['login'], user_inf)),
-                    chat_id.lower() not in list(map(lambda x: Loader.users[x]['first_name'].lower()
-                    if Loader.users[x]['first_name'] is not None
-                    else Loader.users[x]['first_name'], user_inf))]):
-                return Loader.error_resp('User not found')
             privileges = int(lst[2])
         if config.USE_DB:
             user = md.Users.query.filter(
@@ -169,17 +179,57 @@ class DBLoader(Loader):
                 (md.Users.login == chat_id) |
                 (md.Users.first_name == chat_id)
             ).all()
+            if not len(user):
+                return Loader.error_resp('User not found')
             if len(user) > 1:
                 return Loader.error_resp('Count of founded data greater then 1')
             p_id = self.get_p_id(privileges)
             for u in user:
                 u.privileges_id = p_id
             db.session.commit()
-        logger.info(f'Updating memory')
-        Loader.users[chat_id]['value'] = privileges
-        logger.info(f'User {chat_id} updated')
-        resp['text'] = f'User {chat_id} updated'
-        return resp
+            chat_id = user.chat_id
+            logger.info(f'Updating memory')
+            Loader.users[chat_id]['value'] = privileges
+            logger.info(f'User {chat_id} updated')
+            resp['text'] = f'User {chat_id} updated'
+            return resp
+        else:
+            return Loader.error_resp('DB does not using')
+
+    @check_permission(needed_level='root')
+    def update_user_description(self, text: str, **kwargs) -> dict:
+        """
+        Update user privileges in DB and memory
+        """
+        resp = {}
+        lst = text.split()
+        if len(lst) < 3:
+            logger.error(f'Not valid data')
+            return Loader.error_resp(f'Not valid data')
+        else:
+            chat_id = lst[1]
+            description = ' '.join(lst[2:])
+        if config.USE_DB:
+            user = md.Users.query.filter(
+                (md.Users.chat_id == chat_id) |
+                (md.Users.login == chat_id) |
+                (md.Users.first_name == chat_id)
+            ).all()
+            if not len(user):
+                return Loader.error_resp('User not found')
+            if len(user) > 1:
+                return Loader.error_resp('Count of founded data greater then 1')
+            for u in user:
+                u.description = description
+            db.session.commit()
+            chat_id = user.chat_id
+            logger.info(f'Updating memory')
+            Loader.users[chat_id]['description'] = description
+            logger.info(f'User {chat_id} updated')
+            resp['text'] = f'User {chat_id} updated'
+            return resp
+        else:
+            return Loader.error_resp('DB does not using')
 
     @check_permission(needed_level='root')
     def show_users(self, **kwargs) -> dict:
@@ -189,20 +239,22 @@ class DBLoader(Loader):
         resp = {}
         cnt = 1
         users = {}
-        max_rows_lens = [0] * 5
-        users[0] = 'chat_id login first_name privileges'
+        max_rows_lens = [0] * 6
+        users[0] = 'chat_id login first_name privileges description'
         for key, value in Loader.users.items():
             if value['value'] > Loader.privileges_levels['trusted']:
                 continue
             users[cnt] = f"{key} " \
                          f"{value['login']} " \
                          f"{value['first_name']} " \
-                         f"{value['value']}"
+                         f"{value['value']} " \
+                         f"{value['description']}"
             cur_rows_lens = list(map(lambda x: len(x), users[cnt].split()))
             max_rows_lens[1] = cur_rows_lens[0] if cur_rows_lens[0] > max_rows_lens[1] else max_rows_lens[1]
             max_rows_lens[2] = cur_rows_lens[1] if cur_rows_lens[1] > max_rows_lens[2] else max_rows_lens[2]
             max_rows_lens[3] = cur_rows_lens[2] if cur_rows_lens[2] > max_rows_lens[3] else max_rows_lens[3]
             max_rows_lens[4] = cur_rows_lens[3] if cur_rows_lens[3] > max_rows_lens[4] else max_rows_lens[4]
+            max_rows_lens[5] = cur_rows_lens[4] if cur_rows_lens[4] > max_rows_lens[5] else max_rows_lens[5]
             cnt += 1
         if not len(users):
             resp['text'] = Loader.error_resp('Users not found')

@@ -264,6 +264,7 @@ class TBot:
             'movie': TBot.internet_loader.get_random_movie,
             'book': TBot.internet_loader.get_book,
             'update': TBot.db_loader.update_user_privileges,
+            'description': TBot.db_loader.update_user_description,
             'users': TBot.db_loader.show_users,
             'hidden_functions': TBot.file_loader.get_help,
             'admins_help': TBot.file_loader.get_admins_help,

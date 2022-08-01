@@ -47,3 +47,9 @@ class WrongParameterValueError(TBotException):
 class UnknownError(TBotException):
     def __init__(self):
         super().__init__(f'Unknown error')
+
+
+class NotFoundInDatabaseError(TBotException):
+    def __init__(self, tablename):
+        self.tablename = tablename
+        super().__init__(tablename)
