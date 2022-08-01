@@ -239,17 +239,13 @@ class DBLoader(Loader):
         resp = {}
         cnt = 1
         users = {}
-        max_rows_lens = [0] * 6
-        users[0] = 'chat_id login first_name privileges description'
+        users[0] = ['chat_id', 'login', 'first_name', 'privileges', 'description']
+        max_rows_lens = [0] + list(map(lambda x: len(x), users[0]))
         for key, value in Loader.users.items():
             if value['value'] > Loader.privileges_levels['trusted']:
                 continue
-            users[cnt] = f"{key} " \
-                         f"{value['login']} " \
-                         f"{value['first_name']} " \
-                         f"{value['value']} " \
-                         f"{value['description']}"
-            cur_rows_lens = list(map(lambda x: len(x), users[cnt].split()))
+            users[cnt] = [key, value['login'], value['first_name'], str(value['value']), value['description']]
+            cur_rows_lens = list(map(lambda x: 0 if not x else len(x), users[cnt]))
             max_rows_lens[1] = cur_rows_lens[0] if cur_rows_lens[0] > max_rows_lens[1] else max_rows_lens[1]
             max_rows_lens[2] = cur_rows_lens[1] if cur_rows_lens[1] > max_rows_lens[2] else max_rows_lens[2]
             max_rows_lens[3] = cur_rows_lens[2] if cur_rows_lens[2] > max_rows_lens[3] else max_rows_lens[3]
@@ -260,10 +256,11 @@ class DBLoader(Loader):
             resp['text'] = Loader.error_resp('Users not found')
         else:
             for key, value in users.items():
-                usr_split = users[key].split()
-                for usr in range(len(usr_split)):
-                    usr_split[usr] = usr_split[usr].center(max_rows_lens[usr + 1] + 1)
-                users[key] = ' '.join(usr_split)
+                tmp = ''
+                for usr in range(len(users[key])):
+                    item = users[key][usr] or 'None'
+                    tmp += item.center(max_rows_lens[usr+1] + 3)
+                users[key] = tmp
             resp['text'] = dict_to_str(users, '')
         return resp
 
