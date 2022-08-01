@@ -181,6 +181,7 @@ class FileLoader(Loader):
         """
         resp = dict()
         resp['text'] = str(f'Изменение уровня доступа - update "chat_id" "privileges"\n'
+                           f'Изменение уровня доступа - description "chat_id" "text"\n'
                            f'Отправить сообщение другому пользователю - send_other "chat_id" "text"\n'
                            f'Управление сервисами на сервере - systemctl "action" "service"\n')
         return resp
