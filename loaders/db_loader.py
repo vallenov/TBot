@@ -117,25 +117,34 @@ class DBLoader(Loader):
         try:
             db.session.add(md.LogRequests(chat_id=chat_id))
             db.session.commit()
-        except OperationalError:
-            logger.exception('DB connection error')
+        except (OperationalError, exc.OperationalError) as e:
+            logger.exception(f'DB connection error: {e}')
             send_data = dict()
-            send_data['subject'] = 'DB connection error'
-            send_data['text'] = f'Reconnect to DB'
+            send_data['subject'] = f'TBot DB connection error'
+            send_data['text'] = f'{e}'
             send_dev_message(data=send_data, by='telegram')
+            exit()
 
     def add_user(self, chat_id: str, privileges: int, login: str, first_name: str):
         """
         Add new user to DB and memory
         """
         logger.info('add_user')
-        if config.USE_DB:
-            p_id = self.get_p_id(privileges)
-            db.session.add(md.Users(chat_id=chat_id,
-                                    login=login,
-                                    first_name=first_name,
-                                    privileges_id=p_id))
-            db.session.commit()
+        try:
+            if config.USE_DB:
+                p_id = self.get_p_id(privileges)
+                db.session.add(md.Users(chat_id=chat_id,
+                                        login=login,
+                                        first_name=first_name,
+                                        privileges_id=p_id))
+                db.session.commit()
+        except (OperationalError, exc.OperationalError) as e:
+            logger.exception(f'DB connection error: {e}')
+            send_data = dict()
+            send_data['subject'] = f'TBot DB connection error'
+            send_data['text'] = f'{e}'
+            send_dev_message(data=send_data, by='telegram')
+            exit()
         logger.info(f'New user {chat_id} added')
         Loader.users[chat_id] = dict()
         Loader.users[chat_id]['login'] = login
