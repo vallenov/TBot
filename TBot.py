@@ -11,6 +11,9 @@ import inspect
 import asyncio
 import config
 
+from mysql.connector.errors import OperationalError
+from sqlalchemy import exc
+
 from loaders.loader import Loader
 from loaders.internet_loader import InternetLoader
 from loaders.file_loader import FileLoader
@@ -167,10 +170,17 @@ class TBot:
             first_name = message.json['chat'].get('first_name', None)
             if chat_id not in Loader.users.keys():
                 privileges = Loader.privileges_levels['regular']
-                TBot.db_loader.add_user(chat_id=chat_id,
-                                        privileges=privileges,
-                                        login=login,
-                                        first_name=first_name)
+                try:
+                    TBot.db_loader.add_user(chat_id=chat_id,
+                                            privileges=privileges,
+                                            login=login,
+                                            first_name=first_name)
+                except (OperationalError, exc.OperationalError) as e:
+                    send_data = dict()
+                    send_data['subject'] = f'TBot DB connection error'
+                    send_data['text'] = f'{e}'
+                    send_dev_message(data=send_data, by='telegram')
+                    TBot.internet_loader.tbot_restart(privileges=privileges)  
                 send_data = dict()
                 send_data['subject'] = 'TBot NEW USER'
                 send_data['text'] = f'New user added. Chat_id: {chat_id}, login: {login}, first_name: {first_name}'
@@ -184,8 +194,14 @@ class TBot:
                     DBLoader.update_user(chat_id, login, first_name)
         privileges = Loader.users[chat_id]['value']
         if config.USE_DB:
-            TBot.db_loader.log_request(chat_id)
-
+            try:
+                TBot.db_loader.log_request(chat_id)
+            except (OperationalError, exc.OperationalError) as e:
+                send_data = dict()
+                send_data['subject'] = f'TBot DB connection error'
+                send_data['text'] = f'{e}'
+                send_dev_message(data=send_data, by='telegram')
+                TBot.internet_loader.tbot_restart(privileges=privileges)
         if message.content_type == 'text':
             form_text = message.text.lower().strip()
             sptext = form_text.split()
