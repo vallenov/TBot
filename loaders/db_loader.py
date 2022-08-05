@@ -221,9 +221,9 @@ class DBLoader(Loader):
             if len(user) > 1:
                 return Loader.error_resp('Count of founded data greater then 1')
             for u in user:
+                chat_id = u.chat_id
                 u.description = description
             db.session.commit()
-            chat_id = user.chat_id
             logger.info(f'Updating memory')
             Loader.users[chat_id]['description'] = description
             logger.info(f'User {chat_id} updated')
