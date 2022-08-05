@@ -18,3 +18,7 @@ def test_get_users():
     assert type(Loader.users) == dict, 'Wrong return type'
     assert len(Loader.users) > 0, 'Error get users from DB'
 
+def test_add_user():
+    dl = DBLoader('DBLoader')
+    dl.add_user('12345678', 30, 'test_add', 'test_add')
+
