@@ -186,9 +186,9 @@ class DBLoader(Loader):
                 return Loader.error_resp('Count of founded data greater then 1')
             p_id = self.get_p_id(privileges)
             for u in user:
+                chat_id = u.chat_id
                 u.privileges_id = p_id
             db.session.commit()
-            chat_id = user.chat_id
             logger.info(f'Updating memory')
             Loader.users[chat_id]['value'] = privileges
             logger.info(f'User {chat_id} updated')
