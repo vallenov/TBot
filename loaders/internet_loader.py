@@ -855,10 +855,10 @@ class InternetLoader(Loader):
             cmd = text.split()
             if len(cmd) == 1:
                 resp['text'] = 'Подтвердите перезагрузку'
-                resp['markup'] = custom_markup('restart_system', ['Allow'], '✅')
+                resp['markup'] = custom_markup('restart_system', ['allow'], '✅')
                 return resp
             elif len(cmd) == 2:
-                if cmd[1] == 'Allow':
+                if cmd[1] == 'allow':
                     data = requests.get(url + f'system_restart')
                     if data.status_code != 200:
                         raise BadResponseStatusError(data.status_code)
