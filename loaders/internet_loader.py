@@ -843,23 +843,43 @@ class InternetLoader(Loader):
             return Loader.error_resp()
 
     @check_permission(needed_level='root')
-    def system_restart(self, **kwargs) -> dict:
+    def system_restart(self, text: str, **kwargs) -> dict:
         """
         Restart system
         :param:
         :return:
         """
+        resp = {}
         try:
             url = check_config_attribute('system-monitor')
-            data = requests.get(url + f'system_restart')
-            if data.status_code != 200:
-                raise BadResponseStatusError(data.status_code)
+            cmd = text.split()
+            if len(cmd) == 1:
+                resp['text'] = 'Подтвердите перезагрузку'
+                resp['markup'] = custom_markup('restart_system', ['Подтвердить/Allow'], '✅')
+                return resp
+            elif len(cmd) == 2:
+                if cmd[1] == 'allow':
+                    data = requests.get(url + f'system_restart')
+                    if data.status_code != 200:
+                        raise BadResponseStatusError(data.status_code)
+                else:
+                    raise WrongParameterValueError(cmd[1])
+            else:
+                raise WrongParameterCountError(len(cmd))
         except ConfigAttributeNotFoundError:
             logger.exception('Config attribute not found')
             return Loader.error_resp("I can't do this yet😔")
         except BadResponseStatusError:
             logger.exception('Bad response status')
             return Loader.error_resp()
+        except WrongParameterCountError:
+            logger.exception('Wrong parameters count')
+            resp['text'] = 'Wrong parameters count'
+            return resp
+        except WrongParameterValueError:
+            logger.exception('Wrong parameter')
+            resp['text'] = 'Wrong parameter'
+            return resp
 
     @check_permission(needed_level='root')
     def systemctl(self, text: str, **kwargs) -> dict:
