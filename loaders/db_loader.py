@@ -18,6 +18,8 @@ from loggers import get_logger
 from exceptions import (
     ConfigAttributeNotFoundError,
     NotFoundInDatabaseError,
+    WrongParameterCountError,
+    WrongParameterValueError,
 )
 
 logger = get_logger(__name__)
@@ -162,75 +164,63 @@ class DBLoader(Loader):
         logger.info('User info updated')
 
     @check_permission(needed_level='root')
-    def update_user_privileges(self, text: str, **kwargs) -> dict:
+    def update_user_data(self, text: str, **kwargs) -> dict:
         """
         Update user privileges in DB and memory
         """
         resp = {}
-        lst = text.split()
-        if len(lst) != 3:
-            logger.error(f'Not valid data')
-            return Loader.error_resp(f'Not valid data')
-        else:
-            chat_id = lst[1]
-            privileges = int(lst[2])
-        if config.USE_DB:
-            user = md.Users.query.filter(
-                (md.Users.chat_id == chat_id) |
-                (md.Users.login == chat_id) |
-                (md.Users.first_name == chat_id)
-            ).all()
-            if not len(user):
-                return Loader.error_resp('User not found')
-            if len(user) > 1:
-                return Loader.error_resp('Count of founded data greater then 1')
-            p_id = self.get_p_id(privileges)
-            for u in user:
-                chat_id = u.chat_id
-                u.privileges_id = p_id
-            db.session.commit()
-            logger.info(f'Updating memory')
-            Loader.users[chat_id]['value'] = privileges
-            logger.info(f'User {chat_id} updated')
-            resp['text'] = f'User {chat_id} updated'
-            return resp
-        else:
-            return Loader.error_resp('DB does not using')
-
-    @check_permission(needed_level='root')
-    def update_user_description(self, text: str, **kwargs) -> dict:
-        """
-        Update user privileges in DB and memory
-        """
-        resp = {}
-        lst = text.split()
-        if len(lst) < 3:
-            logger.error(f'Not valid data')
-            return Loader.error_resp(f'Not valid data')
-        else:
-            chat_id = lst[1]
-            description = ' '.join(lst[2:])
-        if config.USE_DB:
-            user = md.Users.query.filter(
-                (md.Users.chat_id == chat_id) |
-                (md.Users.login == chat_id) |
-                (md.Users.first_name == chat_id)
-            ).all()
-            if not len(user):
-                return Loader.error_resp('User not found')
-            if len(user) > 1:
-                return Loader.error_resp('Count of founded data greater then 1')
-            for u in user:
-                chat_id = u.chat_id
-                u.description = description
-            db.session.commit()
-            logger.info(f'Updating memory')
-            Loader.users[chat_id]['description'] = description
-            logger.info(f'User {chat_id} updated')
-            resp['text'] = f'User {chat_id} updated'
-            return resp
-        else:
-            return Loader.error_resp('DB does not using')
+        cmd = text.split()
+        valid_fields = ['description', 'privileges']
+        try:
+            if len(cmd) < 4:
+                raise WrongParameterCountError(len(cmd))
+            elif cmd[1] not in valid_fields:
+                raise WrongParameterValueError(cmd[2])
+            else:
+                chat_id = cmd[2]
+                new_value = None
+                if cmd[1] == 'description':
+                    new_value = ' '.join(cmd[3:])
+                if cmd[1] == 'privileges':
+                    new_value = int(cmd[3])
+            if config.USE_DB:
+                user = md.Users.query.filter(
+                    (md.Users.chat_id == chat_id) |
+                    (md.Users.login == chat_id) |
+                    (md.Users.first_name == chat_id)
+                ).all()
+                if not len(user):
+                    raise NotFoundInDatabaseError('users')
+                if len(user) > 1:
+                    return Loader.error_resp('Count of founded data greater then 1')
+                if cmd[1] == 'privileges':
+                    new_value = self.get_p_id(new_value)
+                for u in user:
+                    chat_id = u.chat_id
+                    if cmd[1] == 'description':
+                        u.description = new_value
+                    if cmd[1] == 'privileges':
+                        u.privileges_id = new_value
+                db.session.commit()
+                logger.info(f'Updating memory')
+                if cmd[1] == 'privileges':
+                    Loader.users[chat_id]['value'] = int(cmd[3])
+                if cmd[1] == 'description':
+                    Loader.users[chat_id]['description'] = new_value
+                logger.info(f'User {chat_id} {cmd[1]} updated')
+                resp['text'] = f'User {chat_id} {cmd[1]} updated'
+                return resp
+            else:
+                return Loader.error_resp('DB does not using')
+        except WrongParameterCountError:
+            logger.error(f'Wrong count of parameters')
+            return Loader.error_resp(f'Wrong count of parameters')
+        except WrongParameterValueError:
+            logger.error(f'Not valid parameter data')
+            return Loader.error_resp(f'Not valid parameter data')
+        except NotFoundInDatabaseError:
+            logger.error(f'User not found')
+            return Loader.error_resp('User not found')
 
     @check_permission(needed_level='root')
     def show_users(self, **kwargs) -> dict:
