@@ -44,7 +44,7 @@ class DBLoader(Loader):
         """
         Get all users' information from DB to memory
         """
-        logger.info('get_users_fom_db')
+        logger.info('get_users_from_db')
         users = None
         try:
             users = md.Users.query \
@@ -391,15 +391,12 @@ class DBLoader(Loader):
             if lst[1] != 'today':
                 resp['photo'] = DBLoader.get_graph(lst[1])
             interval = datetime.datetime.now() - datetime.timedelta(days=interval_map[lst[1]])
-            stat_data = md.LogRequests.query \
+            to_sort = md.LogRequests.query \
                 .join(md.Users, md.LogRequests.chat_id == md.Users.chat_id) \
                 .filter(md.LogRequests.date_ins >= interval) \
                 .with_entities(func.count(md.Users.chat_id), md.Users.login, md.Users.first_name) \
                 .group_by(md.Users.chat_id) \
                 .all()
-            to_sort = []
-            for cur in stat_data:
-                to_sort.append([cur[0], cur[1], cur[2]])
             for index_i in range(len(to_sort)):
                 for index_j in range(len(to_sort) - 1):
                     if index_i == index_j:
@@ -407,7 +404,7 @@ class DBLoader(Loader):
                     elif to_sort[index_j][0] < to_sort[index_j + 1][0]:
                         to_sort[index_j], to_sort[index_j + 1] = to_sort[index_j + 1], to_sort[index_j]
             for cur in to_sort:
-                resp['text'] += f'{cur[0]} {cur[1]} {cur[2]}\n'
+                resp['text'] += ' '.join([str(i) for i in cur]) + '\n'
             return resp
         else:
             return Loader.error_resp('DB is not used')
