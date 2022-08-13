@@ -44,7 +44,7 @@ class DBLoader(Loader):
         """
         Get all users' information from DB to memory
         """
-        logger.info('get_users_fom_db')
+        logger.info('get_users_from_db')
         users = None
         try:
             users = md.Users.query \
@@ -399,7 +399,7 @@ class DBLoader(Loader):
                 .all()
             to_sort = []
             for cur in stat_data:
-                to_sort.append([cur[0], cur[1], cur[2]])
+                to_sort.append(cur)
             for index_i in range(len(to_sort)):
                 for index_j in range(len(to_sort) - 1):
                     if index_i == index_j:
@@ -407,7 +407,8 @@ class DBLoader(Loader):
                     elif to_sort[index_j][0] < to_sort[index_j + 1][0]:
                         to_sort[index_j], to_sort[index_j + 1] = to_sort[index_j + 1], to_sort[index_j]
             for cur in to_sort:
-                resp['text'] += f'{cur[0]} {cur[1]} {cur[2]}\n'
+                print(cur)
+                resp['text'] += ' '.join([str(i) for i in cur]) + '\n'
             return resp
         else:
             return Loader.error_resp('DB is not used')
