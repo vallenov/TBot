@@ -3,6 +3,14 @@ from loaders.loader import Loader
 
 
 def custom_markup(command, category, smile='🔹', row_width=1):
+    """
+    Make custom markup
+    :param command: input command
+    :param category: command level 2 list or dict
+    :param: emoji
+    :param row_width: width of markup
+    :return: markup
+    """
     markup = InlineKeyboardMarkup()
     markup.row_width = row_width
     item = None
@@ -21,6 +29,9 @@ def custom_markup(command, category, smile='🔹', row_width=1):
 
 
 def main_markup(privileges: int):
+    """
+    Main markup
+    """
     markup = InlineKeyboardMarkup()
     markup.row_width = 1
     if Loader.privileges_levels['untrusted'] <= privileges:
