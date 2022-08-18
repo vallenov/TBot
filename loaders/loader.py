@@ -1,5 +1,4 @@
 from functools import wraps
-from mysql.connector.errors import OperationalError, DatabaseError
 from sqlalchemy import exc
 
 import config
