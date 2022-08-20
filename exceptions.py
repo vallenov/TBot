@@ -3,12 +3,18 @@ class TBotException(Exception):
 
 
 class FileDBNotFoundError(TBotException):
+    """
+    When file with poems (for example) is not found
+    """
     def __init__(self, file_name):
         self.file_name = file_name
         super().__init__(file_name)
 
 
 class ConfigAttributeNotFoundError(TBotException):
+    """
+    When attribute is not found in config
+    """
     def __init__(self, attr_name):
         self.attr_name = attr_name
         super().__init__(attr_name)
@@ -33,12 +39,18 @@ class WrongParameterTypeError(TBotException):
 
 
 class WrongParameterCountError(TBotException):
+    """
+    When wrong numbers of parameters
+    """
     def __init__(self, cnt):
         self.cnt = cnt
         super().__init__(cnt)
 
 
 class WrongParameterValueError(TBotException):
+    """
+    When not allowed value found
+    """
     def __init__(self, val):
         self.val = val
         super().__init__(val)
@@ -50,6 +62,9 @@ class UnknownError(TBotException):
 
 
 class NotFoundInDatabaseError(TBotException):
+    """
+    When nothing is found in DB table
+    """
     def __init__(self, tablename):
         self.tablename = tablename
         super().__init__(tablename)
