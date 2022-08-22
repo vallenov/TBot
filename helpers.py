@@ -2,15 +2,10 @@ import random
 import datetime
 import string
 import config
-from functools import wraps
 
-from loaders.loader import Loader
 from loggers import get_logger
 from exceptions import (
     ConfigAttributeNotFoundError,
-    EmptySoupDataError,
-    BadResponseStatusError,
-    WrongParameterTypeError,
 )
 
 logger = get_logger(__name__)
