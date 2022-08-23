@@ -269,7 +269,7 @@ class TBot:
         TBot.init_loaders()
         TBot.mapping = {
             'exchange': TBot.internet_loader.get_exchange,
-            'weather': TBot.internet_loader.get_weather,
+            # 'weather': TBot.internet_loader.get_weather,
             'quote': TBot.internet_loader.get_quote,
             'wish': TBot.internet_loader.get_wish,
             'news': TBot.internet_loader.get_news,

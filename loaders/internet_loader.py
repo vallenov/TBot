@@ -715,10 +715,15 @@ class InternetLoader(Loader):
         :return: dict with ip
         """
         resp = {}
-        data = requests.get(config.LINKS['system-monitor'] + 'ip')
-        data_dict = json.loads(data.text)
-        resp['text'] = data_dict.get('ip', 'Something wrong')
-        return resp
+        try:
+            url = check_config_attribute('system-monitor')
+            data = requests.get(url + 'ip')
+            data_dict = json.loads(data.text)
+            resp['text'] = data_dict.get('ip', 'Something wrong')
+            return resp
+        except ConfigAttributeNotFoundError:
+            logger.exception('Config attribute not found')
+            return Loader.error_resp("I can't do this yet😔")
 
     @check_permission(needed_level='root')
     def ngrok(self, text: str, **kwargs) -> dict:

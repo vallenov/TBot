@@ -1,5 +1,4 @@
 from functools import wraps
-from mysql.connector.errors import OperationalError
 from sqlalchemy import exc
 
 import config
@@ -52,7 +51,7 @@ class Loader:
         privileges_levels = {privileges.name: privileges.value
                              for privileges in LibPrivileges.query.with_entities(LibPrivileges.name,
                                                                                  LibPrivileges.value).all()}
-    except (OperationalError, exc.OperationalError) as e:
+    except exc.DatabaseError as e:
         logger.exception(f'DB connection error: {e}')
         privileges_levels = config.PRIVILEGES_LEVELS
 

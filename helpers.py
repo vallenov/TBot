@@ -2,15 +2,10 @@ import random
 import datetime
 import string
 import config
-from functools import wraps
 
-from loaders.loader import Loader
 from loggers import get_logger
 from exceptions import (
     ConfigAttributeNotFoundError,
-    EmptySoupDataError,
-    BadResponseStatusError,
-    WrongParameterTypeError,
 )
 
 logger = get_logger(__name__)
@@ -94,25 +89,3 @@ def check_config_attribute(attr):
         return config.LINKS[attr]
     else:
         raise ConfigAttributeNotFoundError(attr)
-
-
-def exception_catch(func):
-    @wraps
-    def wrap(*args, **kwargs):
-        try:
-            resp = func(*args, kwargs)
-        except ConfigAttributeNotFoundError:
-            logger.exception('Config attribute not found')
-            return Loader.error_resp("I can't do this yet😔")
-        except EmptySoupDataError:
-            logger.exception('Empty soup data')
-            return Loader.error_resp()
-        except BadResponseStatusError:
-            logger.exception('Bad response status')
-            return Loader.error_resp()
-        except WrongParameterTypeError:
-            logger.exception('Count of news is not number')
-            return Loader.error_resp('Count of news is not number')
-        else:
-            return resp
-    return wrap

@@ -41,7 +41,7 @@ def main_markup(privileges: int):
     if Loader.privileges_levels['regular'] <= privileges:
         markup.add(InlineKeyboardButton("📜 Hidden functions/Скрытые функции", callback_data="hidden_functions"),
                    InlineKeyboardButton("💵 Exchange/Курс валют", callback_data="exchange"),
-                   InlineKeyboardButton("⛅️Weather/Погода", callback_data="weather"),
+                   # InlineKeyboardButton("⛅️Weather/Погода", callback_data="weather"),
                    InlineKeyboardButton("💭 Quote/Цитата", callback_data="quote"),
                    InlineKeyboardButton("🤗 Wish/Пожелание", callback_data="wish"),
                    InlineKeyboardButton("📰 News/Новости", callback_data="news"),
