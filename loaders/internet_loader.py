@@ -211,10 +211,11 @@ class InternetLoader(Loader):
                 news_time = n.find('span', class_='elem-info__date')
                 text = n.find('span', class_='share')
                 if news_time and text:
-                    news[news_time.text] = text.get('data-title')
+                    news[news_time.text] = f"[{text.get('data-title')}]({text.get('data-url')})"
                 if len(news) == count:
                     break
-            resp['text'] = dict_to_str(news, '\n')
+            resp['text'] = dict_to_str(news, ' ')
+            resp['parse_mode'] = 'MarkdownV2'
         except ConfigAttributeNotFoundError:
             logger.exception('Config attribute not found')
             return Loader.error_resp("I can't do this yet😔")
