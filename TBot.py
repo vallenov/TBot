@@ -116,6 +116,7 @@ class TBot:
         text = replace.get('text', None)
         cnt_message = math.ceil(len(replace) / config.MESSAGE_MAX_LEN) if text is not None else 1
         photo = replace.get('photo', None)
+        parse_mode = replace.get('parse_mode', None)
         for cnt in range(cnt_message):
             while current_try < config.MAX_TRY:
                 current_try += 1
@@ -126,11 +127,14 @@ class TBot:
                         TBot.bot.send_photo(chat_id, photo=photo, caption=text)
                     elif text is not None:
                         if start + config.MESSAGE_MAX_LEN >= len(replace):
-                            TBot.bot.send_message(chat_id, text[start:], reply_markup=reply_markup)
+                            TBot.bot.send_message(chat_id, text[start:],
+                                                  reply_markup=reply_markup,
+                                                  parse_mode=parse_mode)
                         else:
                             TBot.bot.send_message(chat_id,
                                                   text[start:start + config.MESSAGE_MAX_LEN],
-                                                  reply_markup=reply_markup)
+                                                  reply_markup=reply_markup,
+                                                  parse_mode=parse_mode)
                         start += config.MESSAGE_MAX_LEN
                 except ConnectionResetError as cre:
                     logger.exception(f'ConnectionResetError exception: {cre}')
