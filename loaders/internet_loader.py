@@ -136,7 +136,7 @@ class InternetLoader(Loader):
         """
         Get quote from internet
         :param:
-        :return: dict like {'quote1': 'author1', 'quote2: 'author2'}
+        :return: dict like {'text': 'quote_text\n author'}
         """
         resp = {}
         try:
