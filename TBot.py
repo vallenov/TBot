@@ -58,11 +58,16 @@ class TBot:
             """
             TBot.save_file(message)
             replace = TBot.replace(message)
+            if not replace:
+                return Loader.error_resp('Replace is empty')
             chat_id = replace.get('chat_id', None)
-            if chat_id is not None:
+            if chat_id and isinstance(chat_id, int):
                 message.chat.id = chat_id
-            if replace:
                 TBot.safe_send(message.chat.id, replace, reply_markup=replace.get('markup', None))
+            elif chat_id and isinstance(chat_id, list):
+                for user_chat_id in replace['chat_id']:
+                    message.chat.id = user_chat_id
+                    TBot.safe_send(message.chat.id, replace, reply_markup=replace.get('markup', None))
 
         logger.info('TBot is started')
 
@@ -288,6 +293,7 @@ class TBot:
             'hidden_functions': TBot.file_loader.get_help,
             'admins_help': TBot.file_loader.get_admins_help,
             'send_other': TBot.db_loader.send_other,
+            'send_all': TBot.db_loader.send_to_all_users,
             'metaphorical_card': TBot.file_loader.get_metaphorical_card,
             'russian_painting': TBot.internet_loader.get_russian_painting,
             'ip': TBot.internet_loader.get_server_ip,
