@@ -299,6 +299,27 @@ class DBLoader(Loader):
         resp['text'] = ' '.join(lst[2:])
         return resp
 
+    @check_permission(needed_level='root')
+    def send_to_all_users(self, text: str, **kwargs):
+        """
+        Send message to all users
+        :param text: string "command chat_id message"
+        :return: dict {'chat_id': [1234567, 4637499], 'text': 'some'}
+        """
+        resp = {}
+        lst = text.split()
+        if len(lst) < 2:
+            return Loader.error_resp('Not enough params')
+        resp['chat_id'] = []
+        for chat_id in Loader.users.keys():
+            try:
+                chat_id = int(chat_id)
+            except ValueError:
+                logger.exception(f'Chat {chat_id} is not convert to int')
+            resp['chat_id'].append(chat_id)
+        resp['text'] = ' '.join(lst[1:])
+        return resp
+
     @check_permission()
     def get_poem(self, text: str, **kwargs) -> dict:
         """
