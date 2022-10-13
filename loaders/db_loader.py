@@ -229,7 +229,7 @@ class DBLoader(Loader):
         """
         resp = {}
         cnt = 1
-        users = {}
+        users = dict()
         users[0] = ['chat_id', 'login', 'first_name', 'privileges', 'description']
         max_rows_lens = [0] + list(map(lambda x: len(x), users[0]))
         for key, value in Loader.users.items():
