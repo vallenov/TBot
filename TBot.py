@@ -61,13 +61,23 @@ class TBot:
             if not replace:
                 return Loader.error_resp('Replace is empty')
             chat_id = replace.get('chat_id', None)
+            if not chat_id:
+                chat_id = message.chat.id
             if chat_id and isinstance(chat_id, int):
-                message.chat.id = chat_id
-                TBot.safe_send(message.chat.id, replace, reply_markup=replace.get('markup', None))
+                try:
+                    TBot.safe_send(chat_id, replace, reply_markup=replace.get('markup', None))
+                except telebot.apihelper.ApiException:
+                    TBot.safe_send(message.chat.id, {'text': f"Message to {Loader.users[chat_id]} is not send"})
             elif chat_id and isinstance(chat_id, list):
+                is_not_send = []
                 for user_chat_id in replace['chat_id']:
-                    message.chat.id = user_chat_id
-                    TBot.safe_send(message.chat.id, replace, reply_markup=replace.get('markup', None))
+                    try:
+                        TBot.safe_send(user_chat_id, replace, reply_markup=replace.get('markup', None))
+                    except telebot.apihelper.ApiException:
+                        logger.exception(f'Message to {chat_id} is not send')
+                        is_not_send.append(Loader.users[chat_id])
+                if is_not_send:
+                    TBot.safe_send(message.chat.id, {'text': f"Message to {' ,'.join(is_not_send)} is not send"})
 
         logger.info('TBot is started')
 
@@ -150,6 +160,9 @@ class TBot:
                 except TypeError as te:
                     logger.exception(f'file not ready yet: {te}')
                     time.sleep(1)
+                except telebot.apihelper.ApiException:
+                    logger.exception(f'Message to {chat_id} is not send')
+                    raise
                 except Exception as ex:
                     logger.exception(f'Unrecognized exception during a send: {traceback.format_exc()}')
                     if not is_send:
