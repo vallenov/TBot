@@ -58,8 +58,6 @@ class TBot:
             """
             TBot.save_file(message)
             replace = TBot.replace(message)
-            if not replace:
-                return Loader.error_resp('Replace is empty')
             chat_id = replace.get('chat_id', None)
             if not chat_id:
                 chat_id = message.chat.id
