@@ -65,6 +65,7 @@ class TBot:
                 try:
                     TBot.safe_send(chat_id, replace, reply_markup=replace.get('markup', None))
                 except telebot.apihelper.ApiException:
+                    logger.exception(f'Message to {chat_id} is not send')
                     TBot.safe_send(message.chat.id, {'text': f"Message to {Loader.users[str(chat_id)]} is not send"})
             elif chat_id and isinstance(chat_id, list):
                 is_not_send = []
