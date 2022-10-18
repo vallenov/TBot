@@ -782,6 +782,9 @@ class InternetLoader(Loader):
         except WrongParameterValueError as e:
             logger.exception('Wrong parameter value')
             return Loader.error_resp(f'Wrong parameter value: {e.val}')
+        except requests.exceptions.ConnectionError:
+            logger.exception(f"Error connection to {check_config_attribute('system-monitor')}")
+            return Loader.error_resp(f"Error connection to {check_config_attribute('system-monitor')}")
         else:
             return resp
 
