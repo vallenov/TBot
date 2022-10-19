@@ -726,6 +726,9 @@ class InternetLoader(Loader):
         except ConfigAttributeNotFoundError:
             logger.exception('Config attribute not found')
             return Loader.error_resp("I can't do this yet😔")
+        except requests.exceptions.ConnectionError:
+            logger.exception(f"Error connection to {check_config_attribute('system-monitor')}")
+            return Loader.error_resp(f"Error connection to {check_config_attribute('system-monitor')}")
 
     @check_permission(needed_level='root')
     def ngrok(self, text: str, **kwargs) -> dict:
