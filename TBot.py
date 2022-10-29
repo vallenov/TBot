@@ -59,10 +59,24 @@ class TBot:
             TBot.save_file(message)
             replace = TBot.replace(message)
             chat_id = replace.get('chat_id', None)
-            if chat_id is not None:
-                message.chat.id = chat_id
-            if replace:
-                TBot.safe_send(message.chat.id, replace, reply_markup=replace.get('markup', None))
+            if not chat_id:
+                chat_id = message.chat.id
+            if chat_id and isinstance(chat_id, int):
+                try:
+                    TBot.safe_send(chat_id, replace, reply_markup=replace.get('markup', None))
+                except telebot.apihelper.ApiException:
+                    logger.exception(f'Message to {chat_id} is not send')
+                    TBot.safe_send(message.chat.id, {'text': f"Message to {Loader.users[str(chat_id)]} is not send"})
+            elif chat_id and isinstance(chat_id, list):
+                is_not_send = []
+                for user_chat_id in replace['chat_id']:
+                    try:
+                        TBot.safe_send(user_chat_id, replace, reply_markup=replace.get('markup', None))
+                    except telebot.apihelper.ApiException:
+                        logger.exception(f'Message to {user_chat_id} is not send')
+                        is_not_send.append(str(user_chat_id))
+                if is_not_send:
+                    TBot.safe_send(message.chat.id, {'text': f"Message to {' ,'.join(is_not_send)} is not send"})
 
         logger.info('TBot is started')
 
@@ -145,6 +159,9 @@ class TBot:
                 except TypeError as te:
                     logger.exception(f'file not ready yet: {te}')
                     time.sleep(1)
+                except telebot.apihelper.ApiException:
+                    logger.exception(f'Message to {chat_id} is not send')
+                    raise
                 except Exception as ex:
                     logger.exception(f'Unrecognized exception during a send: {traceback.format_exc()}')
                     if not is_send:
@@ -288,6 +305,7 @@ class TBot:
             'hidden_functions': TBot.file_loader.get_help,
             'admins_help': TBot.file_loader.get_admins_help,
             'send_other': TBot.db_loader.send_other,
+            'send_all': TBot.db_loader.send_to_all_users,
             'metaphorical_card': TBot.file_loader.get_metaphorical_card,
             'russian_painting': TBot.internet_loader.get_russian_painting,
             'ip': TBot.internet_loader.get_server_ip,

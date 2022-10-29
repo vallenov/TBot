@@ -726,6 +726,9 @@ class InternetLoader(Loader):
         except ConfigAttributeNotFoundError:
             logger.exception('Config attribute not found')
             return Loader.error_resp("I can't do this yet😔")
+        except requests.exceptions.ConnectionError:
+            logger.exception(f"Error connection to {check_config_attribute('system-monitor')}")
+            return Loader.error_resp(f"Error connection to {check_config_attribute('system-monitor')}")
 
     @check_permission(needed_level='root')
     def ngrok(self, text: str, **kwargs) -> dict:
@@ -782,6 +785,9 @@ class InternetLoader(Loader):
         except WrongParameterValueError as e:
             logger.exception('Wrong parameter value')
             return Loader.error_resp(f'Wrong parameter value: {e.val}')
+        except requests.exceptions.ConnectionError:
+            logger.exception(f"Error connection to {check_config_attribute('system-monitor')}")
+            return Loader.error_resp(f"Error connection to {check_config_attribute('system-monitor')}")
         else:
             return resp
 
@@ -829,6 +835,9 @@ class InternetLoader(Loader):
         except WrongParameterValueError as e:
             logger.exception('Wrong parameter value')
             return Loader.error_resp(f'Wrong parameter value: {e.val}')
+        except requests.exceptions.ConnectionError:
+            logger.exception(f"Error connection to {check_config_attribute('system-monitor')}")
+            return Loader.error_resp(f"Error connection to {check_config_attribute('system-monitor')}")
 
     @check_permission(needed_level='root')
     def tbot_restart(self, **kwargs) -> dict:
@@ -848,6 +857,9 @@ class InternetLoader(Loader):
         except BadResponseStatusError:
             logger.exception('Bad response status')
             return Loader.error_resp()
+        except requests.exceptions.ConnectionError:
+            logger.exception(f"Error connection to {check_config_attribute('system-monitor')}")
+            return Loader.error_resp(f"Error connection to {check_config_attribute('system-monitor')}")
 
     @check_permission(needed_level='root')
     def system_restart(self, text: str, **kwargs) -> dict:
@@ -887,6 +899,9 @@ class InternetLoader(Loader):
             logger.exception('Wrong parameter')
             resp['text'] = 'Wrong parameter'
             return resp
+        except requests.exceptions.ConnectionError:
+            logger.exception(f"Error connection to {check_config_attribute('system-monitor')}")
+            return Loader.error_resp(f"Error connection to {check_config_attribute('system-monitor')}")
 
     @check_permission(needed_level='root')
     def systemctl(self, text: str, **kwargs) -> dict:
@@ -924,6 +939,9 @@ class InternetLoader(Loader):
         except WrongParameterValueError as e:
             logger.exception(f'Wrong value: {e.val}')
             return Loader.error_resp()
+        except requests.exceptions.ConnectionError:
+            logger.exception(f"Error connection to {check_config_attribute('system-monitor')}")
+            return Loader.error_resp(f"Error connection to {check_config_attribute('system-monitor')}")
 
     @check_permission(needed_level='root')
     def allow_connection(self, **kwargs) -> dict:
@@ -948,3 +966,6 @@ class InternetLoader(Loader):
         except BadResponseStatusError:
             logger.exception('Bad response status')
             return Loader.error_resp()
+        except requests.exceptions.ConnectionError:
+            logger.exception(f"Error connection to {check_config_attribute('system-monitor')}")
+            return Loader.error_resp(f"Error connection to {check_config_attribute('system-monitor')}")

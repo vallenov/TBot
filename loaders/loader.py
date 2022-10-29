@@ -46,13 +46,15 @@ class Loader:
 
     loaders = []
     users = {}
-
-    try:
-        privileges_levels = {privileges.name: privileges.value
-                             for privileges in LibPrivileges.query.with_entities(LibPrivileges.name,
-                                                                                 LibPrivileges.value).all()}
-    except exc.DatabaseError as e:
-        logger.exception(f'DB connection error: {e}')
+    if config.USE_DB:
+        try:
+            privileges_levels = {privileges.name: privileges.value
+                                 for privileges in LibPrivileges.query.with_entities(LibPrivileges.name,
+                                                                                     LibPrivileges.value).all()}
+        except exc.DatabaseError as e:
+            logger.exception(f'DB connection error: {e}')
+            privileges_levels = config.PRIVILEGES_LEVELS
+    else:
         privileges_levels = config.PRIVILEGES_LEVELS
 
     def __init__(self, name):

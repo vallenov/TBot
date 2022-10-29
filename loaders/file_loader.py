@@ -183,5 +183,6 @@ class FileLoader(Loader):
         resp['text'] = str(f'Изменение привилегий пользователя - update privileges "chat_id" "privileges"\n'
                            f'Изменение описания пользователя - update description "chat_id" "description"\n'
                            f'Отправить сообщение другому пользователю - send_other "chat_id" "text"\n'
+                           f'Массовая рассылка текста - send_all "text"\n'
                            f'Управление сервисами на сервере - systemctl "action" "service"\n')
         return resp
