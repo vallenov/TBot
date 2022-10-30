@@ -255,29 +255,6 @@ class DBLoader(Loader):
             resp['text'] = dict_to_str(users, '')
         return resp
 
-    def _poems_to_db(self, poems: list):
-        """
-        Upload poems list to DB
-        :param poems: [{'author': 'some', 'name': 'some', 'text': 'some'}..,
-        {'author': 'some', 'name': 'some', 'text': 'some'}
-        :return:
-        """
-        cnt = 1
-        lst = []
-        logger.info('Preparing to upload')
-        for p in poems:
-            author = p['author']
-            name = p['name'].replace("'", '"')
-            text = p['text'].replace("'", "''")
-            lst.append((author, name, text))
-            cnt += 1
-        with self.connection.cursor() as cursor:
-            logger.info('Upload to DB')
-            query = f"insert into TBot.tmp (author, name, text) values (%s, %s, %s)"
-            cursor.executemany(query, lst)
-            self.connection.commit()
-            logger.info('Upload complete')
-
     @check_permission(needed_level='root')
     def send_other(self, text: str, **kwargs):
         """
