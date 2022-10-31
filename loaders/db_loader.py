@@ -297,6 +297,15 @@ class DBLoader(Loader):
         resp['text'] = ' '.join(lst[1:])
         return resp
 
+    @staticmethod
+    def _get_random_poem():
+        max_id = db.session.query(func.max(md.Poems.p_id)).scalar()
+        min_id = db.session.query(func.min(md.Poems.p_id)).scalar()
+        random_id = random.randint(min_id, max_id + 1)
+        return md.Poems.query.filter(
+                md.Poems.p_id == random_id
+            ).one_or_none()
+
     @check_permission()
     def get_poem(self, text: str, **kwargs) -> dict:
         """
@@ -308,12 +317,7 @@ class DBLoader(Loader):
         if config.USE_DB:
             lst = text.split()
             if len(lst) == 1:
-                max_id = db.session.query(func.max(md.Poems.p_id)).scalar()
-                min_id = db.session.query(func.min(md.Poems.p_id)).scalar()
-                random_id = random.randint(min_id, max_id + 1)
-                poem = md.Poems.query.filter(
-                    md.Poems.p_id == random_id
-                ).one_or_none()
+                poem = self._get_random_poem()
                 if not poem:
                     Loader.error_resp('Something wrong')
             else:
