@@ -299,6 +299,9 @@ class DBLoader(Loader):
 
     @staticmethod
     def _get_random_poem():
+        """
+        Get random poem
+        """
         max_id = db.session.query(func.max(md.Poems.p_id)).scalar()
         min_id = db.session.query(func.min(md.Poems.p_id)).scalar()
         random_id = random.randint(min_id, max_id + 1)
