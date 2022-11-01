@@ -224,8 +224,7 @@ class TBot:
                 TBot.internet_loader.tbot_restart(privileges=privileges)
         if message.content_type == 'text':
             form_text = message.text.lower().strip()
-            sptext = form_text.split()
-            func = TBot.mapping.get(sptext[0], TBot.file_loader.get_hello)
+            func = TBot.mapping.get(form_text.split()[0], TBot.file_loader.get_hello)
             if not inspect.iscoroutinefunction(func.__wrapped__):
                 res = func(privileges=privileges, text=form_text)
             else:
