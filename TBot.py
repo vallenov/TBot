@@ -202,9 +202,10 @@ class TBot:
                     send_data['text'] = f'{e}'
                     send_dev_message(data=send_data, by='telegram')
                     TBot.internet_loader.tbot_restart(privileges=privileges)  
-                send_data = dict()
-                send_data['subject'] = 'TBot NEW USER'
-                send_data['text'] = f'New user added. Chat_id: {chat_id}, login: {login}, first_name: {first_name}'
+                send_data = dict(
+                    subject='TBot NEW USER',
+                    text=f'New user added. Chat_id: {chat_id}, login: {login}, first_name: {first_name}'
+                )
                 mail_resp = send_dev_message(send_data, 'mail')
                 telegram_resp = send_dev_message(send_data, 'telegram')
                 if mail_resp['res'] == 'ERROR' or telegram_resp['res'] == 'ERROR':
