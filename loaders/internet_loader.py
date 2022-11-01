@@ -196,7 +196,7 @@ class InternetLoader(Loader):
         """
         resp = {}
         count = 5
-        lst = text.split(' ')
+        lst = text.split()
         try:
             if len(lst) > 1:
                 try:
