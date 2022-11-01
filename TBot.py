@@ -219,9 +219,7 @@ class TBot:
             try:
                 TBot.db_loader.log_request(chat_id)
             except (OperationalError, exc.OperationalError) as e:
-                send_data = dict()
-                send_data['subject'] = f'TBot DB connection error'
-                send_data['text'] = f'{e}'
+                send_data = dict(subject=f'TBot DB connection error', text=f'{e}')
                 send_dev_message(data=send_data, by='telegram')
                 TBot.internet_loader.tbot_restart(privileges=privileges)
         if message.content_type == 'text':
