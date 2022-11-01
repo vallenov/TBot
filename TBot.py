@@ -223,8 +223,8 @@ class TBot:
                 send_dev_message(data=send_data, by='telegram')
                 TBot.internet_loader.tbot_restart(privileges=privileges)
         if message.content_type == 'text':
-            form_text = message.text.lower().strip()
-            func = TBot.mapping.get(form_text.split()[0], TBot.file_loader.get_hello)
+            form_text = message.text.strip().rstrip()
+            func = TBot.mapping.get(form_text.split()[0].lower(), TBot.file_loader.get_hello)
             if not inspect.iscoroutinefunction(func.__wrapped__):
                 res = func(privileges=privileges, text=form_text)
             else:
