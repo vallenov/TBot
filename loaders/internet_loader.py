@@ -812,9 +812,10 @@ class InternetLoader(Loader):
                                                valid_actions,
                                                '📦')
                 return resp
-            if command[1] not in valid_actions:
-                raise WrongParameterValueError(command[1])
-            data = requests.get(url + f'ngrok_db_{command[1]}')
+            action = command[1].lower()
+            if action not in valid_actions:
+                raise WrongParameterValueError(action)
+            data = requests.get(url + f'ngrok_db_{action}')
             if data.status_code != 200:
                 raise BadResponseStatusError(data.status_code)
             else:
@@ -878,12 +879,12 @@ class InternetLoader(Loader):
                 resp['markup'] = custom_markup('restart_system', ['allow'], '✅')
                 return resp
             elif len(cmd) == 2:
-                if cmd[1] == 'allow':
+                if cmd[1].lower() == 'allow':
                     data = requests.get(url + f'system_restart')
                     if data.status_code != 200:
                         raise BadResponseStatusError(data.status_code)
                 else:
-                    raise WrongParameterValueError(cmd[1])
+                    raise WrongParameterValueError(cmd[1].lower())
             else:
                 raise WrongParameterCountError(len(cmd))
         except ConfigAttributeNotFoundError:
