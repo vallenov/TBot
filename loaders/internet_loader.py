@@ -740,7 +740,7 @@ class InternetLoader(Loader):
         resp = {}
         try:
             url = check_config_attribute('system-monitor')
-            command = text.split(' ')
+            command = text.split()
             valid_actions = ['start', 'stop', 'restart', 'tunnels']
             if len(command) > 2:
                 raise WrongParameterCountError(len(command))
@@ -750,9 +750,10 @@ class InternetLoader(Loader):
                                                valid_actions,
                                                '🖥')
                 return resp
-            if command[1] not in valid_actions:
-                raise WrongParameterValueError(command[1])
-            data = requests.get(url + f'ngrok_{command[1]}')
+            action = command[1].lower()
+            if action not in valid_actions:
+                raise WrongParameterValueError(action)
+            data = requests.get(url + f'ngrok_{action}')
             if data.status_code != 200:
                 raise BadResponseStatusError(data.status_code)
             else:
