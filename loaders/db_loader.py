@@ -170,6 +170,7 @@ class DBLoader(Loader):
         """
         resp = {}
         cmd = text.split()
+        cmd = [word.lower() for word in cmd]
         valid_fields = ['description', 'privileges']
         try:
             if len(cmd) < 4:
