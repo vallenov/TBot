@@ -917,8 +917,8 @@ class InternetLoader(Loader):
             cmd = text.split()
             if len(cmd) != 3:
                 raise WrongParameterCountError(len(cmd))
-            action = cmd[1]
-            service = cmd[2]
+            action = cmd[1].lower()
+            service = cmd[2].lower()
             if action not in config.Systemctl.VALID_ACTIONS or service not in config.Systemctl.VALID_SERVICES:
                 raise WrongParameterValueError(f'{action} + {service}')
             data = requests.get(url + f'systemctl?action={action}&service={service}')
