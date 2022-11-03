@@ -286,7 +286,7 @@ class DBLoader(Loader):
         """
         resp = {}
         lst = text.split()
-        if len(lst) < 2:
+        if len(lst) < 3:
             return Loader.error_resp('Not enough params')
         resp['chat_id'] = []
         for chat_id in Loader.users.keys():
