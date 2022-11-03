@@ -135,23 +135,22 @@ class FileLoader(Loader):
         return Loader.error_resp('Something wrong')
 
     @check_permission()
-    def get_help(self, privileges: int, **kwargs) -> dict:
+    def get_help(self, **kwargs) -> dict:
         """
         Get bot functions
-        :param privileges: user privileges
         :return: {'res': 'OK or ERROR', 'text': 'message'}
         """
         resp = dict()
         resp['text'] = ''
-        if Loader.privileges_levels['regular'] <= privileges:
+        if Loader.privileges_levels['regular'] <= kwargs['privileges']:
             resp['text'] += str(f'Ты можешь написать "новости", "стих" и "фильм" с параметром\n'
                                 f'Новости "количество новостей"\n'
                                 f'Стих "имя автора или название"\n'
                                 f'Фильм "год выпуска" или "промежуток", например "фильм 2001-2005"\n'
                                 f'Так же, ты можешь написать phone и номер телефона, что бы узнать информацию о нем\n')
-        if Loader.privileges_levels['trusted'] <= privileges:
+        if Loader.privileges_levels['trusted'] <= kwargs['privileges']:
             pass
-        if Loader.privileges_levels['root'] <= privileges:
+        if Loader.privileges_levels['root'] <= kwargs['privileges']:
             pass
         return resp
 
