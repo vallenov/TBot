@@ -155,20 +155,19 @@ class FileLoader(Loader):
         return resp
 
     @check_permission()
-    def get_hello(self, privileges: int, **kwargs) -> dict:
+    def get_hello(self, **kwargs) -> dict:
         """
         Get hello from bot
-        :param privileges: user privileges
         :return: {'res': 'OK or ERROR', 'text': 'message'}
         """
         resp = dict()
-        if Loader.privileges_levels['regular'] <= privileges:
+        if Loader.privileges_levels['regular'] <= kwargs['privileges']:
             resp['text'] = f'Привет! Меня зовут InfoBot\n'
-        if Loader.privileges_levels['trusted'] <= privileges:
+        if Loader.privileges_levels['trusted'] <= kwargs['privileges']:
             pass
-        if Loader.privileges_levels['root'] <= privileges:
+        if Loader.privileges_levels['root'] <= kwargs['privileges']:
             resp['text'] = f'You are a root user'
-        resp['markup'] = main_markup(privileges)
+        resp['markup'] = main_markup(kwargs['privileges'])
         return resp
 
     @check_permission(needed_level='root')
