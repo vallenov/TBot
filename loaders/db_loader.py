@@ -381,6 +381,7 @@ class DBLoader(Loader):
         """
         resp = {'text': ''}
         lst = text.split()
+        lst = [word.lower() for word in lst]
         if config.USE_DB:
             if len(lst) == 1:
                 resp['text'] = 'Выберите интервал'
