@@ -9,9 +9,12 @@ import config
 from loaders.loader import Loader, check_permission
 from markup import main_markup
 from loggers import get_logger
+from markup import custom_markup
 
 from exceptions import (
+    WrongParameterTypeError,
     FileDBNotFoundError,
+    UserNotFoundError,
 )
 
 logger = get_logger(__name__)
@@ -42,29 +45,33 @@ class FileLoader(Loader):
         """
         Load poems from file to memory
         """
-        file_path = self.fife_db.get('poems.xlsx', False)
-        if file_path:
-            file_raw = pd.read_excel(file_path)
-            file = pd.DataFrame(file_raw, columns=['Author', 'Name', 'Poem'])
-            dict_file = file.to_dict()
-            for author, name, text in zip(dict_file['Author'].values(),
-                                          dict_file['Name'].values(),
-                                          dict_file['Poem'].values()):
-                try:
-                    text = text.replace('<strong>', '\t')
-                    text = text.replace('</strong>', '')
-                    text = text.replace('<em>', '')
-                    text = text.replace('</em>', '')
-                except AttributeError:
-                    continue
-                poem = dict()
-                poem['author'] = author
-                poem['name'] = name
-                poem['text'] = text
-                self.poems.append(poem)
-            logger.info(f'{file_path} download. len = {len(self.poems)}')
-        else:
-            raise FileDBNotFoundError('poems.xlsx')
+        if not len(self.poems):
+            try:
+                file_path = self.fife_db.get('poems.xlsx', False)
+                if file_path:
+                    file_raw = pd.read_excel(file_path)
+                    file = pd.DataFrame(file_raw, columns=['Author', 'Name', 'Poem'])
+                    dict_file = file.to_dict()
+                    for author, name, text in zip(dict_file['Author'].values(),
+                                                  dict_file['Name'].values(),
+                                                  dict_file['Poem'].values()):
+                        try:
+                            text = text.replace('<strong>', '\t')
+                            text = text.replace('</strong>', '')
+                            text = text.replace('<em>', '')
+                            text = text.replace('</em>', '')
+                        except AttributeError:
+                            continue
+                        poem = dict()
+                        poem['author'] = author
+                        poem['name'] = name
+                        poem['text'] = text
+                        self.poems.append(poem)
+                    logger.info(f'{file_path} download. len = {len(self.poems)}')
+                else:
+                    raise FileDBNotFoundError('poems.xlsx')
+            except FileDBNotFoundError:
+                logger.exception('File not found')
 
     @check_permission()
     def get_poem(self, text: str, **kwargs) -> dict:
@@ -75,12 +82,6 @@ class FileLoader(Loader):
         """
         lst = text.split()
         resp = {}
-        if not len(self.poems):
-            try:
-                self.load_poems()
-            except FileDBNotFoundError:
-                logger.exception('File not found')
-                return Loader.error_resp()
         if len(lst) == 1:
             random_poem = random.choice(self.poems)
         else:
@@ -99,6 +100,42 @@ class FileLoader(Loader):
         str_poem = f"{author}\n\n{name}\n\n{text}"
         resp['text'] = str_poem
         return resp
+
+    @check_permission()
+    def poem_divination(self, text: str, **kwargs):
+        """
+        Poem divination
+        """
+        resp = {}
+        try:
+            if kwargs['chat_id'] not in Loader.users.keys():
+                raise UserNotFoundError(kwargs['chat_id'])
+            if not Loader.users[kwargs['chat_id']].get('cache'):
+                Loader.users[kwargs['chat_id']]['cache'] = dict()
+            if not Loader.users[kwargs['chat_id']]['cache'].get('poem'):
+                poem = random.choice(self.poems)
+                Loader.users[kwargs['chat_id']]['cache']['poem'] = poem
+                count_of_quatrains = poem['text'].count('\n\n')
+                resp['text'] = 'Выберите четверостишие'
+                resp['markup'] = custom_markup('divination', [str(i) for i in range(1, count_of_quatrains+1)], '🔮')
+                return resp
+            else:
+                poem = Loader.users[kwargs['chat_id']]['cache']['poem']
+                quatrains = poem['text'].split('\n\n')
+                cmd = text.split()
+                try:
+                    number_of_quatrain = int(cmd[1])
+                except ValueError:
+                    raise WrongParameterTypeError(cmd[1])
+                resp['text'] = quatrains[number_of_quatrain-1]
+                Loader.users[kwargs['chat_id']]['cache']['poem'] = None
+                return resp
+        except UserNotFoundError as e:
+            logger.exception(f'Chat {e.chat_id} not found')
+            return Loader.error_resp(f'Chat {e.chat_id} not found')
+        except WrongParameterTypeError as e:
+            logger.exception(f'Chat {e.param} not found')
+            return Loader.error_resp(f'Type of param {e.param} is not valid')
 
     @check_permission()
     def get_metaphorical_card(self, **kwargs) -> dict:
