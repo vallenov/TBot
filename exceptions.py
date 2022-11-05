@@ -68,3 +68,12 @@ class NotFoundInDatabaseError(TBotException):
     def __init__(self, tablename):
         self.tablename = tablename
         super().__init__(tablename)
+
+
+class UserNotFoundError(TBotException):
+    """
+    When nothing is found in DB table
+    """
+    def __init__(self, chat_id):
+        self.chat_id = chat_id
+        super().__init__(chat_id)
