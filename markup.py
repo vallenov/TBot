@@ -49,6 +49,7 @@ def main_markup(privileges: int):
                    InlineKeyboardButton("🎭 Events/Мероприятия", callback_data="events"),
                    InlineKeyboardButton("🍲 Food/Еда", callback_data="food"),
                    InlineKeyboardButton("🪶 Poem/Стих", callback_data="poem"),
+                   InlineKeyboardButton("🔮 Divination/Гадание", callback_data="divination"),
                    InlineKeyboardButton("🎞 Movie/Фильм", callback_data="movie"),
                    InlineKeyboardButton("📖 Book/Книга", callback_data="book"),
                    InlineKeyboardButton("🎑 Metaphorical card/Метафорическая карта",
