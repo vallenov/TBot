@@ -225,10 +225,15 @@ class TBot:
         if message.content_type == 'text':
             form_text = message.text.strip().rstrip()
             func = TBot.mapping.get(form_text.split()[0].lower(), TBot.file_loader.get_hello)
+            _kwargs = dict(
+                text=form_text,
+                privileges=privileges,
+                chat_id=chat_id
+            )
             if not inspect.iscoroutinefunction(func.__wrapped__):
-                res = func(privileges=privileges, text=form_text)
+                res = func(**_kwargs)
             else:
-                res = asyncio.run(func(privileges=privileges, text=form_text))
+                res = asyncio.run(func(**_kwargs))
         duration = datetime.datetime.now() - start
         dur = float(str(duration.seconds) + '.' + str(duration.microseconds)[:3])
         logger.info(f'Duration: {dur} sec')
@@ -296,6 +301,7 @@ class TBot:
             'events': TBot.internet_loader.async_events,
             'food': TBot.internet_loader.get_restaurant,
             'poem': TBot.db_loader.get_poem if config.USE_DB else TBot.file_loader.get_poem,
+            'divination': TBot.file_loader.poem_divination,
             'movie': TBot.internet_loader.get_random_movie,
             'book': TBot.internet_loader.get_book,
             'update': TBot.db_loader.update_user_data,
@@ -317,6 +323,8 @@ class TBot:
             'systemctl': TBot.internet_loader.systemctl,
             'allow_connection': TBot.internet_loader.allow_connection
         }
+        if not config.USE_DB:
+            TBot.file_loader.load_poems()
         if config.PROD:
             logger.info(f'Send start message to root users')
             send_dev_message({'text': 'TBot is started'}, 'telegram')
