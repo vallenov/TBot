@@ -33,14 +33,14 @@ class DBLoader(Loader):
     def __init__(self, name):
         super().__init__(name)
         if config.USE_DB:
-            self.get_users_fom_db()
+            self.get_users_from_db()
             logger.info('Connection to DB success')
         else:
-            self.get_users_fom_config()
+            self.get_users_from_config()
             logger.info('Load from config success')
 
     @staticmethod
-    def get_users_fom_db():
+    def get_users_from_db():
         """
         Get all users' information from DB to memory
         """
@@ -73,7 +73,7 @@ class DBLoader(Loader):
             Loader.users[user.chat_id] = user_data
 
     @staticmethod
-    def get_users_fom_config():
+    def get_users_from_config():
         """
         Get all users' information from config to memory
         """
