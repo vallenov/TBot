@@ -1,5 +1,8 @@
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from loaders.loader import Loader
+from loggers import get_logger
+
+logger = get_logger(__name__)
 
 
 def custom_markup(command, category, smile='🔹', row_width=1):
@@ -19,6 +22,7 @@ def custom_markup(command, category, smile='🔹', row_width=1):
     if isinstance(category, list):
         item = category
     if not item:
+        logger.exception(f'Wrong type: {type(item)}')
         raise ValueError
     for cat in item:
         short_cat = cat.split()[0]
