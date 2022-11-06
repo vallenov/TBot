@@ -108,19 +108,39 @@ class FileLoader(Loader):
         """
         resp = {}
         try:
+            cmd = text.split()
             if kwargs['chat_id'] not in Loader.users.keys():
                 raise UserNotFoundError(kwargs['chat_id'])
             if not Loader.users[kwargs['chat_id']].get('cache'):
                 Loader.users[kwargs['chat_id']]['cache'] = dict()
-            if not Loader.users[kwargs['chat_id']]['cache'].get('poem'):
-                poem = random.choice(self.poems)
-                Loader.users[kwargs['chat_id']]['cache']['poem'] = poem
-                count_of_quatrains = poem['text'].count('\n\n')
-                resp['text'] = 'Выберите четверостишие'
-                resp['markup'] = custom_markup('divination', [str(i) for i in range(1, count_of_quatrains+1)], '🔮')
-                return resp
+            if len(cmd) == 1:
+                if 'poem' in Loader.users[kwargs['chat_id']]['cache']:
+                    Loader.users[kwargs['chat_id']]['cache'].pop('poem')
+                if not Loader.users[kwargs['chat_id']]['cache'].get('poem'):
+                    while True:
+                        poem = random.choice(self.poems)
+                        count_of_quatrains = poem['text'].count('\n\n')
+                        if count_of_quatrains == 1:
+                            lines = poem['text'].split('\n')
+                            buf = ''
+                            quatrains = []
+                            for line in lines:
+                                buf += line
+                                if buf.count('\n') == 4:
+                                    quatrains.append(buf)
+                                buf = ''
+                            count_of_quatrains = len(quatrains)
+                        if count_of_quatrains:
+                            break
+                    print(poem)
+                    Loader.users[kwargs['chat_id']]['cache']['poem'] = poem
+                    resp['text'] = 'Выберите четверостишие'
+                    resp['markup'] = custom_markup('divination', [str(i) for i in range(1, count_of_quatrains+1)], '🔮')
+                    return resp
             else:
                 poem = Loader.users[kwargs['chat_id']]['cache']['poem']
+                if not poem:
+                    return Loader.error_resp(f'Отсутствует сохраненный стих. Нажми на гадание еще разок')
                 quatrains = poem['text'].split('\n\n')
                 cmd = text.split()
                 try:
