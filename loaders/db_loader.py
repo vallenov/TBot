@@ -20,6 +20,8 @@ from exceptions import (
     NotFoundInDatabaseError,
     WrongParameterCountError,
     WrongParameterValueError,
+    UserNotFoundError,
+    WrongParameterTypeError,
 )
 
 logger = get_logger(__name__)
@@ -337,6 +339,61 @@ class DBLoader(Loader):
             return resp
         else:
             return Loader.error_resp('DB does not using')
+
+    @check_permission()
+    def poem_divination(self, text: str, **kwargs):
+        """
+        Poem divination
+        """
+        resp = {}
+        try:
+            cmd = text.split()
+            if kwargs['chat_id'] not in Loader.users.keys():
+                raise UserNotFoundError(kwargs['chat_id'])
+            if not Loader.users[kwargs['chat_id']].get('cache'):
+                Loader.users[kwargs['chat_id']]['cache'] = dict()
+            if len(cmd) == 1:
+                if 'poem' in Loader.users[kwargs['chat_id']]['cache']:
+                    Loader.users[kwargs['chat_id']]['cache'].pop('poem')
+                if not Loader.users[kwargs['chat_id']]['cache'].get('poem'):
+                    while True:
+                        poem = self._get_random_poem()
+                        count_of_quatrains = poem['text'].count('\n\n')
+                        if count_of_quatrains == 1:
+                            lines = poem['text'].split('\n')
+                            buf = ''
+                            quatrains = []
+                            for line in lines:
+                                buf += line
+                                if buf.count('\n') == 4:
+                                    quatrains.append(buf)
+                                buf = ''
+                            count_of_quatrains = len(quatrains)
+                        if count_of_quatrains:
+                            break
+                    Loader.users[kwargs['chat_id']]['cache']['poem'] = poem
+                    resp['text'] = 'Выберите четверостишие'
+                    resp['markup'] = custom_markup('divination', [str(i) for i in range(1, count_of_quatrains + 1)],
+                                                   '🔮')
+                    return resp
+            else:
+                poem = Loader.users[kwargs['chat_id']]['cache']['poem']
+                if not poem:
+                    return Loader.error_resp(f'Отсутствует сохраненный стих. Нажми на гадание еще разок')
+                quatrains = poem['text'].split('\n\n')
+                cmd = text.split()
+                try:
+                    number_of_quatrain = int(cmd[1])
+                except ValueError:
+                    raise WrongParameterTypeError(cmd[1])
+                resp['text'] = quatrains[number_of_quatrain - 1]
+                return resp
+        except UserNotFoundError as e:
+            logger.exception(f'Chat {e.chat_id} not found')
+            return Loader.error_resp(f'Chat {e.chat_id} not found')
+        except WrongParameterTypeError as e:
+            logger.exception(f'Chat {e.param} not found')
+            return Loader.error_resp(f'Type of param {e.param} is not valid')
 
     @staticmethod
     def get_graph(interval: str) -> str:
