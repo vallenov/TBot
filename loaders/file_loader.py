@@ -132,7 +132,6 @@ class FileLoader(Loader):
                             count_of_quatrains = len(quatrains)
                         if count_of_quatrains:
                             break
-                    print(poem)
                     Loader.users[kwargs['chat_id']]['cache']['poem'] = poem
                     resp['text'] = 'Выберите четверостишие'
                     resp['markup'] = custom_markup('divination', [str(i) for i in range(1, count_of_quatrains+1)], '🔮')
@@ -148,7 +147,6 @@ class FileLoader(Loader):
                 except ValueError:
                     raise WrongParameterTypeError(cmd[1])
                 resp['text'] = quatrains[number_of_quatrain-1]
-                Loader.users[kwargs['chat_id']]['cache']['poem'] = None
                 return resp
         except UserNotFoundError as e:
             logger.exception(f'Chat {e.chat_id} not found')
