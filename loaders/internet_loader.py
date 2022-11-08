@@ -196,7 +196,7 @@ class InternetLoader(Loader):
         """
         resp = {}
         count = 5
-        lst = text.split(' ')
+        lst = text.split()
         try:
             if len(lst) > 1:
                 try:
@@ -740,7 +740,7 @@ class InternetLoader(Loader):
         resp = {}
         try:
             url = check_config_attribute('system-monitor')
-            command = text.split(' ')
+            command = text.split()
             valid_actions = ['start', 'stop', 'restart', 'tunnels']
             if len(command) > 2:
                 raise WrongParameterCountError(len(command))
@@ -750,9 +750,10 @@ class InternetLoader(Loader):
                                                valid_actions,
                                                '🖥')
                 return resp
-            if command[1] not in valid_actions:
-                raise WrongParameterValueError(command[1])
-            data = requests.get(url + f'ngrok_{command[1]}')
+            action = command[1].lower()
+            if action not in valid_actions:
+                raise WrongParameterValueError(action)
+            data = requests.get(url + f'ngrok_{action}')
             if data.status_code != 200:
                 raise BadResponseStatusError(data.status_code)
             else:
@@ -811,9 +812,10 @@ class InternetLoader(Loader):
                                                valid_actions,
                                                '📦')
                 return resp
-            if command[1] not in valid_actions:
-                raise WrongParameterValueError(command[1])
-            data = requests.get(url + f'ngrok_db_{command[1]}')
+            action = command[1].lower()
+            if action not in valid_actions:
+                raise WrongParameterValueError(action)
+            data = requests.get(url + f'ngrok_db_{action}')
             if data.status_code != 200:
                 raise BadResponseStatusError(data.status_code)
             else:
@@ -877,12 +879,12 @@ class InternetLoader(Loader):
                 resp['markup'] = custom_markup('restart_system', ['allow'], '✅')
                 return resp
             elif len(cmd) == 2:
-                if cmd[1] == 'allow':
+                if cmd[1].lower() == 'allow':
                     data = requests.get(url + f'system_restart')
                     if data.status_code != 200:
                         raise BadResponseStatusError(data.status_code)
                 else:
-                    raise WrongParameterValueError(cmd[1])
+                    raise WrongParameterValueError(cmd[1].lower())
             else:
                 raise WrongParameterCountError(len(cmd))
         except ConfigAttributeNotFoundError:
@@ -915,8 +917,8 @@ class InternetLoader(Loader):
             cmd = text.split()
             if len(cmd) != 3:
                 raise WrongParameterCountError(len(cmd))
-            action = cmd[1]
-            service = cmd[2]
+            action = cmd[1].lower()
+            service = cmd[2].lower()
             if action not in config.Systemctl.VALID_ACTIONS or service not in config.Systemctl.VALID_SERVICES:
                 raise WrongParameterValueError(f'{action} + {service}')
             data = requests.get(url + f'systemctl?action={action}&service={service}')

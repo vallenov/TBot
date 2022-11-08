@@ -20,6 +20,9 @@ from exceptions import (
     NotFoundInDatabaseError,
     WrongParameterCountError,
     WrongParameterValueError,
+    UserNotFoundError,
+    WrongParameterTypeError,
+    EmptyCacheError,
 )
 
 logger = get_logger(__name__)
@@ -33,14 +36,14 @@ class DBLoader(Loader):
     def __init__(self, name):
         super().__init__(name)
         if config.USE_DB:
-            self.get_users_fom_db()
+            self.get_users_from_db()
             logger.info('Connection to DB success')
         else:
-            self.get_users_fom_config()
+            self.get_users_from_config()
             logger.info('Load from config success')
 
     @staticmethod
-    def get_users_fom_db():
+    def get_users_from_db():
         """
         Get all users' information from DB to memory
         """
@@ -73,7 +76,7 @@ class DBLoader(Loader):
             Loader.users[user.chat_id] = user_data
 
     @staticmethod
-    def get_users_fom_config():
+    def get_users_from_config():
         """
         Get all users' information from config to memory
         """
@@ -170,6 +173,7 @@ class DBLoader(Loader):
         """
         resp = {}
         cmd = text.split()
+        cmd = [word.lower() for word in cmd]
         valid_fields = ['description', 'privileges']
         try:
             if len(cmd) < 4:
@@ -255,29 +259,6 @@ class DBLoader(Loader):
             resp['text'] = dict_to_str(users, '')
         return resp
 
-    def _poems_to_db(self, poems: list):
-        """
-        Upload poems list to DB
-        :param poems: [{'author': 'some', 'name': 'some', 'text': 'some'}..,
-        {'author': 'some', 'name': 'some', 'text': 'some'}
-        :return:
-        """
-        cnt = 1
-        lst = []
-        logger.info('Preparing to upload')
-        for p in poems:
-            author = p['author']
-            name = p['name'].replace("'", '"')
-            text = p['text'].replace("'", "''")
-            lst.append((author, name, text))
-            cnt += 1
-        with self.connection.cursor() as cursor:
-            logger.info('Upload to DB')
-            query = f"insert into TBot.tmp (author, name, text) values (%s, %s, %s)"
-            cursor.executemany(query, lst)
-            self.connection.commit()
-            logger.info('Upload complete')
-
     @check_permission(needed_level='root')
     def send_other(self, text: str, **kwargs):
         """
@@ -308,7 +289,7 @@ class DBLoader(Loader):
         """
         resp = {}
         lst = text.split()
-        if len(lst) < 2:
+        if len(lst) < 3:
             return Loader.error_resp('Not enough params')
         resp['chat_id'] = []
         for chat_id in Loader.users.keys():
@@ -319,6 +300,18 @@ class DBLoader(Loader):
             resp['chat_id'].append(chat_id)
         resp['text'] = ' '.join(lst[1:])
         return resp
+
+    @staticmethod
+    def _get_random_poem():
+        """
+        Get random poem
+        """
+        max_id = db.session.query(func.max(md.Poems.p_id)).scalar()
+        min_id = db.session.query(func.min(md.Poems.p_id)).scalar()
+        random_id = random.randint(min_id, max_id + 1)
+        return md.Poems.query.filter(
+                md.Poems.p_id == random_id
+            ).one_or_none()
 
     @check_permission()
     def get_poem(self, text: str, **kwargs) -> dict:
@@ -331,12 +324,7 @@ class DBLoader(Loader):
         if config.USE_DB:
             lst = text.split()
             if len(lst) == 1:
-                max_id = db.session.query(func.max(md.Poems.p_id)).scalar()
-                min_id = db.session.query(func.min(md.Poems.p_id)).scalar()
-                random_id = random.randint(min_id, max_id + 1)
-                poem = md.Poems.query.filter(
-                    md.Poems.p_id == random_id
-                ).one_or_none()
+                poem = self._get_random_poem()
                 if not poem:
                     Loader.error_resp('Something wrong')
             else:
@@ -352,6 +340,66 @@ class DBLoader(Loader):
             return resp
         else:
             return Loader.error_resp('DB does not using')
+
+    @check_permission()
+    def poem_divination(self, text: str, **kwargs):
+        """
+        Poem divination
+        """
+        resp = {}
+        try:
+            cmd = text.split()
+            if kwargs['chat_id'] not in Loader.users.keys():
+                raise UserNotFoundError(kwargs['chat_id'])
+            if not Loader.users[kwargs['chat_id']].get('cache'):
+                Loader.users[kwargs['chat_id']]['cache'] = dict()
+            if len(cmd) == 1:
+                if 'poem' in Loader.users[kwargs['chat_id']]['cache']:
+                    Loader.users[kwargs['chat_id']]['cache'].pop('poem')
+                if not Loader.users[kwargs['chat_id']]['cache'].get('poem'):
+                    while True:
+                        poem = self._get_random_poem()
+                        count_of_quatrains = poem['text'].count('\n\n')
+                        if count_of_quatrains == 1:
+                            lines = poem['text'].split('\n')
+                            buf = ''
+                            quatrains = []
+                            for line in lines:
+                                buf += line
+                                if buf.count('\n') == 4:
+                                    quatrains.append(buf)
+                                buf = ''
+                            count_of_quatrains = len(quatrains)
+                        if count_of_quatrains:
+                            break
+                    Loader.users[kwargs['chat_id']]['cache']['poem'] = poem
+                    resp['text'] = 'Выберите четверостишие'
+                    resp['markup'] = custom_markup('divination', [str(i) for i in range(1, count_of_quatrains + 1)],
+                                                   '🔮')
+                    return resp
+            else:
+                poem = Loader.users[kwargs['chat_id']]['cache'].get('poem')
+                if not poem:
+                    raise EmptyCacheError('poem')
+                quatrains = poem['text'].split('\n\n')
+                cmd = text.split()
+                try:
+                    number_of_quatrain = int(cmd[1])
+                    resp['text'] = quatrains[number_of_quatrain - 1]
+                except ValueError:
+                    raise WrongParameterTypeError(cmd[1])
+                except IndexError:
+                    raise EmptyCacheError('poem')
+                return resp
+        except UserNotFoundError as e:
+            logger.exception(f'Chat {e.chat_id} not found')
+            return Loader.error_resp(f'Chat {e.chat_id} not found')
+        except WrongParameterTypeError as e:
+            logger.exception(f'Chat {e.param} not found')
+            return Loader.error_resp(f'Type of param {e.param} is not valid')
+        except EmptyCacheError as e:
+            logger.exception(f'Empty param: {e.param}')
+            return Loader.error_resp(f'Отсутствует сохраненный стих. Нажми на гадание еще разок')
 
     @staticmethod
     def get_graph(interval: str) -> str:
@@ -396,6 +444,7 @@ class DBLoader(Loader):
         """
         resp = {'text': ''}
         lst = text.split()
+        lst = [word.lower() for word in lst]
         if config.USE_DB:
             if len(lst) == 1:
                 resp['text'] = 'Выберите интервал'

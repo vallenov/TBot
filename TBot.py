@@ -202,9 +202,10 @@ class TBot:
                     send_data['text'] = f'{e}'
                     send_dev_message(data=send_data, by='telegram')
                     TBot.internet_loader.tbot_restart(privileges=privileges)  
-                send_data = dict()
-                send_data['subject'] = 'TBot NEW USER'
-                send_data['text'] = f'New user added. Chat_id: {chat_id}, login: {login}, first_name: {first_name}'
+                send_data = dict(
+                    subject='TBot NEW USER',
+                    text=f'New user added. Chat_id: {chat_id}, login: {login}, first_name: {first_name}'
+                )
                 mail_resp = send_dev_message(send_data, 'mail')
                 telegram_resp = send_dev_message(send_data, 'telegram')
                 if mail_resp['res'] == 'ERROR' or telegram_resp['res'] == 'ERROR':
@@ -218,19 +219,21 @@ class TBot:
             try:
                 TBot.db_loader.log_request(chat_id)
             except (OperationalError, exc.OperationalError) as e:
-                send_data = dict()
-                send_data['subject'] = f'TBot DB connection error'
-                send_data['text'] = f'{e}'
+                send_data = dict(subject=f'TBot DB connection error', text=f'{e}')
                 send_dev_message(data=send_data, by='telegram')
                 TBot.internet_loader.tbot_restart(privileges=privileges)
         if message.content_type == 'text':
-            form_text = message.text.lower().strip()
-            sptext = form_text.split()
-            func = TBot.mapping.get(sptext[0], TBot.file_loader.get_hello)
+            form_text = message.text.strip().rstrip()
+            func = TBot.mapping.get(form_text.split()[0].lower(), TBot.file_loader.get_hello)
+            _kwargs = dict(
+                text=form_text,
+                privileges=privileges,
+                chat_id=chat_id
+            )
             if not inspect.iscoroutinefunction(func.__wrapped__):
-                res = func(privileges=privileges, text=form_text)
+                res = func(**_kwargs)
             else:
-                res = asyncio.run(func(privileges=privileges, text=form_text))
+                res = asyncio.run(func(**_kwargs))
         duration = datetime.datetime.now() - start
         dur = float(str(duration.seconds) + '.' + str(duration.microseconds)[:3])
         logger.info(f'Duration: {dur} sec')
@@ -298,6 +301,7 @@ class TBot:
             'events': TBot.internet_loader.async_events,
             'food': TBot.internet_loader.get_restaurant,
             'poem': TBot.db_loader.get_poem if config.USE_DB else TBot.file_loader.get_poem,
+            'divination': TBot.db_loader.poem_divination if config.USE_DB else TBot.file_loader.poem_divination,
             'movie': TBot.internet_loader.get_random_movie,
             'book': TBot.internet_loader.get_book,
             'update': TBot.db_loader.update_user_data,
@@ -319,6 +323,8 @@ class TBot:
             'systemctl': TBot.internet_loader.systemctl,
             'allow_connection': TBot.internet_loader.allow_connection
         }
+        if not config.USE_DB:
+            TBot.file_loader.load_poems()
         if config.PROD:
             logger.info(f'Send start message to root users')
             send_dev_message({'text': 'TBot is started'}, 'telegram')
