@@ -301,7 +301,7 @@ class TBot:
             'events': TBot.internet_loader.async_events,
             'food': TBot.internet_loader.get_restaurant,
             'poem': TBot.db_loader.get_poem if config.USE_DB else TBot.file_loader.get_poem,
-            'divination': TBot.file_loader.poem_divination,
+            'divination': TBot.db_loader.poem_divination if config.USE_DB else TBot.file_loader.poem_divination,
             'movie': TBot.internet_loader.get_random_movie,
             'book': TBot.internet_loader.get_book,
             'update': TBot.db_loader.update_user_data,
