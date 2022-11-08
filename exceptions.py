@@ -72,7 +72,7 @@ class NotFoundInDatabaseError(TBotException):
 
 class UserNotFoundError(TBotException):
     """
-    When nothing is found in DB table
+    When user not found in memory
     """
     def __init__(self, chat_id):
         self.chat_id = chat_id
