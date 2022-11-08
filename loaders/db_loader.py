@@ -22,6 +22,7 @@ from exceptions import (
     WrongParameterValueError,
     UserNotFoundError,
     WrongParameterTypeError,
+    EmptyCacheError,
 )
 
 logger = get_logger(__name__)
@@ -377,16 +378,18 @@ class DBLoader(Loader):
                                                    '🔮')
                     return resp
             else:
-                poem = Loader.users[kwargs['chat_id']]['cache']['poem']
+                poem = Loader.users[kwargs['chat_id']]['cache'].get('poem')
                 if not poem:
-                    return Loader.error_resp(f'Отсутствует сохраненный стих. Нажми на гадание еще разок')
+                    raise EmptyCacheError('poem')
                 quatrains = poem['text'].split('\n\n')
                 cmd = text.split()
                 try:
                     number_of_quatrain = int(cmd[1])
+                    resp['text'] = quatrains[number_of_quatrain - 1]
                 except ValueError:
                     raise WrongParameterTypeError(cmd[1])
-                resp['text'] = quatrains[number_of_quatrain - 1]
+                except IndexError:
+                    raise EmptyCacheError('poem')
                 return resp
         except UserNotFoundError as e:
             logger.exception(f'Chat {e.chat_id} not found')
@@ -394,6 +397,9 @@ class DBLoader(Loader):
         except WrongParameterTypeError as e:
             logger.exception(f'Chat {e.param} not found')
             return Loader.error_resp(f'Type of param {e.param} is not valid')
+        except EmptyCacheError as e:
+            logger.exception(f'Empty param: {e.param}')
+            return Loader.error_resp(f'Отсутствует сохраненный стих. Нажми на гадание еще разок')
 
     @staticmethod
     def get_graph(interval: str) -> str:
