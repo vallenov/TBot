@@ -359,9 +359,9 @@ class DBLoader(Loader):
                 if not Loader.users[kwargs['chat_id']]['cache'].get('poem'):
                     while True:
                         poem = self._get_random_poem()
-                        count_of_quatrains = poem['text'].count('\n\n')
+                        count_of_quatrains = poem.text.count('\n\n')
                         if count_of_quatrains == 1:
-                            lines = poem['text'].split('\n')
+                            lines = poem.text.split('\n')
                             buf = ''
                             quatrains = []
                             for line in lines:
@@ -381,7 +381,7 @@ class DBLoader(Loader):
                 poem = Loader.users[kwargs['chat_id']]['cache'].get('poem')
                 if not poem:
                     raise EmptyCacheError('poem')
-                quatrains = poem['text'].split('\n\n')
+                quatrains = poem.text.split('\n\n')
                 cmd = text.split()
                 try:
                     number_of_quatrain = int(cmd[1])
