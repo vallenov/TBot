@@ -77,3 +77,12 @@ class UserNotFoundError(TBotException):
     def __init__(self, chat_id):
         self.chat_id = chat_id
         super().__init__(chat_id)
+
+
+class EmptyCacheError(TBotException):
+    """
+    When data in cache not found
+    """
+    def __init__(self, param):
+        self.param = param
+        super().__init__(param)
