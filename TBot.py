@@ -157,11 +157,14 @@ class TBot:
                 except urllib3.exceptions.ProtocolError as uep:
                     logger.exception(f'urllib3.exceptions.ProtocolError exception: {uep}')
                 except TypeError as te:
-                    logger.exception(f'file not ready yet: {te}')
+                    logger.exception(f'File not ready yet: {te}')
                     time.sleep(1)
-                except telebot.apihelper.ApiException:
+                except telebot.apihelper.ApiException as e:
                     logger.exception(f'Message to {chat_id} is not send')
-                    raise
+                    send_dev_message({'subject': repr(e)[:-2],
+                                      'text': f'Chat_id: {chat_id}\n'
+                                              f'Replace: {replace}\n'
+                                              f'Error: {traceback.format_exc()}'})
                 except Exception as ex:
                     logger.exception(f'Unrecognized exception during a send: {traceback.format_exc()}')
                     if not is_send:
