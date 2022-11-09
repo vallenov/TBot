@@ -301,6 +301,21 @@ class DBLoader(Loader):
         resp['text'] = ' '.join(lst[1:])
         return resp
 
+    @check_permission()
+    def send_to_admin(self, text: str, **kwargs):
+        """
+        Send message to admin
+        :param text: string "command chat_id message"
+        :return: dict {'chat_id': admin_id, 'text': 'some'}
+        """
+        resp = {}
+        lst = text.split()
+        if len(lst) < 2:
+            return Loader.error_resp('Format is not valid')
+        resp['chat_id'] = int(config.USERS['root_id']['chat_id'])
+        resp['text'] = ' '.join(lst[1:])
+        return resp
+
     @staticmethod
     def _get_random_poem():
         """
