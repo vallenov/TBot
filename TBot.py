@@ -312,6 +312,7 @@ class TBot:
             'hidden_functions': TBot.file_loader.get_help,
             'admins_help': TBot.file_loader.get_admins_help,
             'send_other': TBot.db_loader.send_other,
+            'to_admin': TBot.db_loader.send_to_admin,
             'send_all': TBot.db_loader.send_to_all_users,
             'metaphorical_card': TBot.file_loader.get_metaphorical_card,
             'russian_painting': TBot.internet_loader.get_russian_painting,
