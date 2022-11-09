@@ -268,7 +268,7 @@ class DBLoader(Loader):
         """
         resp = {}
         lst = text.split()
-        if len(lst) != 3:
+        if len(lst) < 3:
             return Loader.error_resp('Format is not valid')
         try:
             chat_id = int(lst[1])
