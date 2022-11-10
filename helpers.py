@@ -89,3 +89,11 @@ def check_config_attribute(attr):
         return config.LINKS[attr]
     else:
         raise ConfigAttributeNotFoundError(attr)
+
+
+def cut_commands(text: str, count_of_commands):
+    while '  ' in text:
+        text = text.replace('  ', ' ')
+    for _ in range(count_of_commands):
+        text = text[text.find(' '):]
+    return text
