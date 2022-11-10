@@ -313,7 +313,7 @@ class DBLoader(Loader):
         if len(lst) < 2:
             return Loader.error_resp('Format is not valid')
         resp['chat_id'] = int(config.USERS['root_id']['chat_id'])
-        resp['text'] = ' '.join(lst[1:])
+        resp['text'] = f"Message from {kwargs['chat_id']}\nText: {' '.join(lst[1:])}"
         return resp
 
     @staticmethod
