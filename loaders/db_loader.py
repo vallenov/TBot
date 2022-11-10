@@ -7,7 +7,7 @@ from mysql.connector.errors import OperationalError
 import config
 
 from loaders.loader import Loader, check_permission
-from helpers import dict_to_str
+from helpers import dict_to_str, cut_commands
 import models as md
 from sqlalchemy import cast, Date, exc
 from sqlalchemy.sql import func
@@ -313,7 +313,7 @@ class DBLoader(Loader):
         if len(lst) < 2:
             return Loader.error_resp('Format is not valid')
         resp['chat_id'] = int(config.USERS['root_id']['chat_id'])
-        resp['text'] = f"Message from {kwargs['chat_id']}\nText: {' '.join(lst[1:])}"
+        resp['text'] = f"Message from {kwargs['chat_id']}\nText: {cut_commands(text, 1)}"
         return resp
 
     @staticmethod
