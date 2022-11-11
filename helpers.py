@@ -95,5 +95,5 @@ def cut_commands(text: str, count_of_commands):
     while '  ' in text:
         text = text.replace('  ', ' ')
     for _ in range(count_of_commands):
-        text = text[text.find(' '):]
+        text = text[text.find(' ')+1:]
     return text
