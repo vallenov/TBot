@@ -7,7 +7,7 @@ from mysql.connector.errors import OperationalError
 import config
 
 from loaders.loader import Loader, check_permission
-from helpers import dict_to_str
+from helpers import dict_to_str, cut_commands
 import models as md
 from sqlalchemy import cast, Date, exc
 from sqlalchemy.sql import func
@@ -277,7 +277,7 @@ class DBLoader(Loader):
         if str(chat_id) not in Loader.users.keys():
             return Loader.error_resp('User not found')
         resp['chat_id'] = chat_id
-        resp['text'] = ' '.join(lst[2:])
+        resp['text'] = cut_commands(text, 2)
         return resp
 
     @check_permission(needed_level='root')
@@ -289,7 +289,7 @@ class DBLoader(Loader):
         """
         resp = {}
         lst = text.split()
-        if len(lst) < 3:
+        if len(lst) < 2:
             return Loader.error_resp('Not enough params')
         resp['chat_id'] = []
         for chat_id in Loader.users.keys():
@@ -298,7 +298,22 @@ class DBLoader(Loader):
             except ValueError:
                 logger.exception(f'Chat {chat_id} is not convert to int')
             resp['chat_id'].append(chat_id)
-        resp['text'] = ' '.join(lst[1:])
+        resp['text'] = cut_commands(text, 1)
+        return resp
+
+    @check_permission()
+    def send_to_admin(self, text: str, **kwargs):
+        """
+        Send message to admin
+        :param text: string "command chat_id message"
+        :return: dict {'chat_id': admin_id, 'text': 'some'}
+        """
+        resp = {}
+        lst = text.split()
+        if len(lst) < 2:
+            return Loader.error_resp('Format is not valid')
+        resp['chat_id'] = int(config.USERS['root_id']['chat_id'])
+        resp['text'] = f"Message from {kwargs['chat_id']}\nText: {cut_commands(text, 1)}"
         return resp
 
     @staticmethod
