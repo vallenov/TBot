@@ -313,7 +313,8 @@ class DBLoader(Loader):
         if len(lst) < 2:
             return Loader.error_resp('Format is not valid')
         resp['chat_id'] = int(config.USERS['root_id']['chat_id'])
-        resp['text'] = f"Message from {kwargs['chat_id']}\nText: {cut_commands(text, 1)}"
+        resp['text'] = str(f"Message from {Loader.users[kwargs['chat_id']]['first_name'] or kwargs['chat_id']}\n"
+                           f"Text: {cut_commands(text, 1)}")
         return resp
 
     @staticmethod
