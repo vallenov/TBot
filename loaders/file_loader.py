@@ -1,6 +1,7 @@
 import random
 import os
 import time
+import traceback
 
 import pandas as pd
 import datetime
@@ -11,12 +12,7 @@ from markup import main_markup
 from loggers import get_logger
 from markup import custom_markup
 
-from exceptions import (
-    WrongParameterTypeError,
-    FileDBNotFoundError,
-    UserNotFoundError,
-    EmptyCacheError,
-)
+from exceptions import TBotException
 
 logger = get_logger(__name__)
 
@@ -70,9 +66,10 @@ class FileLoader(Loader):
                         self.poems.append(poem)
                     logger.info(f'{file_path} download. len = {len(self.poems)}')
                 else:
-                    raise FileDBNotFoundError('poems.xlsx')
-            except FileDBNotFoundError:
-                logger.exception('File not found')
+                    raise TBotException(code=2, message='File poems.xlsx do not found')
+            except TBotException as e:
+                logger.exception(e.context)
+                e.send_error(traceback.format_exc())
 
     @check_permission()
     def get_poem(self, text: str, **kwargs) -> dict:
@@ -111,7 +108,7 @@ class FileLoader(Loader):
         try:
             cmd = text.split()
             if kwargs['chat_id'] not in Loader.users.keys():
-                raise UserNotFoundError(kwargs['chat_id'])
+                raise TBotException(code=3, chat_id=f"{kwargs['chat_id']}")
             if not Loader.users[kwargs['chat_id']].get('cache'):
                 Loader.users[kwargs['chat_id']]['cache'] = dict()
             if len(cmd) == 1:
@@ -140,26 +137,20 @@ class FileLoader(Loader):
             else:
                 poem = Loader.users[kwargs['chat_id']]['cache'].get('poem')
                 if not poem:
-                    raise EmptyCacheError('poem')
+                    raise TBotException(code=7, chat_id=kwargs.get('chat_id'), cache_field='poem')
                 quatrains = poem['text'].split('\n\n')
                 cmd = text.split()
                 try:
                     number_of_quatrain = int(cmd[1])
                     resp['text'] = quatrains[number_of_quatrain - 1]
                 except ValueError:
-                    raise WrongParameterTypeError(cmd[1])
+                    raise TBotException(code=6, parameter=cmd[1], type=type(cmd[1]))
                 except IndexError:
-                    raise EmptyCacheError('poem')
+                    raise TBotException(code=7, chat_id=kwargs.get('chat_id'), cache_field='poem')
                 return resp
-        except UserNotFoundError as e:
-            logger.exception(f'Chat {e.chat_id} not found')
-            return Loader.error_resp(f'Chat {e.chat_id} not found')
-        except WrongParameterTypeError as e:
-            logger.exception(f'Chat {e.param} not found')
-            return Loader.error_resp(f'Type of param {e.param} is not valid')
-        except EmptyCacheError as e:
-            logger.exception(f'Empty param: {e.param}')
-            return Loader.error_resp(f'Отсутствует сохраненный стих. Нажми на гадание еще разок')
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
 
     @check_permission()
     def get_metaphorical_card(self, **kwargs) -> dict:
