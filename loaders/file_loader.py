@@ -66,7 +66,7 @@ class FileLoader(Loader):
                         self.poems.append(poem)
                     logger.info(f'{file_path} download. len = {len(self.poems)}')
                 else:
-                    raise TBotException(code=2, message='File poems.xlsx do not found')
+                    raise TBotException(code=2, message='File poems.xlsx do not found', send=True)
             except TBotException as e:
                 logger.exception(e.context)
                 e.send_error(traceback.format_exc())
@@ -144,13 +144,14 @@ class FileLoader(Loader):
                     number_of_quatrain = int(cmd[1])
                     resp['text'] = quatrains[number_of_quatrain - 1]
                 except ValueError:
-                    raise TBotException(code=6, parameter=cmd[1], type=type(cmd[1]))
+                    raise TBotException(code=6, message='Wrong parameter type', parameter=cmd[1], type=type(cmd[1]))
                 except IndexError:
                     raise TBotException(code=7, chat_id=kwargs.get('chat_id'), cache_field='poem')
                 return resp
         except TBotException as e:
             logger.exception(e.context)
             e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @check_permission()
     def get_metaphorical_card(self, **kwargs) -> dict:
