@@ -3,6 +3,7 @@ import os
 import datetime
 import matplotlib.pyplot as plt
 from mysql.connector.errors import OperationalError
+import traceback
 
 import config
 
@@ -15,15 +16,7 @@ from extentions import db
 from markup import custom_markup
 from send_service import send_dev_message
 from loggers import get_logger
-from exceptions import (
-    ConfigAttributeNotFoundError,
-    NotFoundInDatabaseError,
-    WrongParameterCountError,
-    WrongParameterValueError,
-    UserNotFoundError,
-    WrongParameterTypeError,
-    EmptyCacheError,
-)
+from exceptions import TBotException
 
 logger = get_logger(__name__)
 
@@ -59,13 +52,14 @@ class DBLoader(Loader):
                              md.Users.description) \
                 .all()
             if not users:
-                raise NotFoundInDatabaseError('Users')
+                raise TBotException(code=3, message='TBot.users is empty', send=True)
         except exc.DatabaseError:
             logger.info('Error connection to DB')
             send_dev_message(data={'text': f'Ошибка подключения к БД'}, by='telegram')
             exit()
-        except NotFoundInDatabaseError as e:
-            logger.exception(e)
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
             exit()
         for user in users:
             user_data = dict()
@@ -83,7 +77,7 @@ class DBLoader(Loader):
         logger.info('get_users_fom_config')
         try:
             if not config.USERS:
-                raise ConfigAttributeNotFoundError('USERS')
+                raise TBotException(code=4, message='USERS')
             for value in config.USERS.values():
                 Loader.users[value['chat_id']] = {
                     'login': value['login'],
@@ -91,8 +85,9 @@ class DBLoader(Loader):
                     'value': value['privileges'],
                     'description': value['description']
                 }
-        except ConfigAttributeNotFoundError as e:
-            logger.exception(e)
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
             exit()
 
     @staticmethod
@@ -105,9 +100,10 @@ class DBLoader(Loader):
                 md.LibPrivileges.value == privileges
             ).one_or_none()
             if not data:
-                raise NotFoundInDatabaseError('LibPrivileges')
-        except NotFoundInDatabaseError as e:
-            logger.exception(e)
+                raise TBotException(code=3, message=f'Privileges {privileges} not found')
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
             return None
         else:
             return data.p_id
@@ -174,29 +170,31 @@ class DBLoader(Loader):
         resp = {}
         cmd = text.split()
         cmd = [word.lower() for word in cmd]
-        valid_fields = ['description', 'privileges']
         try:
             if len(cmd) < 4:
-                raise WrongParameterCountError(len(cmd))
-            elif cmd[1] not in valid_fields:
-                raise WrongParameterValueError(cmd[2])
+                raise TBotException(code=6,
+                                    return_message=f'Wrong parameters count: {len(cmd)}',
+                                    parameres_count=len(cmd))
             else:
                 chat_id = cmd[2]
-                new_value = None
                 if cmd[1] == 'description':
                     new_value = ' '.join(cmd[3:])
-                if cmd[1] == 'privileges':
+                elif cmd[1] == 'privileges':
                     new_value = int(cmd[3])
+                else:
+                    raise TBotException(code=6,
+                                        return_message=f'Wrong parameter value: {cmd[1]}',
+                                        parameres_value=cmd[2])
             if config.USE_DB:
                 user = md.Users.query.filter(
                     (md.Users.chat_id == chat_id) |
                     (md.Users.login == chat_id) |
                     (md.Users.first_name == chat_id)
                 ).all()
-                if not len(user):
-                    raise NotFoundInDatabaseError('users')
+                if not user:
+                    raise TBotException(code=3, return_message=f'User {chat_id} not found')
                 if len(user) > 1:
-                    return Loader.error_resp('Count of founded data greater then 1')
+                    raise TBotException(code=3, message='Count of founded data greater then 1', send=True)
                 if cmd[1] == 'privileges':
                     new_value = self.get_p_id(new_value)
                 for u in user:
@@ -216,15 +214,10 @@ class DBLoader(Loader):
                 return resp
             else:
                 return Loader.error_resp('DB does not using')
-        except WrongParameterCountError:
-            logger.error(f'Wrong count of parameters')
-            return Loader.error_resp(f'Wrong count of parameters')
-        except WrongParameterValueError:
-            logger.error(f'Not valid parameter data')
-            return Loader.error_resp(f'Not valid parameter data')
-        except NotFoundInDatabaseError:
-            logger.error(f'User not found')
-            return Loader.error_resp('User not found')
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @check_permission(needed_level='root')
     def show_users(self, **kwargs) -> dict:
@@ -366,7 +359,7 @@ class DBLoader(Loader):
         try:
             cmd = text.split()
             if kwargs['chat_id'] not in Loader.users.keys():
-                raise UserNotFoundError(kwargs['chat_id'])
+                raise TBotException(code=3, message=f'User {kwargs["chat_id"]} not found')
             if not Loader.users[kwargs['chat_id']].get('cache'):
                 Loader.users[kwargs['chat_id']]['cache'] = dict()
             if len(cmd) == 1:
@@ -396,26 +389,27 @@ class DBLoader(Loader):
             else:
                 poem = Loader.users[kwargs['chat_id']]['cache'].get('poem')
                 if not poem:
-                    raise EmptyCacheError('poem')
+                    raise TBotException(code=7,
+                                        return_message=f'Отсутствует сохраненный стих. Нажми на гадание еще разок',
+                                        chat_id=kwargs.get('chat_id'),
+                                        cache_field='poem')
                 quatrains = poem.text.split('\n\n')
                 cmd = text.split()
                 try:
                     number_of_quatrain = int(cmd[1])
                     resp['text'] = quatrains[number_of_quatrain - 1]
                 except ValueError:
-                    raise WrongParameterTypeError(cmd[1])
+                    raise TBotException(code=6, message='Wrong parameter type', parameter=cmd[1], type=type(cmd[1]))
                 except IndexError:
-                    raise EmptyCacheError('poem')
+                    raise TBotException(code=7,
+                                        return_message=f'Отсутствует сохраненный стих. Нажми на гадание еще разок',
+                                        chat_id=kwargs.get('chat_id'),
+                                        cache_field='poem')
                 return resp
-        except UserNotFoundError as e:
-            logger.exception(f'Chat {e.chat_id} not found')
-            return Loader.error_resp(f'Chat {e.chat_id} not found')
-        except WrongParameterTypeError as e:
-            logger.exception(f'Chat {e.param} not found')
-            return Loader.error_resp(f'Type of param {e.param} is not valid')
-        except EmptyCacheError as e:
-            logger.exception(f'Empty param: {e.param}')
-            return Loader.error_resp(f'Отсутствует сохраненный стих. Нажми на гадание еще разок')
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @staticmethod
     def get_graph(interval: str) -> str:
