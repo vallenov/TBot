@@ -234,11 +234,8 @@ class DBLoader(Loader):
                 continue
             users[cnt] = [key, value['login'], value['first_name'], str(value['value']), value['description']]
             cur_rows_lens = list(map(lambda x: 0 if not x else len(x), users[cnt]))
-            max_rows_lens[1] = cur_rows_lens[0] if cur_rows_lens[0] > max_rows_lens[1] else max_rows_lens[1]
-            max_rows_lens[2] = cur_rows_lens[1] if cur_rows_lens[1] > max_rows_lens[2] else max_rows_lens[2]
-            max_rows_lens[3] = cur_rows_lens[2] if cur_rows_lens[2] > max_rows_lens[3] else max_rows_lens[3]
-            max_rows_lens[4] = cur_rows_lens[3] if cur_rows_lens[3] > max_rows_lens[4] else max_rows_lens[4]
-            max_rows_lens[5] = cur_rows_lens[4] if cur_rows_lens[4] > max_rows_lens[5] else max_rows_lens[5]
+            for i in range(1, 6):
+                max_rows_lens[i] = cur_rows_lens[i-1] if cur_rows_lens[i-1] > max_rows_lens[i] else max_rows_lens[i]
             cnt += 1
         if not len(users):
             resp['text'] = Loader.error_resp('Users not found')
