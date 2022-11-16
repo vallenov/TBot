@@ -15,6 +15,14 @@ RESPONSE_CODES_MAPPING = {
 
 
 class TBotException(Exception):
+    """
+    Custom exceptions
+    Main params:
+    code - RESPONSE_CODES_MAPPING
+    message - error message for developer
+    return_message - message for user
+    """
+
     CODES = RESPONSE_CODES_MAPPING
 
     def __init__(self, *args, **kwargs):
@@ -33,6 +41,9 @@ class TBotException(Exception):
                     text=f"Message: {self.context['message']}\nTraceback: {trace}"
                 )
             )
+
+    def return_message(self):
+        return dict(text=self.context.get('return_message', 'Something wrong'))
 
 
 class FileDBNotFoundError(TBotException):
