@@ -226,7 +226,7 @@ class InternetLoader(Loader):
                 logger.info(f'Get successful ({url})')
             else:
                 logger.error(f'Get unsuccessful ({url})')
-                raise BadResponseStatusError(url)
+                raise TBotException(code=1, message=f'Bad response status: {res.status_code}')
             self.async_url_data.append(data)
 
     @check_permission()
@@ -315,17 +315,11 @@ class InternetLoader(Loader):
                     final_restaurant[name] = value
             final_restaurant[1] = config.LINKS['restaurant_url'] + restaurant.get('href')
             resp['text'] = dict_to_str(final_restaurant, ' ')
-        except ConfigAttributeNotFoundError:
-            logger.exception('Config attribute not found')
-            return Loader.error_resp("I can't do this yet😔")
-        except EmptySoupDataError:
-            logger.exception('Empty soup data')
-            return Loader.error_resp()
-        except BadResponseStatusError:
-            logger.exception('Bad response status')
-            return Loader.error_resp()
-        else:
             return resp
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @check_permission()
     def get_poem(self, **kwargs) -> dict:
