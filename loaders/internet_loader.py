@@ -368,17 +368,11 @@ class InternetLoader(Loader):
                 quatrains.append(quatrain)
             poem = '\n\n'.join(quatrains)
             resp['text'] = f'{author}\n\n{name}\n\n{poem}{year}'
-        except ConfigAttributeNotFoundError:
-            logger.exception('Config attribute not found')
-            return Loader.error_resp("I can't do this yet😔")
-        except EmptySoupDataError:
-            logger.exception('Empty soup data')
-            return Loader.error_resp()
-        except BadResponseStatusError:
-            logger.exception('Bad response status')
-            return Loader.error_resp()
-        else:
             return resp
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @check_permission()
     def get_phone_number_info(self, text: str, **kwargs) -> dict:
@@ -409,17 +403,11 @@ class InternetLoader(Loader):
             span_raw = p_raw.find_all('span')
             phone_info['Текущий оператор'] = span_raw[-1].text
             resp['text'] = dict_to_str(phone_info, ': ')
-        except ConfigAttributeNotFoundError:
-            logger.exception('Config attribute not found')
-            return Loader.error_resp("I can't do this yet😔")
-        except EmptySoupDataError:
-            logger.exception('Empty soup data')
-            return Loader.error_resp()
-        except BadResponseStatusError:
-            logger.exception('Bad response status')
-            return Loader.error_resp()
-        else:
             return resp
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @check_permission()
     def get_random_movie(self, text: str, **kwargs) -> dict:
@@ -434,7 +422,9 @@ class InternetLoader(Loader):
         year_to = 0
         try:
             if len(command) > 2:
-                raise WrongParameterCountError(len(command))
+                raise TBotException(code=6,
+                                    return_message=f'Wrong parameters count: {len(command)}',
+                                    parameres_count=len(command))
             if len(command) == 1:
                 resp['text'] = 'Выберите промежуток'
                 resp['markup'] = custom_markup('movie',
@@ -511,20 +501,11 @@ class InternetLoader(Loader):
                     if try_count > per_page:
                         logger.warning(f'No elements with cyrillic symbols')
                         break
-        except ConfigAttributeNotFoundError:
-            logger.exception('Config attribute not found')
-            return Loader.error_resp("I can't do this yet😔")
-        except EmptySoupDataError:
-            logger.exception('Empty soup data')
-            return Loader.error_resp()
-        except BadResponseStatusError:
-            logger.exception('Bad response status')
-            return Loader.error_resp()
-        except WrongParameterCountError:
-            logger.exception('Wrong parameter count')
-            return Loader.error_resp('Wrong parameter count')
-        else:
-            return Loader.error_resp(f'Movie {year_from}-{year_to} years not found')
+            raise TBotException(code=1, return_message=f'Movie {year_from}-{year_to} years not found')
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     def get_book_genres(self):
         """
