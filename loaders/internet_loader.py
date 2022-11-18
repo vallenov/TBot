@@ -210,20 +210,11 @@ class InternetLoader(Loader):
                     if em.text[0].isupper():
                         aff_list.append(em.text)
             resp['text'] = random.choice(aff_list)
-        except ConfigAttributeNotFoundError:
-            logger.exception('Config attribute not found')
-            return Loader.error_resp("I can't do this yet😔")
-        except EmptySoupDataError:
-            logger.exception('Empty soup data')
-            return Loader.error_resp()
-        except BadResponseStatusError:
-            logger.exception('Bad response status')
-            return Loader.error_resp()
-        except WrongParameterTypeError:
-            logger.exception('Count of news is not number')
-            return Loader.error_resp('Count of news is not number')
-        else:
             return resp
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     async def _get_url(self, session, url) -> None:
         """
@@ -256,7 +247,7 @@ class InternetLoader(Loader):
                 tasks = []
                 soup = BeautifulSoup(self.async_url_data.pop(), 'lxml')
                 if not soup:
-                    raise EmptySoupDataError(url)
+                    raise TBotException(code=1, message=f'Bad soup parsing {url}')
                 links = {}
                 div = soup.find_all('div', class_='site-nav-events')
                 raw_a = div[0].find_all('a')
@@ -270,7 +261,7 @@ class InternetLoader(Loader):
                     events_links = []
                     soup_curr = BeautifulSoup(raw, 'lxml')
                     if not soup_curr:
-                        raise EmptySoupDataError
+                        raise TBotException(code=1, message=f'Bad soup parsing')
                     name = soup_curr.find('title').text.split('.')[0]
                     raw_div = soup_curr.find('div', class_='feed-container')
                     article = raw_div.find_all('article', class_='post post-rect')
@@ -282,17 +273,11 @@ class InternetLoader(Loader):
                             events_links.append(f"{descr}\n{a.get('href')}\n")
                     events[name] = random.choice(events_links)
                 resp['text'] = dict_to_str(events, '\n')
-        except ConfigAttributeNotFoundError:
-            logger.exception('Config attribute not found')
-            return Loader.error_resp("I can't do this yet😔")
-        except EmptySoupDataError:
-            logger.exception('Empty soup data')
-            return Loader.error_resp()
-        except BadResponseStatusError:
-            logger.exception('Bad response status')
-            return Loader.error_resp()
-        else:
-            return resp
+                return resp
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @check_permission()
     def get_restaurant(self, **kwargs) -> dict:
