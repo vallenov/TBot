@@ -37,8 +37,8 @@ class TBotException(Exception):
         if self.context.get('send', False) is True:
             send_dev_message(
                 data=dict(
-                    subject=self.context['error_type'],
-                    text=f"Message: {self.context['message']}\nTraceback: {trace}"
+                    subject=self.context.get('error_type', 100),
+                    text=f"Message: {self.context.get('message')}\nTraceback: {trace}"
                 )
             )
 
