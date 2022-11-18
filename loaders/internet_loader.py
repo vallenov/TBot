@@ -46,15 +46,14 @@ class InternetLoader(Loader):
                 soup = BeautifulSoup(resp.text, 'lxml')
                 if soup is None:
                     raise TBotException(code=1, message=f'Bad soup parsing {url}')
+                logger.info(f'Get successful')
+                return soup
             else:
                 logger.error(f'Status of response: {resp.status_code}')
                 raise TBotException(code=1, message=f'Bad response status: {resp.status_code}')
         except Exception as e:
             logger.exception(f'Exception in {__name__}:\n{e}')
             raise TBotException(code=100)
-        else:
-            logger.info(f'Get successful')
-        return soup
 
     @check_permission()
     def get_exchange(self, **kwargs) -> dict:
@@ -553,9 +552,6 @@ class InternetLoader(Loader):
                 return Loader.error_resp('Genre is not valid')
             site = '/'.join(config.LINKS['book_url'].split('/')[:3])
             soup = InternetLoader.site_to_lxml(f'{site}{category}/listview/biglist/~6')
-            if soup is None:
-                logger.error(f'Empty soup data')
-                return Loader.error_resp()
             a_raw = soup.find_all('a', class_='pagination-page pagination-wide')
             last_page_raw = a_raw[-1].get('href')
             last_page = last_page_raw.split('~')[-1]
