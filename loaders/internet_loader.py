@@ -600,17 +600,11 @@ class InternetLoader(Loader):
             else:
                 text = 'Picture'
             resp['text'] = text
-        except ConfigAttributeNotFoundError:
-            logger.exception('Config attribute not found')
-            return Loader.error_resp("I can't do this yet😔")
-        except EmptySoupDataError:
-            logger.exception('Empty soup data')
-            return Loader.error_resp()
-        except BadResponseStatusError:
-            logger.exception('Bad response status')
-            return Loader.error_resp()
-        else:
             return resp
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @check_permission(needed_level='root')
     def get_server_ip(self, **kwargs) -> dict:
@@ -626,9 +620,10 @@ class InternetLoader(Loader):
             data_dict = json.loads(data.text)
             resp['text'] = data_dict.get('ip', 'Something wrong')
             return resp
-        except ConfigAttributeNotFoundError:
-            logger.exception('Config attribute not found')
-            return Loader.error_resp("I can't do this yet😔")
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
         except requests.exceptions.ConnectionError:
             logger.exception(f"Error connection to {check_config_attribute('system-monitor')}")
             return Loader.error_resp(f"Error connection to {check_config_attribute('system-monitor')}")
