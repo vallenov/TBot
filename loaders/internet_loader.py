@@ -523,15 +523,10 @@ class InternetLoader(Loader):
                 title_raw = genre.find('a', class_='main-genre-title')
                 if title_raw.text:
                     self.book_genres[title_raw.text] = title_raw.get('href')
-        except ConfigAttributeNotFoundError:
-            logger.exception('Config attribute not found')
-            return Loader.error_resp("I can't do this yet😔")
-        except EmptySoupDataError:
-            logger.exception('Empty soup data')
-            return Loader.error_resp()
-        except BadResponseStatusError:
-            logger.exception('Bad response status')
-            return Loader.error_resp()
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @check_permission()
     def get_book(self, text, **kwargs):
@@ -570,19 +565,12 @@ class InternetLoader(Loader):
             book_list = div_raw.find_all('div', class_='book-item-manage')
             random_book_raw = random.choice(book_list)
             random_book = random_book_raw.find('a', class_='brow-book-name with-cycle')
-            resp['text'] = f"{random_book.get('title')}\n"
-            resp['text'] += f"{site}{random_book.get('href')}"
-        except ConfigAttributeNotFoundError:
-            logger.exception('Config attribute not found')
-            return Loader.error_resp("I can't do this yet😔")
-        except EmptySoupDataError:
-            logger.exception('Empty soup data')
-            return Loader.error_resp()
-        except BadResponseStatusError:
-            logger.exception('Bad response status')
-            return Loader.error_resp()
-        else:
+            resp['text'] = f"{random_book.get('title')}\n{site}{random_book.get('href')}"
             return resp
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @check_permission()
     def get_russian_painting(self, **kwargs) -> dict:
