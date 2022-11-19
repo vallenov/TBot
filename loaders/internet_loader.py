@@ -691,7 +691,7 @@ class InternetLoader(Loader):
             command = text.split(' ')
             valid_actions = ['start', 'stop', 'restart']
             if len(command) > 2:
-                raise WrongParameterCountError(len(command))
+                raise TBotException(code=6, message=f'Wrong parameter count: {len(command)}')
             if len(command) == 1:
                 resp['text'] = 'Выберите действие'
                 resp['markup'] = custom_markup('ngrok_db',
@@ -700,29 +700,18 @@ class InternetLoader(Loader):
                 return resp
             action = command[1].lower()
             if action not in valid_actions:
-                raise WrongParameterValueError(action)
+                raise TBotException(code=6, message=f'Wrong parameter value: {action}')
             data = requests.get(url + f'ngrok_db_{action}')
             if data.status_code != 200:
-                raise BadResponseStatusError(data.status_code)
+                raise TBotException(code=1, message=f'Bad response status: {data.status_code}')
             else:
                 sys_mon_res = json.loads(data.text)
                 resp['text'] = sys_mon_res['msg']
                 return resp
-        except ConfigAttributeNotFoundError:
-            logger.exception('Config attribute not found')
-            return Loader.error_resp("I can't do this yet😔")
-        except EmptySoupDataError:
-            logger.exception('Empty soup data')
-            return Loader.error_resp()
-        except BadResponseStatusError:
-            logger.exception('Bad response status')
-            return Loader.error_resp()
-        except WrongParameterCountError:
-            logger.exception('Wrong parameter count')
-            return Loader.error_resp('Wrong parameter count')
-        except WrongParameterValueError as e:
-            logger.exception('Wrong parameter value')
-            return Loader.error_resp(f'Wrong parameter value: {e.val}')
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
         except requests.exceptions.ConnectionError:
             logger.exception(f"Error connection to {check_config_attribute('system-monitor')}")
             return Loader.error_resp(f"Error connection to {check_config_attribute('system-monitor')}")
