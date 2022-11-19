@@ -755,25 +755,15 @@ class InternetLoader(Loader):
                 if cmd[1].lower() == 'allow':
                     data = requests.get(url + f'system_restart')
                     if data.status_code != 200:
-                        raise BadResponseStatusError(data.status_code)
+                        raise TBotException(code=1, message=f'Bad response status: {data.status_code}')
                 else:
-                    raise WrongParameterValueError(cmd[1].lower())
+                    raise TBotException(code=6, message=f'Wrong parameter value: {cmd[1].lower()}')
             else:
-                raise WrongParameterCountError(len(cmd))
-        except ConfigAttributeNotFoundError:
-            logger.exception('Config attribute not found')
-            return Loader.error_resp("I can't do this yet😔")
-        except BadResponseStatusError:
-            logger.exception('Bad response status')
-            return Loader.error_resp()
-        except WrongParameterCountError:
-            logger.exception('Wrong parameters count')
-            resp['text'] = 'Wrong parameters count'
-            return resp
-        except WrongParameterValueError:
-            logger.exception('Wrong parameter')
-            resp['text'] = 'Wrong parameter'
-            return resp
+                raise TBotException(code=6, message=f'Wrong parameter count: {len(cmd)}')
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
         except requests.exceptions.ConnectionError:
             logger.exception(f"Error connection to {check_config_attribute('system-monitor')}")
             return Loader.error_resp(f"Error connection to {check_config_attribute('system-monitor')}")
@@ -789,31 +779,23 @@ class InternetLoader(Loader):
             url = check_config_attribute('system-monitor')
             cmd = text.split()
             if len(cmd) != 3:
-                raise WrongParameterCountError(len(cmd))
+                raise TBotException(code=6, message=f'Wrong parameter count: {len(cmd)}')
             action = cmd[1].lower()
             service = cmd[2].lower()
             if action not in config.Systemctl.VALID_ACTIONS or service not in config.Systemctl.VALID_SERVICES:
-                raise WrongParameterValueError(f'{action} + {service}')
+                raise TBotException(code=6, message=f'Wrong parameter value: {f"{action} + {service}"}')
             data = requests.get(url + f'systemctl?action={action}&service={service}')
             if data.status_code != 200:
-                raise BadResponseStatusError(data.status_code)
+                raise TBotException(code=1, message=f'Bad response status: {data.status_code}')
             text = json.loads(data.text)
             resp = {
                 'text': text.get('msg', 'Complete')
             }
             return resp
-        except ConfigAttributeNotFoundError:
-            logger.exception('Config attribute not found')
-            return Loader.error_resp("I can't do this yet😔")
-        except BadResponseStatusError:
-            logger.exception('Bad response status')
-            return Loader.error_resp()
-        except WrongParameterCountError:
-            logger.exception('Wrong count of command')
-            return Loader.error_resp()
-        except WrongParameterValueError as e:
-            logger.exception(f'Wrong value: {e.val}')
-            return Loader.error_resp()
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
         except requests.exceptions.ConnectionError:
             logger.exception(f"Error connection to {check_config_attribute('system-monitor')}")
             return Loader.error_resp(f"Error connection to {check_config_attribute('system-monitor')}")
@@ -828,19 +810,17 @@ class InternetLoader(Loader):
             url = check_config_attribute('system-monitor')
             data = requests.get(url + f'allow_connection')
             if data.status_code != 200:
-                raise BadResponseStatusError(data.status_code)
+                raise TBotException(code=1, message=f'Bad response status: {data.status_code}')
             else:
                 text = json.loads(data.text)
                 resp = {
                     'text': text.get('msg', 'Complete')
                 }
                 return resp
-        except ConfigAttributeNotFoundError:
-            logger.exception('Config attribute not found')
-            return Loader.error_resp("I can't do this yet😔")
-        except BadResponseStatusError:
-            logger.exception('Bad response status')
-            return Loader.error_resp()
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
         except requests.exceptions.ConnectionError:
             logger.exception(f"Error connection to {check_config_attribute('system-monitor')}")
             return Loader.error_resp(f"Error connection to {check_config_attribute('system-monitor')}")
