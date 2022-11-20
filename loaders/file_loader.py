@@ -137,7 +137,10 @@ class FileLoader(Loader):
             else:
                 poem = Loader.users[kwargs['chat_id']]['cache'].get('poem')
                 if not poem:
-                    raise TBotException(code=7, chat_id=kwargs.get('chat_id'), cache_field='poem')
+                    raise TBotException(code=7,
+                                        return_message=f'Отсутствует сохраненный стих. Нажми на гадание еще разок',
+                                        chat_id=kwargs.get('chat_id'),
+                                        cache_field='poem')
                 quatrains = poem['text'].split('\n\n')
                 cmd = text.split()
                 try:
@@ -146,7 +149,10 @@ class FileLoader(Loader):
                 except ValueError:
                     raise TBotException(code=6, message='Wrong parameter type', parameter=cmd[1], type=type(cmd[1]))
                 except IndexError:
-                    raise TBotException(code=7, chat_id=kwargs.get('chat_id'), cache_field='poem')
+                    raise TBotException(code=7,
+                                        return_message=f'Отсутствует сохраненный стих. Нажми на гадание еще разок',
+                                        chat_id=kwargs.get('chat_id'),
+                                        cache_field='poem')
                 return resp
         except TBotException as e:
             logger.exception(e.context)
@@ -179,13 +185,18 @@ class FileLoader(Loader):
         cmd = f"raspistill -o {path} -rot 180 -w 640 -h 480"
         os.system(cmd)
         i = 0
-        while i < config.MAX_TRY:
-            if os.path.exists(path):
-                resp['photo'] = path
-                return resp
-            time.sleep(1)
-            i += 1
-        return Loader.error_resp('Something wrong')
+        try:
+            while i < config.MAX_TRY:
+                if os.path.exists(path):
+                    resp['photo'] = path
+                    return resp
+                time.sleep(1)
+                i += 1
+            raise TBotException(code=2, message='Unable to create capture')
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @check_permission()
     def get_help(self, **kwargs) -> dict:
