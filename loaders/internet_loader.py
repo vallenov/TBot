@@ -711,13 +711,10 @@ class InternetLoader(Loader):
             action = command[1].lower()
             if action not in valid_actions:
                 raise TBotException(code=6, message=f'Wrong parameter value: {action}')
-            data = requests.get(url + f'ngrok_db_{action}')
-            if data.status_code != 200:
-                raise TBotException(code=1, message=f'Bad response status: {data.status_code}')
-            else:
-                sys_mon_res = json.loads(data.text)
-                resp['text'] = sys_mon_res['msg']
-                return resp
+            data = InternetLoader.regular_request(url + f'ngrok_db_{action}')
+            sys_mon_res = json.loads(data.text)
+            resp['text'] = sys_mon_res['msg']
+            return resp
         except TBotException as e:
             logger.exception(e.context)
             e.send_error(traceback.format_exc())
