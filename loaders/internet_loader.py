@@ -719,9 +719,6 @@ class InternetLoader(Loader):
             logger.exception(e.context)
             e.send_error(traceback.format_exc())
             return e.return_message()
-        except requests.exceptions.ConnectionError:
-            logger.exception(f"Error connection to {check_config_attribute('system-monitor')}")
-            return Loader.error_resp(f"Error connection to {check_config_attribute('system-monitor')}")
 
     @check_permission(needed_level='root')
     def tbot_restart(self, **kwargs) -> dict:
@@ -732,16 +729,11 @@ class InternetLoader(Loader):
         """
         try:
             url = check_config_attribute('system-monitor')
-            data = requests.get(url + f'tbot_restart')
-            if data.status_code != 200:
-                raise TBotException(code=1, message=f'Bad response status: {data.status_code}')
+            InternetLoader.regular_request(url + f'tbot_restart')
         except TBotException as e:
             logger.exception(e.context)
             e.send_error(traceback.format_exc())
             return e.return_message()
-        except requests.exceptions.ConnectionError:
-            logger.exception(f"Error connection to {check_config_attribute('system-monitor')}")
-            return Loader.error_resp(f"Error connection to {check_config_attribute('system-monitor')}")
 
     @check_permission(needed_level='root')
     def system_restart(self, text: str, **kwargs) -> dict:
