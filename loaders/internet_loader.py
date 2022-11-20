@@ -28,11 +28,9 @@ class InternetLoader(Loader):
         self.book_genres = {}
 
     @staticmethod
-    def site_to_lxml(url: str) -> BeautifulSoup or None:
+    def regular_request(url: str):
         """
-        Get site and convert it to the lxml
-        :param url: https://site.com/
-        :return: BeautifulSoup object
+        Regular request to site
         """
         headers = {
             'User-Agent': 'Mozilla/5.0',
@@ -43,17 +41,38 @@ class InternetLoader(Loader):
             resp = requests.get(url, headers=headers)
             if resp.status_code == 200:
                 resp.encoding = 'utf-8'
-                soup = BeautifulSoup(resp.text, 'lxml')
-                if soup is None:
-                    raise TBotException(code=1, message=f'Bad soup parsing {url}')
                 logger.info(f'Get successful')
-                return soup
+                return resp
             else:
-                logger.error(f'Status of response: {resp.status_code}')
+                logger.error(f'Bad status of response: {resp.status_code}')
                 raise TBotException(code=1, message=f'Bad response status: {resp.status_code}')
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+        except requests.exceptions.ConnectionError:
+            logger.exception(f"Error connection to {check_config_attribute('system-monitor')}")
+            raise TBotException(code=1, message='Connection Error')
         except Exception as e:
             logger.exception(f'Exception in {__name__}:\n{e}')
             raise TBotException(code=100)
+
+    @staticmethod
+    def site_to_lxml(url: str) -> BeautifulSoup or None:
+        """
+        Get site and convert it to the lxml
+        :param url: https://site.com/
+        :return: BeautifulSoup object
+        """
+        try:
+            resp = InternetLoader.regular_request(url)
+            soup = BeautifulSoup(resp.text, 'lxml')
+            if soup is None:
+                raise TBotException(code=1, message=f'Bad soup parsing {url}')
+            return soup
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            raise
 
     @check_permission()
     def get_exchange(self, **kwargs) -> dict:
@@ -616,7 +635,7 @@ class InternetLoader(Loader):
         resp = {}
         try:
             url = check_config_attribute('system-monitor')
-            data = requests.get(url + 'ip')
+            data = InternetLoader.regular_request(url + 'ip')
             data_dict = json.loads(data.text)
             resp['text'] = data_dict.get('ip', 'Something wrong')
             return resp
@@ -624,9 +643,6 @@ class InternetLoader(Loader):
             logger.exception(e.context)
             e.send_error(traceback.format_exc())
             return e.return_message()
-        except requests.exceptions.ConnectionError:
-            logger.exception(f"Error connection to {check_config_attribute('system-monitor')}")
-            return Loader.error_resp(f"Error connection to {check_config_attribute('system-monitor')}")
 
     @check_permission(needed_level='root')
     def ngrok(self, text: str, **kwargs) -> dict:
@@ -651,32 +667,26 @@ class InternetLoader(Loader):
             action = command[1].lower()
             if action not in valid_actions:
                 raise TBotException(code=6, message=f'Wrong parameter value: {action}')
-            data = requests.get(url + f'ngrok_{action}')
-            if data.status_code != 200:
-                raise TBotException(code=1, message=f'Bad response status: {data.status_code}')
-            else:
-                sys_mon_res = json.loads(data.text)
-                if isinstance(sys_mon_res['msg'], str):
-                    resp['text'] = sys_mon_res['msg']
-                elif isinstance(sys_mon_res['msg'], list):
-                    if len(sys_mon_res['msg']) == 0:
-                        resp['text'] = 'Отсутствуют открытые туннели'
-                        return resp
-                    resp['text'] = '\n\n'.join(
-                        ['\n'.join([f"url: {i['url']}",
-                                    f"port: {i['port']}",
-                                    f"protocol: {i['protocol']}",
-                                    f"forwards_to: {i['forwards_to']}"]) for i in sys_mon_res['msg']
-                         ]
-                    )
+            data = InternetLoader.regular_request(url + f'ngrok_{action}')
+            sys_mon_res = json.loads(data.text)
+            if isinstance(sys_mon_res['msg'], str):
+                resp['text'] = sys_mon_res['msg']
+            elif isinstance(sys_mon_res['msg'], list):
+                if len(sys_mon_res['msg']) == 0:
+                    resp['text'] = 'Отсутствуют открытые туннели'
+                    return resp
+                resp['text'] = '\n\n'.join(
+                    ['\n'.join([f"url: {i['url']}",
+                                f"port: {i['port']}",
+                                f"protocol: {i['protocol']}",
+                                f"forwards_to: {i['forwards_to']}"]) for i in sys_mon_res['msg']
+                     ]
+                )
             return resp
         except TBotException as e:
             logger.exception(e.context)
             e.send_error(traceback.format_exc())
             return e.return_message()
-        except requests.exceptions.ConnectionError:
-            logger.exception(f"Error connection to {check_config_attribute('system-monitor')}")
-            return Loader.error_resp(f"Error connection to {check_config_attribute('system-monitor')}")
 
     @check_permission(needed_level='root')
     def ngrok_db(self, text: str, **kwargs) -> dict:
