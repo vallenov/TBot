@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 import asyncio
 import aiohttp
 import json
+import traceback
 
 import config
 
@@ -12,14 +13,7 @@ from loaders.loader import Loader, check_permission
 from markup import custom_markup
 from helpers import dict_to_str, is_phone_number, check_config_attribute
 from loggers import get_logger
-from exceptions import (
-    ConfigAttributeNotFoundError,
-    EmptySoupDataError,
-    BadResponseStatusError,
-    WrongParameterTypeError,
-    WrongParameterCountError,
-    WrongParameterValueError,
-)
+from exceptions import TBotException
 
 logger = get_logger(__name__)
 
@@ -34,11 +28,9 @@ class InternetLoader(Loader):
         self.book_genres = {}
 
     @staticmethod
-    def site_to_lxml(url: str) -> BeautifulSoup or None:
+    def regular_request(url: str):
         """
-        Get site and convert it to the lxml
-        :param url: https://site.com/
-        :return: BeautifulSoup object
+        Regular request to site
         """
         headers = {
             'User-Agent': 'Mozilla/5.0',
@@ -49,22 +41,35 @@ class InternetLoader(Loader):
             resp = requests.get(url, headers=headers)
             if resp.status_code == 200:
                 resp.encoding = 'utf-8'
-                soup = BeautifulSoup(resp.text, 'lxml')
-                if soup is None:
-                    raise EmptySoupDataError(url)
+                logger.info(f'Get successful')
+                return resp
             else:
-                logger.error(f'Status of response: {resp.status_code}')
-                raise BadResponseStatusError(resp.status_code)
-        except EmptySoupDataError:
+                logger.error(f'Bad status of response: {resp.status_code}')
+                raise TBotException(code=1, message=f'Bad response status: {resp.status_code}')
+        except TBotException:
             raise
-        except BadResponseStatusError:
+        except requests.exceptions.ConnectionError:
+            raise TBotException(code=1,
+                                message=f"Error connection to {check_config_attribute('system-monitor')}",
+                                send=True)
+        except Exception:
+            raise TBotException(code=100, message=f'Exception in {__name__}', send=True)
+
+    @staticmethod
+    def site_to_lxml(url: str) -> BeautifulSoup or None:
+        """
+        Get site and convert it to the lxml
+        :param url: https://site.com/
+        :return: BeautifulSoup object
+        """
+        try:
+            resp = InternetLoader.regular_request(url)
+            soup = BeautifulSoup(resp.text, 'lxml')
+            if soup is None:
+                raise TBotException(code=1, message=f'Bad soup parsing {url}')
+            return soup
+        except TBotException as e:
             raise
-        except Exception as _ex:
-            logger.exception(f'Exception in {__name__}:\n{_ex}')
-            raise
-        else:
-            logger.info(f'Get successful')
-        return soup
 
     @check_permission()
     def get_exchange(self, **kwargs) -> dict:
@@ -86,17 +91,11 @@ class InternetLoader(Loader):
                     continue
                 exchange[inf[1].text] = inf[4].text
             resp['text'] = dict_to_str(exchange, ' = ')
-        except ConfigAttributeNotFoundError:
-            logger.exception('Config attribute not found')
-            return Loader.error_resp("I can't do this yet😔")
-        except EmptySoupDataError:
-            logger.exception('Empty soup data')
-            return Loader.error_resp("Empty soup data")
-        except BadResponseStatusError:
-            logger.exception('Bad response status')
-            return Loader.error_resp()
-        else:
             return resp
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @check_permission()
     def get_weather(self, **kwargs) -> dict:
@@ -119,17 +118,11 @@ class InternetLoader(Loader):
                 span = list(map(lambda x: x.text, span))
                 weather[h2.text] = ''.join(span[:-1])
             resp['text'] = dict_to_str(weather, ' = ')
-        except ConfigAttributeNotFoundError:
-            logger.exception('Config attribute not found')
-            return Loader.error_resp("I can't do this yet😔")
-        except EmptySoupDataError:
-            logger.exception('Empty soup data')
-            return Loader.error_resp()
-        except BadResponseStatusError:
-            logger.exception('Bad response status')
-            return Loader.error_resp()
-        else:
             return resp
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @check_permission()
     def get_quote(self, **kwargs) -> dict:
@@ -149,17 +142,11 @@ class InternetLoader(Loader):
             quote = dict()
             quote[text.text] = author.text
             resp['text'] = dict_to_str(quote, '\n')
-        except ConfigAttributeNotFoundError:
-            logger.exception('Config attribute not found')
-            return Loader.error_resp("I can't do this yet😔")
-        except EmptySoupDataError:
-            logger.exception('Empty soup data')
-            return Loader.error_resp()
-        except BadResponseStatusError:
-            logger.exception('Bad response status')
-            return Loader.error_resp()
-        else:
             return resp
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @check_permission()
     def get_wish(self, **kwargs) -> dict:
@@ -175,17 +162,11 @@ class InternetLoader(Loader):
             wishes = soup.find_all('ol')
             wish_list = wishes[0].find_all('li')
             resp['text'] = random.choice(wish_list).text
-        except ConfigAttributeNotFoundError:
-            logger.exception('Config attribute not found')
-            return Loader.error_resp("I can't do this yet😔")
-        except EmptySoupDataError:
-            logger.exception('Empty soup data')
-            return Loader.error_resp()
-        except BadResponseStatusError:
-            logger.exception('Bad response status')
-            return Loader.error_resp()
-        else:
             return resp
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @check_permission()
     def get_news(self, text: str, **kwargs) -> dict:
@@ -202,7 +183,9 @@ class InternetLoader(Loader):
                 try:
                     count = int(lst[1])
                 except ValueError:
-                    raise WrongParameterTypeError(lst[1])
+                    raise TBotException(code=6,
+                                        return_message='Count of news is not number',
+                                        message=f'{lst[1]} is not int')
             url = check_config_attribute('news_url')
             soup = InternetLoader.site_to_lxml(url)
             div_raw = soup.find_all('div', class_='cell-list__item-info')
@@ -217,20 +200,11 @@ class InternetLoader(Loader):
                     break
             resp['text'] = dict_to_str(news, ' ')
             resp['parse_mode'] = 'MarkdownV2'
-        except ConfigAttributeNotFoundError:
-            logger.exception('Config attribute not found')
-            return Loader.error_resp("I can't do this yet😔")
-        except EmptySoupDataError:
-            logger.exception('Empty soup data')
-            return Loader.error_resp()
-        except BadResponseStatusError:
-            logger.exception('Bad response status')
-            return Loader.error_resp()
-        except WrongParameterTypeError:
-            logger.exception('Count of news is not number')
-            return Loader.error_resp('Count of news is not number')
-        else:
             return resp
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @check_permission()
     def get_affirmation(self, **kwargs) -> dict:
@@ -251,20 +225,11 @@ class InternetLoader(Loader):
                     if em.text[0].isupper():
                         aff_list.append(em.text)
             resp['text'] = random.choice(aff_list)
-        except ConfigAttributeNotFoundError:
-            logger.exception('Config attribute not found')
-            return Loader.error_resp("I can't do this yet😔")
-        except EmptySoupDataError:
-            logger.exception('Empty soup data')
-            return Loader.error_resp()
-        except BadResponseStatusError:
-            logger.exception('Bad response status')
-            return Loader.error_resp()
-        except WrongParameterTypeError:
-            logger.exception('Count of news is not number')
-            return Loader.error_resp('Count of news is not number')
-        else:
             return resp
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     async def _get_url(self, session, url) -> None:
         """
@@ -276,7 +241,7 @@ class InternetLoader(Loader):
                 logger.info(f'Get successful ({url})')
             else:
                 logger.error(f'Get unsuccessful ({url})')
-                raise BadResponseStatusError(url)
+                raise TBotException(code=1, message=f'Bad response status: {res.status_code}')
             self.async_url_data.append(data)
 
     @check_permission()
@@ -297,7 +262,7 @@ class InternetLoader(Loader):
                 tasks = []
                 soup = BeautifulSoup(self.async_url_data.pop(), 'lxml')
                 if not soup:
-                    raise EmptySoupDataError(url)
+                    raise TBotException(code=1, message=f'Bad soup parsing {url}')
                 links = {}
                 div = soup.find_all('div', class_='site-nav-events')
                 raw_a = div[0].find_all('a')
@@ -311,7 +276,7 @@ class InternetLoader(Loader):
                     events_links = []
                     soup_curr = BeautifulSoup(raw, 'lxml')
                     if not soup_curr:
-                        raise EmptySoupDataError
+                        raise TBotException(code=1, message=f'Bad soup parsing')
                     name = soup_curr.find('title').text.split('.')[0]
                     raw_div = soup_curr.find('div', class_='feed-container')
                     article = raw_div.find_all('article', class_='post post-rect')
@@ -323,17 +288,11 @@ class InternetLoader(Loader):
                             events_links.append(f"{descr}\n{a.get('href')}\n")
                     events[name] = random.choice(events_links)
                 resp['text'] = dict_to_str(events, '\n')
-        except ConfigAttributeNotFoundError:
-            logger.exception('Config attribute not found')
-            return Loader.error_resp("I can't do this yet😔")
-        except EmptySoupDataError:
-            logger.exception('Empty soup data')
-            return Loader.error_resp()
-        except BadResponseStatusError:
-            logger.exception('Bad response status')
-            return Loader.error_resp()
-        else:
-            return resp
+                return resp
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @check_permission()
     def get_restaurant(self, **kwargs) -> dict:
@@ -371,17 +330,11 @@ class InternetLoader(Loader):
                     final_restaurant[name] = value
             final_restaurant[1] = config.LINKS['restaurant_url'] + restaurant.get('href')
             resp['text'] = dict_to_str(final_restaurant, ' ')
-        except ConfigAttributeNotFoundError:
-            logger.exception('Config attribute not found')
-            return Loader.error_resp("I can't do this yet😔")
-        except EmptySoupDataError:
-            logger.exception('Empty soup data')
-            return Loader.error_resp()
-        except BadResponseStatusError:
-            logger.exception('Bad response status')
-            return Loader.error_resp()
-        else:
             return resp
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @check_permission()
     def get_poem(self, **kwargs) -> dict:
@@ -430,17 +383,11 @@ class InternetLoader(Loader):
                 quatrains.append(quatrain)
             poem = '\n\n'.join(quatrains)
             resp['text'] = f'{author}\n\n{name}\n\n{poem}{year}'
-        except ConfigAttributeNotFoundError:
-            logger.exception('Config attribute not found')
-            return Loader.error_resp("I can't do this yet😔")
-        except EmptySoupDataError:
-            logger.exception('Empty soup data')
-            return Loader.error_resp()
-        except BadResponseStatusError:
-            logger.exception('Bad response status')
-            return Loader.error_resp()
-        else:
             return resp
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @check_permission()
     def get_phone_number_info(self, text: str, **kwargs) -> dict:
@@ -471,17 +418,11 @@ class InternetLoader(Loader):
             span_raw = p_raw.find_all('span')
             phone_info['Текущий оператор'] = span_raw[-1].text
             resp['text'] = dict_to_str(phone_info, ': ')
-        except ConfigAttributeNotFoundError:
-            logger.exception('Config attribute not found')
-            return Loader.error_resp("I can't do this yet😔")
-        except EmptySoupDataError:
-            logger.exception('Empty soup data')
-            return Loader.error_resp()
-        except BadResponseStatusError:
-            logger.exception('Bad response status')
-            return Loader.error_resp()
-        else:
             return resp
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @check_permission()
     def get_random_movie(self, text: str, **kwargs) -> dict:
@@ -496,7 +437,9 @@ class InternetLoader(Loader):
         year_to = 0
         try:
             if len(command) > 2:
-                raise WrongParameterCountError(len(command))
+                raise TBotException(code=6,
+                                    return_message=f'Wrong parameters count: {len(command)}',
+                                    parameres_count=len(command))
             if len(command) == 1:
                 resp['text'] = 'Выберите промежуток'
                 resp['markup'] = custom_markup('movie',
@@ -573,20 +516,11 @@ class InternetLoader(Loader):
                     if try_count > per_page:
                         logger.warning(f'No elements with cyrillic symbols')
                         break
-        except ConfigAttributeNotFoundError:
-            logger.exception('Config attribute not found')
-            return Loader.error_resp("I can't do this yet😔")
-        except EmptySoupDataError:
-            logger.exception('Empty soup data')
-            return Loader.error_resp()
-        except BadResponseStatusError:
-            logger.exception('Bad response status')
-            return Loader.error_resp()
-        except WrongParameterCountError:
-            logger.exception('Wrong parameter count')
-            return Loader.error_resp('Wrong parameter count')
-        else:
-            return Loader.error_resp(f'Movie {year_from}-{year_to} years not found')
+            raise TBotException(code=1, return_message=f'Movie {year_from}-{year_to} years not found')
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     def get_book_genres(self):
         """
@@ -604,15 +538,10 @@ class InternetLoader(Loader):
                 title_raw = genre.find('a', class_='main-genre-title')
                 if title_raw.text:
                     self.book_genres[title_raw.text] = title_raw.get('href')
-        except ConfigAttributeNotFoundError:
-            logger.exception('Config attribute not found')
-            return Loader.error_resp("I can't do this yet😔")
-        except EmptySoupDataError:
-            logger.exception('Empty soup data')
-            return Loader.error_resp()
-        except BadResponseStatusError:
-            logger.exception('Bad response status')
-            return Loader.error_resp()
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @check_permission()
     def get_book(self, text, **kwargs):
@@ -639,9 +568,6 @@ class InternetLoader(Loader):
                 return Loader.error_resp('Genre is not valid')
             site = '/'.join(config.LINKS['book_url'].split('/')[:3])
             soup = InternetLoader.site_to_lxml(f'{site}{category}/listview/biglist/~6')
-            if soup is None:
-                logger.error(f'Empty soup data')
-                return Loader.error_resp()
             a_raw = soup.find_all('a', class_='pagination-page pagination-wide')
             last_page_raw = a_raw[-1].get('href')
             last_page = last_page_raw.split('~')[-1]
@@ -651,19 +577,12 @@ class InternetLoader(Loader):
             book_list = div_raw.find_all('div', class_='book-item-manage')
             random_book_raw = random.choice(book_list)
             random_book = random_book_raw.find('a', class_='brow-book-name with-cycle')
-            resp['text'] = f"{random_book.get('title')}\n"
-            resp['text'] += f"{site}{random_book.get('href')}"
-        except ConfigAttributeNotFoundError:
-            logger.exception('Config attribute not found')
-            return Loader.error_resp("I can't do this yet😔")
-        except EmptySoupDataError:
-            logger.exception('Empty soup data')
-            return Loader.error_resp()
-        except BadResponseStatusError:
-            logger.exception('Bad response status')
-            return Loader.error_resp()
-        else:
+            resp['text'] = f"{random_book.get('title')}\n{site}{random_book.get('href')}"
             return resp
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @check_permission()
     def get_russian_painting(self, **kwargs) -> dict:
@@ -697,17 +616,11 @@ class InternetLoader(Loader):
             else:
                 text = 'Picture'
             resp['text'] = text
-        except ConfigAttributeNotFoundError:
-            logger.exception('Config attribute not found')
-            return Loader.error_resp("I can't do this yet😔")
-        except EmptySoupDataError:
-            logger.exception('Empty soup data')
-            return Loader.error_resp()
-        except BadResponseStatusError:
-            logger.exception('Bad response status')
-            return Loader.error_resp()
-        else:
             return resp
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @check_permission(needed_level='root')
     def get_server_ip(self, **kwargs) -> dict:
@@ -719,16 +632,14 @@ class InternetLoader(Loader):
         resp = {}
         try:
             url = check_config_attribute('system-monitor')
-            data = requests.get(url + 'ip')
+            data = InternetLoader.regular_request(url + 'ip')
             data_dict = json.loads(data.text)
-            resp['text'] = data_dict.get('ip', 'Something wrong')
+            resp['text'] = data_dict.get('ip')
             return resp
-        except ConfigAttributeNotFoundError:
-            logger.exception('Config attribute not found')
-            return Loader.error_resp("I can't do this yet😔")
-        except requests.exceptions.ConnectionError:
-            logger.exception(f"Error connection to {check_config_attribute('system-monitor')}")
-            return Loader.error_resp(f"Error connection to {check_config_attribute('system-monitor')}")
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @check_permission(needed_level='root')
     def ngrok(self, text: str, **kwargs) -> dict:
@@ -743,7 +654,7 @@ class InternetLoader(Loader):
             command = text.split()
             valid_actions = ['start', 'stop', 'restart', 'tunnels']
             if len(command) > 2:
-                raise WrongParameterCountError(len(command))
+                raise TBotException(code=6, return_message=f'Wrong parameters count: {len(command)}')
             if len(command) == 1:
                 resp['text'] = 'Выберите действие'
                 resp['markup'] = custom_markup('ngrok',
@@ -752,45 +663,27 @@ class InternetLoader(Loader):
                 return resp
             action = command[1].lower()
             if action not in valid_actions:
-                raise WrongParameterValueError(action)
-            data = requests.get(url + f'ngrok_{action}')
-            if data.status_code != 200:
-                raise BadResponseStatusError(data.status_code)
-            else:
-                sys_mon_res = json.loads(data.text)
-                if isinstance(sys_mon_res['msg'], str):
-                    resp['text'] = sys_mon_res['msg']
-                elif isinstance(sys_mon_res['msg'], list):
-                    if len(sys_mon_res['msg']) == 0:
-                        resp['text'] = 'Отсутствуют открытые туннели'
-                        return resp
-                    resp['text'] = '\n\n'.join(
-                        ['\n'.join([f"url: {i['url']}",
-                                    f"port: {i['port']}",
-                                    f"protocol: {i['protocol']}",
-                                    f"forwards_to: {i['forwards_to']}"]) for i in sys_mon_res['msg']
-                         ]
-                    )
-        except ConfigAttributeNotFoundError:
-            logger.exception('Config attribute not found')
-            return Loader.error_resp("I can't do this yet😔")
-        except EmptySoupDataError:
-            logger.exception('Empty soup data')
-            return Loader.error_resp()
-        except BadResponseStatusError:
-            logger.exception('Bad response status')
-            return Loader.error_resp()
-        except WrongParameterCountError:
-            logger.exception('Wrong parameter count')
-            return Loader.error_resp('Wrong parameter count')
-        except WrongParameterValueError as e:
-            logger.exception('Wrong parameter value')
-            return Loader.error_resp(f'Wrong parameter value: {e.val}')
-        except requests.exceptions.ConnectionError:
-            logger.exception(f"Error connection to {check_config_attribute('system-monitor')}")
-            return Loader.error_resp(f"Error connection to {check_config_attribute('system-monitor')}")
-        else:
+                raise TBotException(code=6, return_message=f'Wrong parameter value: {action}')
+            data = InternetLoader.regular_request(url + f'ngrok_{action}')
+            sys_mon_res = json.loads(data.text)
+            if isinstance(sys_mon_res['msg'], str):
+                resp['text'] = sys_mon_res['msg']
+            elif isinstance(sys_mon_res['msg'], list):
+                if len(sys_mon_res['msg']) == 0:
+                    resp['text'] = 'Отсутствуют открытые туннели'
+                    return resp
+                resp['text'] = '\n\n'.join(
+                    ['\n'.join([f"url: {i['url']}",
+                                f"port: {i['port']}",
+                                f"protocol: {i['protocol']}",
+                                f"forwards_to: {i['forwards_to']}"]) for i in sys_mon_res['msg']
+                     ]
+                )
             return resp
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @check_permission(needed_level='root')
     def ngrok_db(self, text: str, **kwargs) -> dict:
@@ -805,7 +698,7 @@ class InternetLoader(Loader):
             command = text.split(' ')
             valid_actions = ['start', 'stop', 'restart']
             if len(command) > 2:
-                raise WrongParameterCountError(len(command))
+                raise TBotException(code=6, return_message=f'Wrong parameters count: {len(command)}')
             if len(command) == 1:
                 resp['text'] = 'Выберите действие'
                 resp['markup'] = custom_markup('ngrok_db',
@@ -814,32 +707,15 @@ class InternetLoader(Loader):
                 return resp
             action = command[1].lower()
             if action not in valid_actions:
-                raise WrongParameterValueError(action)
-            data = requests.get(url + f'ngrok_db_{action}')
-            if data.status_code != 200:
-                raise BadResponseStatusError(data.status_code)
-            else:
-                sys_mon_res = json.loads(data.text)
-                resp['text'] = sys_mon_res['msg']
-                return resp
-        except ConfigAttributeNotFoundError:
-            logger.exception('Config attribute not found')
-            return Loader.error_resp("I can't do this yet😔")
-        except EmptySoupDataError:
-            logger.exception('Empty soup data')
-            return Loader.error_resp()
-        except BadResponseStatusError:
-            logger.exception('Bad response status')
-            return Loader.error_resp()
-        except WrongParameterCountError:
-            logger.exception('Wrong parameter count')
-            return Loader.error_resp('Wrong parameter count')
-        except WrongParameterValueError as e:
-            logger.exception('Wrong parameter value')
-            return Loader.error_resp(f'Wrong parameter value: {e.val}')
-        except requests.exceptions.ConnectionError:
-            logger.exception(f"Error connection to {check_config_attribute('system-monitor')}")
-            return Loader.error_resp(f"Error connection to {check_config_attribute('system-monitor')}")
+                raise TBotException(code=6, return_message=f'Wrong parameter value: {action}')
+            data = InternetLoader.regular_request(url + f'ngrok_db_{action}')
+            sys_mon_res = json.loads(data.text)
+            resp['text'] = sys_mon_res['msg']
+            return resp
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @check_permission(needed_level='root')
     def tbot_restart(self, **kwargs) -> dict:
@@ -850,18 +726,11 @@ class InternetLoader(Loader):
         """
         try:
             url = check_config_attribute('system-monitor')
-            data = requests.get(url + f'tbot_restart')
-            if data.status_code != 200:
-                raise BadResponseStatusError(data.status_code)
-        except ConfigAttributeNotFoundError:
-            logger.exception('Config attribute not found')
-            return Loader.error_resp("I can't do this yet😔")
-        except BadResponseStatusError:
-            logger.exception('Bad response status')
-            return Loader.error_resp()
-        except requests.exceptions.ConnectionError:
-            logger.exception(f"Error connection to {check_config_attribute('system-monitor')}")
-            return Loader.error_resp(f"Error connection to {check_config_attribute('system-monitor')}")
+            InternetLoader.regular_request(url + f'tbot_restart')
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @check_permission(needed_level='root')
     def system_restart(self, text: str, **kwargs) -> dict:
@@ -880,30 +749,15 @@ class InternetLoader(Loader):
                 return resp
             elif len(cmd) == 2:
                 if cmd[1].lower() == 'allow':
-                    data = requests.get(url + f'system_restart')
-                    if data.status_code != 200:
-                        raise BadResponseStatusError(data.status_code)
+                    InternetLoader.regular_request(url + f'system_restart')
                 else:
-                    raise WrongParameterValueError(cmd[1].lower())
+                    raise TBotException(code=6, return_message=f'Wrong parameter value: {cmd[1].lower()}')
             else:
-                raise WrongParameterCountError(len(cmd))
-        except ConfigAttributeNotFoundError:
-            logger.exception('Config attribute not found')
-            return Loader.error_resp("I can't do this yet😔")
-        except BadResponseStatusError:
-            logger.exception('Bad response status')
-            return Loader.error_resp()
-        except WrongParameterCountError:
-            logger.exception('Wrong parameters count')
-            resp['text'] = 'Wrong parameters count'
-            return resp
-        except WrongParameterValueError:
-            logger.exception('Wrong parameter')
-            resp['text'] = 'Wrong parameter'
-            return resp
-        except requests.exceptions.ConnectionError:
-            logger.exception(f"Error connection to {check_config_attribute('system-monitor')}")
-            return Loader.error_resp(f"Error connection to {check_config_attribute('system-monitor')}")
+                raise TBotException(code=6, return_message=f'Wrong parameters count: {len(cmd)}')
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @check_permission(needed_level='root')
     def systemctl(self, text: str, **kwargs) -> dict:
@@ -916,34 +770,21 @@ class InternetLoader(Loader):
             url = check_config_attribute('system-monitor')
             cmd = text.split()
             if len(cmd) != 3:
-                raise WrongParameterCountError(len(cmd))
+                raise TBotException(code=6, return_message=f'Wrong parameters count: {len(cmd)}')
             action = cmd[1].lower()
             service = cmd[2].lower()
             if action not in config.Systemctl.VALID_ACTIONS or service not in config.Systemctl.VALID_SERVICES:
-                raise WrongParameterValueError(f'{action} + {service}')
-            data = requests.get(url + f'systemctl?action={action}&service={service}')
-            if data.status_code != 200:
-                raise BadResponseStatusError(data.status_code)
+                raise TBotException(code=6, return_message=f'Wrong parameter value: {f"{action} + {service}"}')
+            data = InternetLoader.regular_request(url + f'systemctl?action={action}&service={service}')
             text = json.loads(data.text)
             resp = {
                 'text': text.get('msg', 'Complete')
             }
             return resp
-        except ConfigAttributeNotFoundError:
-            logger.exception('Config attribute not found')
-            return Loader.error_resp("I can't do this yet😔")
-        except BadResponseStatusError:
-            logger.exception('Bad response status')
-            return Loader.error_resp()
-        except WrongParameterCountError:
-            logger.exception('Wrong count of command')
-            return Loader.error_resp()
-        except WrongParameterValueError as e:
-            logger.exception(f'Wrong value: {e.val}')
-            return Loader.error_resp()
-        except requests.exceptions.ConnectionError:
-            logger.exception(f"Error connection to {check_config_attribute('system-monitor')}")
-            return Loader.error_resp(f"Error connection to {check_config_attribute('system-monitor')}")
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @check_permission(needed_level='root')
     def allow_connection(self, **kwargs) -> dict:
@@ -953,21 +794,13 @@ class InternetLoader(Loader):
         """
         try:
             url = check_config_attribute('system-monitor')
-            data = requests.get(url + f'allow_connection')
-            if data.status_code != 200:
-                raise BadResponseStatusError(data.status_code)
-            else:
-                text = json.loads(data.text)
-                resp = {
-                    'text': text.get('msg', 'Complete')
-                }
-                return resp
-        except ConfigAttributeNotFoundError:
-            logger.exception('Config attribute not found')
-            return Loader.error_resp("I can't do this yet😔")
-        except BadResponseStatusError:
-            logger.exception('Bad response status')
-            return Loader.error_resp()
-        except requests.exceptions.ConnectionError:
-            logger.exception(f"Error connection to {check_config_attribute('system-monitor')}")
-            return Loader.error_resp(f"Error connection to {check_config_attribute('system-monitor')}")
+            data = InternetLoader.regular_request(url + f'allow_connection')
+            text = json.loads(data.text)
+            resp = {
+                'text': text.get('msg', 'Complete')
+            }
+            return resp
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()

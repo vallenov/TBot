@@ -1,4 +1,5 @@
 import requests
+
 from loaders.loader import Loader
 import config
 from loggers import get_logger
@@ -25,10 +26,10 @@ def send_dev_message(data: dict, by: str = 'mail') -> dict:
     while current_try < config.MAX_TRY:
         current_try += 1
         try:
-            res = requests.post(config.MAIL.get('message_server_address') + '/' + by, data=data,
+            res = requests.post(f"{config.MAIL.get('message_server_address')}/'{by}", data=data,
                                 headers={'Connection': 'close'})
-        except Exception as _ex:
-            logger.exception(_ex)
+        except Exception as e:
+            logger.exception(e)
         else:
             logger.info('Send successful')
             resp['res'] = res.text

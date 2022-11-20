@@ -4,9 +4,7 @@ import string
 import config
 
 from loggers import get_logger
-from exceptions import (
-    ConfigAttributeNotFoundError,
-)
+from exceptions import TBotException
 
 logger = get_logger(__name__)
 
@@ -88,7 +86,7 @@ def check_config_attribute(attr):
     if config.LINKS.get(attr, None):
         return config.LINKS[attr]
     else:
-        raise ConfigAttributeNotFoundError(attr)
+        raise TBotException(code=4, return_message="I can't do this yet😔", message=f'Attribute {attr} not found')
 
 
 def cut_commands(text: str, count_of_commands):

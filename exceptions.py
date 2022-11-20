@@ -38,7 +38,7 @@ class TBotException(Exception):
             send_dev_message(
                 data=dict(
                     subject=self.context['error_type'],
-                    text=f"Message: {self.context['message']}\nTraceback: {trace}"
+                    text=f"Message: {self.context.get('message')}\nTraceback: {trace}"
                 )
             )
 
