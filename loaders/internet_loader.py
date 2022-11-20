@@ -46,15 +46,14 @@ class InternetLoader(Loader):
             else:
                 logger.error(f'Bad status of response: {resp.status_code}')
                 raise TBotException(code=1, message=f'Bad response status: {resp.status_code}')
-        except TBotException as e:
-            logger.exception(e.context)
-            e.send_error(traceback.format_exc())
+        except TBotException:
+            raise
         except requests.exceptions.ConnectionError:
-            logger.exception(f"Error connection to {check_config_attribute('system-monitor')}")
-            raise TBotException(code=1, message='Connection Error')
-        except Exception as e:
-            logger.exception(f'Exception in {__name__}:\n{e}')
-            raise TBotException(code=100)
+            raise TBotException(code=1,
+                                message=f"Error connection to {check_config_attribute('system-monitor')}",
+                                send=True)
+        except Exception:
+            raise TBotException(code=100, message=f'Exception in {__name__}', send=True)
 
     @staticmethod
     def site_to_lxml(url: str) -> BeautifulSoup or None:
@@ -70,8 +69,6 @@ class InternetLoader(Loader):
                 raise TBotException(code=1, message=f'Bad soup parsing {url}')
             return soup
         except TBotException as e:
-            logger.exception(e.context)
-            e.send_error(traceback.format_exc())
             raise
 
     @check_permission()
@@ -637,7 +634,7 @@ class InternetLoader(Loader):
             url = check_config_attribute('system-monitor')
             data = InternetLoader.regular_request(url + 'ip')
             data_dict = json.loads(data.text)
-            resp['text'] = data_dict.get('ip', 'Something wrong')
+            resp['text'] = data_dict.get('ip')
             return resp
         except TBotException as e:
             logger.exception(e.context)
@@ -752,9 +749,7 @@ class InternetLoader(Loader):
                 return resp
             elif len(cmd) == 2:
                 if cmd[1].lower() == 'allow':
-                    data = requests.get(url + f'system_restart')
-                    if data.status_code != 200:
-                        raise TBotException(code=1, message=f'Bad response status: {data.status_code}')
+                    InternetLoader.regular_request(url + f'system_restart')
                 else:
                     raise TBotException(code=6, message=f'Wrong parameter value: {cmd[1].lower()}')
             else:
@@ -763,9 +758,6 @@ class InternetLoader(Loader):
             logger.exception(e.context)
             e.send_error(traceback.format_exc())
             return e.return_message()
-        except requests.exceptions.ConnectionError:
-            logger.exception(f"Error connection to {check_config_attribute('system-monitor')}")
-            return Loader.error_resp(f"Error connection to {check_config_attribute('system-monitor')}")
 
     @check_permission(needed_level='root')
     def systemctl(self, text: str, **kwargs) -> dict:
@@ -783,9 +775,7 @@ class InternetLoader(Loader):
             service = cmd[2].lower()
             if action not in config.Systemctl.VALID_ACTIONS or service not in config.Systemctl.VALID_SERVICES:
                 raise TBotException(code=6, message=f'Wrong parameter value: {f"{action} + {service}"}')
-            data = requests.get(url + f'systemctl?action={action}&service={service}')
-            if data.status_code != 200:
-                raise TBotException(code=1, message=f'Bad response status: {data.status_code}')
+            data = InternetLoader.regular_request(url + f'systemctl?action={action}&service={service}')
             text = json.loads(data.text)
             resp = {
                 'text': text.get('msg', 'Complete')
@@ -795,9 +785,6 @@ class InternetLoader(Loader):
             logger.exception(e.context)
             e.send_error(traceback.format_exc())
             return e.return_message()
-        except requests.exceptions.ConnectionError:
-            logger.exception(f"Error connection to {check_config_attribute('system-monitor')}")
-            return Loader.error_resp(f"Error connection to {check_config_attribute('system-monitor')}")
 
     @check_permission(needed_level='root')
     def allow_connection(self, **kwargs) -> dict:
@@ -807,19 +794,13 @@ class InternetLoader(Loader):
         """
         try:
             url = check_config_attribute('system-monitor')
-            data = requests.get(url + f'allow_connection')
-            if data.status_code != 200:
-                raise TBotException(code=1, message=f'Bad response status: {data.status_code}')
-            else:
-                text = json.loads(data.text)
-                resp = {
-                    'text': text.get('msg', 'Complete')
-                }
-                return resp
+            data = InternetLoader.regular_request(url + f'allow_connection')
+            text = json.loads(data.text)
+            resp = {
+                'text': text.get('msg', 'Complete')
+            }
+            return resp
         except TBotException as e:
             logger.exception(e.context)
             e.send_error(traceback.format_exc())
             return e.return_message()
-        except requests.exceptions.ConnectionError:
-            logger.exception(f"Error connection to {check_config_attribute('system-monitor')}")
-            return Loader.error_resp(f"Error connection to {check_config_attribute('system-monitor')}")
