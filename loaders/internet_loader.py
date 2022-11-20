@@ -654,7 +654,7 @@ class InternetLoader(Loader):
             command = text.split()
             valid_actions = ['start', 'stop', 'restart', 'tunnels']
             if len(command) > 2:
-                raise TBotException(code=6, message=f'Wrong parameter count: {len(command)}')
+                raise TBotException(code=6, return_message=f'Wrong parameter count: {len(command)}')
             if len(command) == 1:
                 resp['text'] = 'Выберите действие'
                 resp['markup'] = custom_markup('ngrok',
@@ -663,7 +663,7 @@ class InternetLoader(Loader):
                 return resp
             action = command[1].lower()
             if action not in valid_actions:
-                raise TBotException(code=6, message=f'Wrong parameter value: {action}')
+                raise TBotException(code=6, return_message=f'Wrong parameter value: {action}')
             data = InternetLoader.regular_request(url + f'ngrok_{action}')
             sys_mon_res = json.loads(data.text)
             if isinstance(sys_mon_res['msg'], str):
@@ -698,7 +698,7 @@ class InternetLoader(Loader):
             command = text.split(' ')
             valid_actions = ['start', 'stop', 'restart']
             if len(command) > 2:
-                raise TBotException(code=6, message=f'Wrong parameter count: {len(command)}')
+                raise TBotException(code=6, return_message=f'Wrong parameter count: {len(command)}')
             if len(command) == 1:
                 resp['text'] = 'Выберите действие'
                 resp['markup'] = custom_markup('ngrok_db',
@@ -707,7 +707,7 @@ class InternetLoader(Loader):
                 return resp
             action = command[1].lower()
             if action not in valid_actions:
-                raise TBotException(code=6, message=f'Wrong parameter value: {action}')
+                raise TBotException(code=6, return_message=f'Wrong parameter value: {action}')
             data = InternetLoader.regular_request(url + f'ngrok_db_{action}')
             sys_mon_res = json.loads(data.text)
             resp['text'] = sys_mon_res['msg']
@@ -751,9 +751,9 @@ class InternetLoader(Loader):
                 if cmd[1].lower() == 'allow':
                     InternetLoader.regular_request(url + f'system_restart')
                 else:
-                    raise TBotException(code=6, message=f'Wrong parameter value: {cmd[1].lower()}')
+                    raise TBotException(code=6, return_message=f'Wrong parameter value: {cmd[1].lower()}')
             else:
-                raise TBotException(code=6, message=f'Wrong parameter count: {len(cmd)}')
+                raise TBotException(code=6, return_message=f'Wrong parameter count: {len(cmd)}')
         except TBotException as e:
             logger.exception(e.context)
             e.send_error(traceback.format_exc())
@@ -770,11 +770,11 @@ class InternetLoader(Loader):
             url = check_config_attribute('system-monitor')
             cmd = text.split()
             if len(cmd) != 3:
-                raise TBotException(code=6, message=f'Wrong parameter count: {len(cmd)}')
+                raise TBotException(code=6, return_message=f'Wrong parameter count: {len(cmd)}')
             action = cmd[1].lower()
             service = cmd[2].lower()
             if action not in config.Systemctl.VALID_ACTIONS or service not in config.Systemctl.VALID_SERVICES:
-                raise TBotException(code=6, message=f'Wrong parameter value: {f"{action} + {service}"}')
+                raise TBotException(code=6, return_message=f'Wrong parameter value: {f"{action} + {service}"}')
             data = InternetLoader.regular_request(url + f'systemctl?action={action}&service={service}')
             text = json.loads(data.text)
             resp = {
