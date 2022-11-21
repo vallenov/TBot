@@ -15,9 +15,8 @@ def send_dev_message(data: dict, by: str = 'mail') -> dict:
     """
     resp = {}
     if by not in ('mail', 'telegram'):
-        Loader.error_resp(f'Wrong parameter by ({by}) in send_dev_message')
-        logger.error(resp['descr'])
-        return resp
+        logger.error(f'Wrong parameter by ({by}) in send_dev_message')
+        return Loader.error_resp(f'Wrong parameter by ({by}) in send_dev_message')
     if not data.get('to'):
         if by == 'mail':
             data.update({'to': config.MAIL.get('address')})
