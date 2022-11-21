@@ -477,36 +477,41 @@ class DBLoader(Loader):
         resp = {'text': ''}
         lst = text.split()
         lst = [word.lower() for word in lst]
-        if config.USE_DB:
-            if len(lst) == 1:
-                resp['text'] = 'Выберите интервал'
-                resp['markup'] = custom_markup('statistic',
-                                               ['Today', 'Week', 'Month', 'All'],
-                                               '📋')
+        try:
+            if config.USE_DB:
+                if len(lst) == 1:
+                    resp['text'] = 'Выберите интервал'
+                    resp['markup'] = custom_markup('statistic',
+                                                   ['Today', 'Week', 'Month', 'All'],
+                                                   '📋')
+                    return resp
+                interval_map = {'today': 1,
+                                'week': 7,
+                                'month': 30,
+                                'all': 100000}
+                if lst[1] not in interval_map.keys():
+                    raise TBotException(code=6, return_message=f'Wrong parameter value: {lst[1]}')
+                if lst[1] != 'today':
+                    resp['photo'] = DBLoader.get_graph(lst[1])
+                interval = datetime.datetime.now() - datetime.timedelta(days=interval_map[lst[1]])
+                to_sort = md.LogRequests.query \
+                    .join(md.Users, md.LogRequests.chat_id == md.Users.chat_id) \
+                    .filter(md.LogRequests.date_ins >= interval) \
+                    .with_entities(func.count(md.Users.chat_id), md.Users.login, md.Users.first_name) \
+                    .group_by(md.Users.chat_id) \
+                    .all()
+                for index_i in range(len(to_sort)):
+                    for index_j in range(len(to_sort) - 1):
+                        if index_i == index_j:
+                            continue
+                        elif to_sort[index_j][0] < to_sort[index_j + 1][0]:
+                            to_sort[index_j], to_sort[index_j + 1] = to_sort[index_j + 1], to_sort[index_j]
+                for cur in to_sort:
+                    resp['text'] += ' '.join([str(i) for i in cur]) + '\n'
                 return resp
-            interval_map = {'today': 1,
-                            'week': 7,
-                            'month': 30,
-                            'all': 100000}
-            if lst[1] not in interval_map.keys():
-                return Loader.error_resp('Interval is not valid')
-            if lst[1] != 'today':
-                resp['photo'] = DBLoader.get_graph(lst[1])
-            interval = datetime.datetime.now() - datetime.timedelta(days=interval_map[lst[1]])
-            to_sort = md.LogRequests.query \
-                .join(md.Users, md.LogRequests.chat_id == md.Users.chat_id) \
-                .filter(md.LogRequests.date_ins >= interval) \
-                .with_entities(func.count(md.Users.chat_id), md.Users.login, md.Users.first_name) \
-                .group_by(md.Users.chat_id) \
-                .all()
-            for index_i in range(len(to_sort)):
-                for index_j in range(len(to_sort) - 1):
-                    if index_i == index_j:
-                        continue
-                    elif to_sort[index_j][0] < to_sort[index_j + 1][0]:
-                        to_sort[index_j], to_sort[index_j + 1] = to_sort[index_j + 1], to_sort[index_j]
-            for cur in to_sort:
-                resp['text'] += ' '.join([str(i) for i in cur]) + '\n'
-            return resp
-        else:
-            return Loader.error_resp('DB is not used')
+            else:
+                raise TBotException(code=3, return_message='DB does not using')
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
