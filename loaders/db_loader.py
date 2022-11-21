@@ -229,25 +229,30 @@ class DBLoader(Loader):
         users = dict()
         users[0] = ['chat_id', 'login', 'first_name', 'privileges', 'description']
         max_rows_lens = [0] + list(map(lambda x: len(x), users[0]))
-        for key, value in Loader.users.items():
-            if value['value'] > Loader.privileges_levels['trusted']:
-                continue
-            users[cnt] = [key, value['login'], value['first_name'], str(value['value']), value['description']]
-            cur_rows_lens = list(map(lambda x: 0 if not x else len(x), users[cnt]))
-            for i in range(1, 6):
-                max_rows_lens[i] = cur_rows_lens[i-1] if cur_rows_lens[i-1] > max_rows_lens[i] else max_rows_lens[i]
-            cnt += 1
-        if not len(users):
-            resp['text'] = Loader.error_resp('Users not found')
-        else:
-            for key, value in users.items():
-                tmp = ''
-                for usr in range(len(users[key])):
-                    item = users[key][usr] or 'None'
-                    tmp += item.center(max_rows_lens[usr+1] + 3)
-                users[key] = tmp
-            resp['text'] = dict_to_str(users, '')
-        return resp
+        try:
+            for key, value in Loader.users.items():
+                if value['value'] > Loader.privileges_levels['trusted']:
+                    continue
+                users[cnt] = [key, value['login'], value['first_name'], str(value['value']), value['description']]
+                cur_rows_lens = list(map(lambda x: 0 if not x else len(x), users[cnt]))
+                for i in range(1, 6):
+                    max_rows_lens[i] = cur_rows_lens[i-1] if cur_rows_lens[i-1] > max_rows_lens[i] else max_rows_lens[i]
+                cnt += 1
+            if not len(users):
+                raise TBotException(code=3, return_message='Users not found')
+            else:
+                for key, value in users.items():
+                    tmp = ''
+                    for usr in range(len(users[key])):
+                        item = users[key][usr] or 'None'
+                        tmp += item.center(max_rows_lens[usr+1] + 3)
+                    users[key] = tmp
+                resp['text'] = dict_to_str(users, '')
+            return resp
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @check_permission(needed_level='root')
     def send_other(self, text: str, **kwargs):
@@ -258,17 +263,22 @@ class DBLoader(Loader):
         """
         resp = {}
         lst = text.split()
-        if len(lst) < 3:
-            return Loader.error_resp('Format is not valid')
         try:
-            chat_id = int(lst[1])
-        except ValueError:
-            return Loader.error_resp('Chat_id format is not valid')
-        if str(chat_id) not in Loader.users.keys():
-            return Loader.error_resp('User not found')
-        resp['chat_id'] = chat_id
-        resp['text'] = cut_commands(text, 2)
-        return resp
+            if len(lst) < 3:
+                raise TBotException(code=6, return_message=f'Wrong parameters count: {len(lst)}')
+            try:
+                chat_id = int(lst[1])
+            except ValueError:
+                raise TBotException(code=6, return_message=f'Wrong parameter value: {lst[1]}')
+            if str(chat_id) not in Loader.users.keys():
+                raise TBotException(code=3, return_message=f'User {lst[1]} not found')
+            resp['chat_id'] = chat_id
+            resp['text'] = cut_commands(text, 2)
+            return resp
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @check_permission(needed_level='root')
     def send_to_all_users(self, text: str, **kwargs):
