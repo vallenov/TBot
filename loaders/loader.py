@@ -2,7 +2,6 @@ from functools import wraps
 from sqlalchemy import exc
 
 import config
-from send_service import send_dev_message
 from loggers import get_logger
 from models import LibPrivileges
 
@@ -55,7 +54,6 @@ class Loader:
         except exc.DatabaseError as e:
             logger.exception(f'DB connection error: {e}')
             privileges_levels = config.PRIVILEGES_LEVELS
-            send_dev_message(dict(subject='DB connection error'))
             exit()
     else:
         privileges_levels = config.PRIVILEGES_LEVELS
