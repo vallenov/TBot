@@ -181,7 +181,7 @@ class InternetLoader(Loader):
         try:
             if len(lst) > 2:
                 raise TBotException(code=6, return_message=f'Wrong parameters count: {len(lst)}')
-            else:
+            elif len(lst) == 2:
                 try:
                     count = int(lst[1])
                 except ValueError:
