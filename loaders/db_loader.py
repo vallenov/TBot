@@ -289,17 +289,22 @@ class DBLoader(Loader):
         """
         resp = {}
         lst = text.split()
-        if len(lst) < 2:
-            return Loader.error_resp('Not enough params')
-        resp['chat_id'] = []
-        for chat_id in Loader.users.keys():
-            try:
-                chat_id = int(chat_id)
-            except ValueError:
-                logger.exception(f'Chat {chat_id} is not convert to int')
-            resp['chat_id'].append(chat_id)
-        resp['text'] = cut_commands(text, 1)
-        return resp
+        try:
+            if len(lst) < 2:
+                raise TBotException(code=6, return_message=f'Wrong parameters count: {len(lst)}')
+            resp['chat_id'] = []
+            for chat_id in Loader.users.keys():
+                try:
+                    chat_id = int(chat_id)
+                except ValueError:
+                    logger.exception(f'Chat {chat_id} is not convert to int')
+                resp['chat_id'].append(chat_id)
+            resp['text'] = cut_commands(text, 1)
+            return resp
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @check_permission()
     def send_to_admin(self, text: str, **kwargs):
@@ -310,12 +315,17 @@ class DBLoader(Loader):
         """
         resp = {}
         lst = text.split()
-        if len(lst) < 2:
-            return Loader.error_resp('Format is not valid')
-        resp['chat_id'] = int(config.USERS['root_id']['chat_id'])
-        resp['text'] = str(f"Message from {Loader.users[kwargs['chat_id']]['first_name'] or kwargs['chat_id']}\n"
-                           f"Text: {cut_commands(text, 1)}")
-        return resp
+        try:
+            if len(lst) < 2:
+                raise TBotException(code=6, return_message=f'Wrong parameters count: {len(lst)}')
+            resp['chat_id'] = int(config.USERS['root_id']['chat_id'])
+            resp['text'] = str(f"Message from {Loader.users[kwargs['chat_id']]['first_name'] or kwargs['chat_id']}\n"
+                               f"Text: {cut_commands(text, 1)}")
+            return resp
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @staticmethod
     def _get_random_poem():
@@ -337,25 +347,30 @@ class DBLoader(Loader):
         :return: poesy string
         """
         resp = {}
-        if config.USE_DB:
-            lst = text.split()
-            if len(lst) == 1:
-                poem = self._get_random_poem()
-                if not poem:
-                    Loader.error_resp('Something wrong')
-            else:
-                search_string = ' '.join(lst[1:])
-                poems = md.Poems.query.filter(
-                    md.Poems.author.like(f'%{search_string}%') | md.Poems.name.like(f'%{search_string}%')
-                ).all()
-                if poems:
-                    poem = random.choice(poems)
+        try:
+            if config.USE_DB:
+                lst = text.split()
+                if len(lst) == 1:
+                    poem = self._get_random_poem()
+                    if not poem:
+                        raise TBotException(code=3, message='Poem not found')
                 else:
-                    return Loader.error_resp('Poem not found')
-            resp['text'] = f"{poem.author}\n\n{poem.name}\n\n{poem.text}"
-            return resp
-        else:
-            return Loader.error_resp('DB does not using')
+                    search_string = ' '.join(lst[1:])
+                    poems = md.Poems.query.filter(
+                        md.Poems.author.like(f'%{search_string}%') | md.Poems.name.like(f'%{search_string}%')
+                    ).all()
+                    if poems:
+                        poem = random.choice(poems)
+                    else:
+                        raise TBotException(code=3, message='Poem not found')
+                resp['text'] = f"{poem.author}\n\n{poem.name}\n\n{poem.text}"
+                return resp
+            else:
+                raise TBotException(code=3, return_message='DB does not using')
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @check_permission()
     def poem_divination(self, text: str, **kwargs):
