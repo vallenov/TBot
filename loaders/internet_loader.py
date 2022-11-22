@@ -10,7 +10,7 @@ import traceback
 import config
 
 from loaders.loader import Loader, check_permission
-from graph import Graph
+from graph import Graph, BaseGraphInfo
 from markup import custom_markup
 from helpers import dict_to_str, is_phone_number, check_config_attribute
 from loggers import get_logger
@@ -126,10 +126,10 @@ class InternetLoader(Loader):
                 url += '&start_date={0}&end_date={0}'.format(str(datetime.datetime.now())[:10])
                 data = InternetLoader.regular_request(url)
                 weather = json.loads(data.text)
-                resp['photo'] = Graph.get_weather_graph(
-                    [time[11:] for time in weather['hourly']['time']],
-                    weather['hourly']['temperature_2m']
-                )
+                time = [time[11:] for time in weather['hourly']['time']]
+                temperature = weather['hourly']['temperature_2m']
+                bgi = BaseGraphInfo('weather', 'Date', 'Temperature (°C)', time, temperature)
+                resp['photo'] = Graph.get_base_graph(bgi)
                 resp['text'] = 'Погода на сутки'
                 return resp
             else:
