@@ -179,7 +179,9 @@ class InternetLoader(Loader):
         count = 5
         lst = text.split()
         try:
-            if len(lst) > 1:
+            if len(lst) > 2:
+                raise TBotException(code=6, return_message=f'Wrong parameters count: {len(lst)}')
+            elif len(lst) == 2:
                 try:
                     count = int(lst[1])
                 except ValueError:

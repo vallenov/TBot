@@ -229,25 +229,30 @@ class DBLoader(Loader):
         users = dict()
         users[0] = ['chat_id', 'login', 'first_name', 'privileges', 'description']
         max_rows_lens = [0] + list(map(lambda x: len(x), users[0]))
-        for key, value in Loader.users.items():
-            if value['value'] > Loader.privileges_levels['trusted']:
-                continue
-            users[cnt] = [key, value['login'], value['first_name'], str(value['value']), value['description']]
-            cur_rows_lens = list(map(lambda x: 0 if not x else len(x), users[cnt]))
-            for i in range(1, 6):
-                max_rows_lens[i] = cur_rows_lens[i-1] if cur_rows_lens[i-1] > max_rows_lens[i] else max_rows_lens[i]
-            cnt += 1
-        if not len(users):
-            resp['text'] = Loader.error_resp('Users not found')
-        else:
-            for key, value in users.items():
-                tmp = ''
-                for usr in range(len(users[key])):
-                    item = users[key][usr] or 'None'
-                    tmp += item.center(max_rows_lens[usr+1] + 3)
-                users[key] = tmp
-            resp['text'] = dict_to_str(users, '')
-        return resp
+        try:
+            for key, value in Loader.users.items():
+                if value['value'] > Loader.privileges_levels['trusted']:
+                    continue
+                users[cnt] = [key, value['login'], value['first_name'], str(value['value']), value['description']]
+                cur_rows_lens = list(map(lambda x: 0 if not x else len(x), users[cnt]))
+                for i in range(1, 6):
+                    max_rows_lens[i] = cur_rows_lens[i-1] if cur_rows_lens[i-1] > max_rows_lens[i] else max_rows_lens[i]
+                cnt += 1
+            if not len(users):
+                raise TBotException(code=3, return_message='Users not found')
+            else:
+                for key, value in users.items():
+                    tmp = ''
+                    for usr in range(len(users[key])):
+                        item = users[key][usr] or 'None'
+                        tmp += item.center(max_rows_lens[usr+1] + 3)
+                    users[key] = tmp
+                resp['text'] = dict_to_str(users, '')
+            return resp
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @check_permission(needed_level='root')
     def send_other(self, text: str, **kwargs):
@@ -258,17 +263,22 @@ class DBLoader(Loader):
         """
         resp = {}
         lst = text.split()
-        if len(lst) < 3:
-            return Loader.error_resp('Format is not valid')
         try:
-            chat_id = int(lst[1])
-        except ValueError:
-            return Loader.error_resp('Chat_id format is not valid')
-        if str(chat_id) not in Loader.users.keys():
-            return Loader.error_resp('User not found')
-        resp['chat_id'] = chat_id
-        resp['text'] = cut_commands(text, 2)
-        return resp
+            if len(lst) < 3:
+                raise TBotException(code=6, return_message=f'Wrong parameters count: {len(lst)}')
+            try:
+                chat_id = int(lst[1])
+            except ValueError:
+                raise TBotException(code=6, return_message=f'Wrong parameter value: {lst[1]}')
+            if str(chat_id) not in Loader.users.keys():
+                raise TBotException(code=3, return_message=f'User {lst[1]} not found')
+            resp['chat_id'] = chat_id
+            resp['text'] = cut_commands(text, 2)
+            return resp
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @check_permission(needed_level='root')
     def send_to_all_users(self, text: str, **kwargs):
@@ -279,17 +289,22 @@ class DBLoader(Loader):
         """
         resp = {}
         lst = text.split()
-        if len(lst) < 2:
-            return Loader.error_resp('Not enough params')
-        resp['chat_id'] = []
-        for chat_id in Loader.users.keys():
-            try:
-                chat_id = int(chat_id)
-            except ValueError:
-                logger.exception(f'Chat {chat_id} is not convert to int')
-            resp['chat_id'].append(chat_id)
-        resp['text'] = cut_commands(text, 1)
-        return resp
+        try:
+            if len(lst) < 2:
+                raise TBotException(code=6, return_message=f'Wrong parameters count: {len(lst)}')
+            resp['chat_id'] = []
+            for chat_id in Loader.users.keys():
+                try:
+                    chat_id = int(chat_id)
+                except ValueError:
+                    logger.exception(f'Chat {chat_id} is not convert to int')
+                resp['chat_id'].append(chat_id)
+            resp['text'] = cut_commands(text, 1)
+            return resp
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @check_permission()
     def send_to_admin(self, text: str, **kwargs):
@@ -300,12 +315,17 @@ class DBLoader(Loader):
         """
         resp = {}
         lst = text.split()
-        if len(lst) < 2:
-            return Loader.error_resp('Format is not valid')
-        resp['chat_id'] = int(config.USERS['root_id']['chat_id'])
-        resp['text'] = str(f"Message from {Loader.users[kwargs['chat_id']]['first_name'] or kwargs['chat_id']}\n"
-                           f"Text: {cut_commands(text, 1)}")
-        return resp
+        try:
+            if len(lst) < 2:
+                raise TBotException(code=6, return_message=f'Wrong parameters count: {len(lst)}')
+            resp['chat_id'] = int(config.USERS['root_id']['chat_id'])
+            resp['text'] = str(f"Message from {Loader.users[kwargs['chat_id']]['first_name'] or kwargs['chat_id']}\n"
+                               f"Text: {cut_commands(text, 1)}")
+            return resp
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @staticmethod
     def _get_random_poem():
@@ -327,25 +347,30 @@ class DBLoader(Loader):
         :return: poesy string
         """
         resp = {}
-        if config.USE_DB:
-            lst = text.split()
-            if len(lst) == 1:
-                poem = self._get_random_poem()
-                if not poem:
-                    Loader.error_resp('Something wrong')
-            else:
-                search_string = ' '.join(lst[1:])
-                poems = md.Poems.query.filter(
-                    md.Poems.author.like(f'%{search_string}%') | md.Poems.name.like(f'%{search_string}%')
-                ).all()
-                if poems:
-                    poem = random.choice(poems)
+        try:
+            if config.USE_DB:
+                lst = text.split()
+                if len(lst) == 1:
+                    poem = self._get_random_poem()
+                    if not poem:
+                        raise TBotException(code=3, message='Poem not found')
                 else:
-                    return Loader.error_resp('Poem not found')
-            resp['text'] = f"{poem.author}\n\n{poem.name}\n\n{poem.text}"
-            return resp
-        else:
-            return Loader.error_resp('DB does not using')
+                    search_string = ' '.join(lst[1:])
+                    poems = md.Poems.query.filter(
+                        md.Poems.author.like(f'%{search_string}%') | md.Poems.name.like(f'%{search_string}%')
+                    ).all()
+                    if poems:
+                        poem = random.choice(poems)
+                    else:
+                        raise TBotException(code=3, message='Poem not found')
+                resp['text'] = f"{poem.author}\n\n{poem.name}\n\n{poem.text}"
+                return resp
+            else:
+                raise TBotException(code=3, return_message='DB does not using')
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @check_permission()
     def poem_divination(self, text: str, **kwargs):
@@ -452,36 +477,41 @@ class DBLoader(Loader):
         resp = {'text': ''}
         lst = text.split()
         lst = [word.lower() for word in lst]
-        if config.USE_DB:
-            if len(lst) == 1:
-                resp['text'] = 'Выберите интервал'
-                resp['markup'] = custom_markup('statistic',
-                                               ['Today', 'Week', 'Month', 'All'],
-                                               '📋')
+        try:
+            if config.USE_DB:
+                if len(lst) == 1:
+                    resp['text'] = 'Выберите интервал'
+                    resp['markup'] = custom_markup('statistic',
+                                                   ['Today', 'Week', 'Month', 'All'],
+                                                   '📋')
+                    return resp
+                interval_map = {'today': 1,
+                                'week': 7,
+                                'month': 30,
+                                'all': 100000}
+                if lst[1] not in interval_map.keys():
+                    raise TBotException(code=6, return_message=f'Wrong parameter value: {lst[1]}')
+                if lst[1] != 'today':
+                    resp['photo'] = DBLoader.get_graph(lst[1])
+                interval = datetime.datetime.now() - datetime.timedelta(days=interval_map[lst[1]])
+                to_sort = md.LogRequests.query \
+                    .join(md.Users, md.LogRequests.chat_id == md.Users.chat_id) \
+                    .filter(md.LogRequests.date_ins >= interval) \
+                    .with_entities(func.count(md.Users.chat_id), md.Users.login, md.Users.first_name) \
+                    .group_by(md.Users.chat_id) \
+                    .all()
+                for index_i in range(len(to_sort)):
+                    for index_j in range(len(to_sort) - 1):
+                        if index_i == index_j:
+                            continue
+                        elif to_sort[index_j][0] < to_sort[index_j + 1][0]:
+                            to_sort[index_j], to_sort[index_j + 1] = to_sort[index_j + 1], to_sort[index_j]
+                for cur in to_sort:
+                    resp['text'] += ' '.join([str(i) for i in cur]) + '\n'
                 return resp
-            interval_map = {'today': 1,
-                            'week': 7,
-                            'month': 30,
-                            'all': 100000}
-            if lst[1] not in interval_map.keys():
-                return Loader.error_resp('Interval is not valid')
-            if lst[1] != 'today':
-                resp['photo'] = DBLoader.get_graph(lst[1])
-            interval = datetime.datetime.now() - datetime.timedelta(days=interval_map[lst[1]])
-            to_sort = md.LogRequests.query \
-                .join(md.Users, md.LogRequests.chat_id == md.Users.chat_id) \
-                .filter(md.LogRequests.date_ins >= interval) \
-                .with_entities(func.count(md.Users.chat_id), md.Users.login, md.Users.first_name) \
-                .group_by(md.Users.chat_id) \
-                .all()
-            for index_i in range(len(to_sort)):
-                for index_j in range(len(to_sort) - 1):
-                    if index_i == index_j:
-                        continue
-                    elif to_sort[index_j][0] < to_sort[index_j + 1][0]:
-                        to_sort[index_j], to_sort[index_j + 1] = to_sort[index_j + 1], to_sort[index_j]
-            for cur in to_sort:
-                resp['text'] += ' '.join([str(i) for i in cur]) + '\n'
-            return resp
-        else:
-            return Loader.error_resp('DB is not used')
+            else:
+                raise TBotException(code=3, return_message='DB does not using')
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()

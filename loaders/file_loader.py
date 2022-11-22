@@ -80,24 +80,29 @@ class FileLoader(Loader):
         """
         lst = text.split()
         resp = {}
-        if len(lst) == 1:
-            random_poem = random.choice(self.poems)
-        else:
-            search_string = ' '.join(lst[1:])
-            authors_poems_list = []
-            for poem in self.poems:
-                if search_string.lower() in poem['author'].lower() or search_string.lower() in poem['name'].lower():
-                    authors_poems_list.append(poem)
-            if authors_poems_list:
-                random_poem = random.choice(authors_poems_list)
+        try:
+            if len(lst) == 1:
+                random_poem = random.choice(self.poems)
             else:
-                return Loader.error_resp('Poem not found')
-        author = random_poem['author']
-        name = random_poem['name']
-        text = random_poem['text']
-        str_poem = f"{author}\n\n{name}\n\n{text}"
-        resp['text'] = str_poem
-        return resp
+                search_string = ' '.join(lst[1:])
+                authors_poems_list = []
+                for poem in self.poems:
+                    if search_string.lower() in poem['author'].lower() or search_string.lower() in poem['name'].lower():
+                        authors_poems_list.append(poem)
+                if authors_poems_list:
+                    random_poem = random.choice(authors_poems_list)
+                else:
+                    raise TBotException(code=3, message='Poem not found')
+            author = random_poem['author']
+            name = random_poem['name']
+            text = random_poem['text']
+            str_poem = f"{author}\n\n{name}\n\n{text}"
+            resp['text'] = str_poem
+            return resp
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
 
     @check_permission()
     def poem_divination(self, text: str, **kwargs):

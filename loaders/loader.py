@@ -54,6 +54,7 @@ class Loader:
         except exc.DatabaseError as e:
             logger.exception(f'DB connection error: {e}')
             privileges_levels = config.PRIVILEGES_LEVELS
+            exit()
     else:
         privileges_levels = config.PRIVILEGES_LEVELS
 
