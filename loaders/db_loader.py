@@ -1,7 +1,5 @@
 import random
-import os
 import datetime
-import matplotlib.pyplot as plt
 from mysql.connector.errors import OperationalError
 import traceback
 
@@ -17,6 +15,7 @@ from markup import custom_markup
 from send_service import send_dev_message
 from loggers import get_logger
 from exceptions import TBotException
+from graph import Graph, BaseGraphInfo
 
 logger = get_logger(__name__)
 
@@ -433,40 +432,6 @@ class DBLoader(Loader):
             e.send_error(traceback.format_exc())
             return e.return_message()
 
-    @staticmethod
-    def get_graph(interval: str) -> str:
-        """
-        Create graph image
-        :param interval: graph interval
-        :return: path to image
-        """
-        dt = []
-        cnt = []
-        interval_plot = {'week': 7,
-                         'month': 30,
-                         'all': 10000}
-        interval = datetime.datetime.now() - datetime.timedelta(days=interval_plot[interval])
-        plot_data = md.LogRequests.query \
-            .with_entities(cast(md.LogRequests.date_ins, Date), func.count(md.LogRequests.chat_id)) \
-            .group_by(cast(md.LogRequests.date_ins, Date)) \
-            .filter(md.LogRequests.date_ins >= interval) \
-            .all()
-        for cur in plot_data:
-            dt.append(cur[0])
-            cnt.append(cur[1])
-        if not os.path.exists('tmp'):
-            os.mkdir('tmp')
-        unique_name = str(datetime.datetime.now()).replace(':', '').replace(' ', '')[:16]
-        img_path = os.path.join('tmp', f'graph_{unique_name}.png')
-        plt.figure(figsize=(15, 5))
-        plt.plot(dt, cnt)
-        plt.xlabel('Date', fontsize=14)
-        plt.ylabel('Count of requests', fontsize=14)
-        plt.grid()
-        plt.savefig(img_path)
-        plt.close()
-        return img_path
-
     @check_permission(needed_level='root')
     def get_statistic(self, text, **kwargs) -> dict:
         """
@@ -491,9 +456,20 @@ class DBLoader(Loader):
                                 'all': 100000}
                 if lst[1] not in interval_map.keys():
                     raise TBotException(code=6, return_message=f'Wrong parameter value: {lst[1]}')
-                if lst[1] != 'today':
-                    resp['photo'] = DBLoader.get_graph(lst[1])
                 interval = datetime.datetime.now() - datetime.timedelta(days=interval_map[lst[1]])
+                if lst[1] != 'today':
+                    plot_data = md.LogRequests.query \
+                        .with_entities(cast(md.LogRequests.date_ins, Date), func.count(md.LogRequests.chat_id)) \
+                        .group_by(cast(md.LogRequests.date_ins, Date)) \
+                        .filter(md.LogRequests.date_ins >= interval) \
+                        .all()
+                    dt = []
+                    cnt = []
+                    for cur in plot_data:
+                        dt.append(cur[0])
+                        cnt.append(cur[1])
+                    bgi = BaseGraphInfo('statistic', 'Date', 'Count', dt, cnt)
+                    resp['photo'] = Graph.get_base_graph(bgi)
                 to_sort = md.LogRequests.query \
                     .join(md.Users, md.LogRequests.chat_id == md.Users.chat_id) \
                     .filter(md.LogRequests.date_ins >= interval) \

@@ -10,6 +10,7 @@ import traceback
 import config
 
 from loaders.loader import Loader, check_permission
+from graph import Graph, BaseGraphInfo
 from markup import custom_markup
 from helpers import dict_to_str, is_phone_number, check_config_attribute
 from loggers import get_logger
@@ -28,7 +29,7 @@ class InternetLoader(Loader):
         self.book_genres = {}
 
     @staticmethod
-    def regular_request(url: str):
+    def regular_request(url: str, method: str = 'GET', data: dict = None):
         """
         Regular request to site
         """
@@ -38,7 +39,12 @@ class InternetLoader(Loader):
         }
         try:
             logger.info(f'Try to get info from {url}')
-            resp = requests.get(url, headers=headers)
+            if method.upper() == 'GET':
+                resp = requests.get(url, headers=headers)
+            elif method.upper() == 'POST':
+                resp = requests.post(url, headers=headers, data=data)
+            else:
+                raise TBotException(code=6, message=f'Method is not allowed: {method}')
             if resp.status_code == 200:
                 resp.encoding = 'utf-8'
                 logger.info(f'Get successful')
@@ -98,27 +104,36 @@ class InternetLoader(Loader):
             return e.return_message()
 
     @check_permission()
-    def get_weather(self, **kwargs) -> dict:
+    def get_weather(self, text: str, **kwargs) -> dict:
         """
         Get weather from internet
         :param:
-        :return: dict like {'Сегодня': '10°/15°', 'ср 12': '11°/18°'}
+        :return: picture with graph
         """
         resp = {}
         try:
-            url = check_config_attribute('weather_url')
-            soup = InternetLoader.site_to_lxml(url)
-            parse = soup.find_all('div',
-                                  class_='DetailsSummary--DetailsSummary--2HluQ DetailsSummary--fadeOnOpen--vFCc_')
-            weather = {}
-            for i in parse:
-                h2 = i.find('h2')
-                div = i.find('div')
-                span = div.find_all('span')
-                span = list(map(lambda x: x.text, span))
-                weather[h2.text] = ''.join(span[:-1])
-            resp['text'] = dict_to_str(weather, ' = ')
-            return resp
+            cmd = text.split()
+            if len(cmd) == 1:
+                resp['text'] = 'Выберите город'
+                resp['markup'] = custom_markup('weather',
+                                               [city.capitalize() for city in config.CITY_COORDINATES.keys()],
+                                               '⛅')
+                return resp
+            elif len(cmd) == 2:
+                url = check_config_attribute('weather_url')
+                url += '?latitude={0}&longitude={1}'.format(*config.CITY_COORDINATES.get(cmd[1].lower()))
+                url += '&hourly=temperature_2m'
+                url += '&start_date={0}&end_date={0}'.format(str(datetime.datetime.now())[:10])
+                data = InternetLoader.regular_request(url)
+                weather = json.loads(data.text)
+                time = [time[11:] for time in weather['hourly']['time']]
+                temperature = weather['hourly']['temperature_2m']
+                bgi = BaseGraphInfo('weather', 'Date', 'Temperature (°C)', time, temperature)
+                resp['photo'] = Graph.get_base_graph(bgi)
+                resp['text'] = 'Погода на сутки'
+                return resp
+            else:
+                raise TBotException(code=6, return_message=f'Wrong parameters count: {len(cmd)}')
         except TBotException as e:
             logger.exception(e.context)
             e.send_error(traceback.format_exc())
