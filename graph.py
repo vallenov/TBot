@@ -27,12 +27,12 @@ class Graph:
         return img_path
 
     @staticmethod
-    def get_weather_graph(dates: list, tepmerature: list):
+    def get_weather_graph(dates: list, temperature: list):
         if not os.path.exists('tmp'):
             os.mkdir('tmp')
         img_path = os.path.join('tmp', f'weather_{now_time()}.png')
         plt.figure(figsize=(15, 5))
-        plt.plot(dates, tepmerature)
+        plt.plot(dates, temperature)
         plt.xlabel('Date', fontsize=14)
         plt.ylabel('Temperature (°C)', fontsize=14)
         plt.grid()
