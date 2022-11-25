@@ -78,7 +78,6 @@ class TBot:
                     try:
                         TBot.safe_send(user_chat_id, replace, reply_markup=replace.get('markup', None))
                     except telebot.apihelper.ApiException:
-                        logger.exception(f'Message to {user_chat_id} is not send')
                         is_not_send.append(str(user_chat_id))
                     else:
                         is_send.append(str(chat_id))
@@ -175,10 +174,7 @@ class TBot:
                     time.sleep(1)
                 except telebot.apihelper.ApiException as e:
                     logger.exception(f'Message to {chat_id} is not send')
-                    send_dev_message({'subject': repr(e)[:-2],
-                                      'text': f'Chat_id: {chat_id}\n'
-                                              f'Replace: {replace}\n'
-                                              f'Error: {traceback.format_exc()}'})
+                    raise
                 except Exception as ex:
                     logger.exception(f'Unrecognized exception during a send: {traceback.format_exc()}')
                     if not is_send:
