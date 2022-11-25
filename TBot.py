@@ -133,15 +133,18 @@ class TBot:
         :param reply_markup: markup or None
         :return:
         """
+        text = replace.get('text', None)
+        photo = replace.get('photo', None)
+        if not text and not photo:
+            TBotException(code=6, message='Replace is empty')
+        if text:
+            user = Loader.users.get(str(chat_id))
+            text = text.replace('#%user_name%#', user.get('first_name', 'участник моего мини-клуба'))
         is_send = False
         current_try = 0
         start = 0
-        text = replace.get('text', None)
         cnt_message = math.ceil(len(replace) / config.MESSAGE_MAX_LEN) if text else 1
-        photo = replace.get('photo', None)
         parse_mode = replace.get('parse_mode', None)
-        if not text and not photo:
-            TBotException(code=6, message='Replace is empty')
         for cnt in range(cnt_message):
             while current_try < config.MAX_TRY:
                 current_try += 1
