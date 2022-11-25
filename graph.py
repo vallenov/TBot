@@ -1,5 +1,6 @@
 import os
 from collections import namedtuple
+import random
 
 from matplotlib import pyplot as plt
 from helpers import now_time
@@ -15,6 +16,8 @@ class Graph:
         'bar': plt.bar
     }
 
+    line_colors = 'rgbcmykw'
+
     @staticmethod
     def get_base_graph(base: BaseGraphInfo):
         if not os.path.exists('tmp'):
@@ -22,10 +25,13 @@ class Graph:
         img_path = os.path.join('tmp', f'{base.type}_{now_time()}.png')
         plt.title(base.title)
         plt.figure(figsize=(15, 5 * len(base.subplots)))
+        colors = None
         for i, splot in enumerate(base.subplots):
+            if not colors:
+                colors = list(Graph.line_colors)
             plt.subplot(len(base.subplots), 1, i+1)
             plot = Graph.type_map.get(splot.type, plt.plot)
-            plot(splot.x, splot.y)
+            plot(splot.x, splot.y, color=colors.pop(random.randint(0, len(colors)-1)))
             plt.xlabel(splot.xname, fontsize=14)
             plt.ylabel(splot.yname, fontsize=14)
             plt.grid()
