@@ -5,10 +5,15 @@ from matplotlib import pyplot as plt
 from helpers import now_time
 
 BaseGraphInfo = namedtuple('BaseGraphInfo', ['title', 'type', 'subplots'])
-BaseSubGraphInfo = namedtuple('BaseGraphInfo', ['xname', 'yname', 'x', 'y'])
+BaseSubGraphInfo = namedtuple('BaseGraphInfo', ['type', 'xname', 'yname', 'x', 'y'])
 
 
 class Graph:
+
+    type_map = {
+        'plot': plt.plot,
+        'bar': plt.bar
+    }
 
     @staticmethod
     def get_base_graph(base: BaseGraphInfo):
@@ -19,7 +24,8 @@ class Graph:
         plt.figure(figsize=(15, 5 * len(base.subplots)))
         for i, splot in enumerate(base.subplots):
             plt.subplot(len(base.subplots), 1, i+1)
-            plt.plot(splot.x, splot.y)
+            plot = Graph.type_map.get(splot.type, plt.plot)
+            plot(splot.x, splot.y)
             plt.xlabel(splot.xname, fontsize=14)
             plt.ylabel(splot.yname, fontsize=14)
             plt.grid()
