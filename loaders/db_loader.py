@@ -468,7 +468,7 @@ class DBLoader(Loader):
                     for cur in plot_data:
                         dt.append(cur[0])
                         cnt.append(cur[1])
-                    bgi = BaseGraphInfo('statistic', 'Date', 'Count', dt, cnt)
+                    bgi = BaseGraphInfo('Statistic', 'statistic', 'Date', 'Count', dt, cnt)
                     resp['photo'] = Graph.get_base_graph(bgi)
                 to_sort = md.LogRequests.query \
                     .join(md.Users, md.LogRequests.chat_id == md.Users.chat_id) \
