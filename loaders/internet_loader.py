@@ -128,7 +128,7 @@ class InternetLoader(Loader):
                 weather = json.loads(data.text)
                 time = [time[11:] for time in weather['hourly']['time']]
                 temperature = weather['hourly']['temperature_2m']
-                bgi = BaseGraphInfo('weather', 'Date', 'Temperature (°C)', time, temperature)
+                bgi = BaseGraphInfo('Weather', 'weather', 'Date', 'Temperature (°C)', time, temperature)
                 resp['photo'] = Graph.get_base_graph(bgi)
                 resp['text'] = 'Погода на сутки'
                 return resp
