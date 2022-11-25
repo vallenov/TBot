@@ -130,7 +130,16 @@ class InternetLoader(Loader):
                 time = [time[11:] for time in weather['hourly']['time']]
                 subplots = []
                 for param in weather_params:
-                    subplots.append(BaseSubGraphInfo('plot', 'Date', param, time, weather['hourly'][param]))
+                    subplots.append(
+                        BaseSubGraphInfo(
+                            type='plot',
+                            color=Graph.color_map.get('aqua'),
+                            xname='Date',
+                            yname=param,
+                            x=time,
+                            y=weather['hourly'][param]
+                        )
+                    )
                 bgi = BaseGraphInfo('Weather', 'weather', subplots)
                 resp['photo'] = Graph.get_base_graph(bgi)
                 resp['text'] = 'Погода на сутки'
