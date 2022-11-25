@@ -122,7 +122,7 @@ class InternetLoader(Loader):
             elif len(cmd) == 2:
                 url = check_config_attribute('weather_url')
                 url += '?latitude={0}&longitude={1}'.format(*config.CITY_COORDINATES.get(cmd[1].lower()))
-                weather_params = ['temperature_2m', 'relativehumidity_2m']
+                weather_params = ['temperature_2m', 'relativehumidity_2m', 'pressure_msl']
                 url += f'&hourly={",".join(weather_params)}'
                 url += '&start_date={0}&end_date={0}'.format(str(datetime.datetime.now())[:10])
                 data = InternetLoader.regular_request(url)
@@ -133,7 +133,6 @@ class InternetLoader(Loader):
                     subplots.append(
                         BaseSubGraphInfo(
                             type='plot',
-                            color=Graph.color_map.get('aqua'),
                             xname='Date',
                             yname=param,
                             x=time,
