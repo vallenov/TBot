@@ -4,7 +4,7 @@ from collections import namedtuple
 from matplotlib import pyplot as plt
 from helpers import now_time
 
-BaseGraphInfo = namedtuple('BaseGraphInfo', ['type', 'xname', 'yname', 'x', 'y'])
+BaseGraphInfo = namedtuple('BaseGraphInfo', ['title', 'type', 'xname', 'yname', 'x', 'y'])
 
 
 class Graph:
@@ -16,6 +16,7 @@ class Graph:
         img_path = os.path.join('tmp', f'{base.type}_{now_time()}.png')
         plt.figure(figsize=(15, 5))
         plt.plot(base.x, base.y)
+        plt.title(base.title or '')
         plt.xlabel(base.xname, fontsize=14)
         plt.ylabel(base.yname, fontsize=14)
         plt.grid()
