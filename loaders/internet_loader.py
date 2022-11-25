@@ -10,7 +10,7 @@ import traceback
 import config
 
 from loaders.loader import Loader, check_permission
-from graph import Graph, BaseGraphInfo
+from graph import Graph, BaseGraphInfo, BaseSubGraphInfo
 from markup import custom_markup
 from helpers import dict_to_str, is_phone_number, check_config_attribute
 from loggers import get_logger
@@ -122,13 +122,24 @@ class InternetLoader(Loader):
             elif len(cmd) == 2:
                 url = check_config_attribute('weather_url')
                 url += '?latitude={0}&longitude={1}'.format(*config.CITY_COORDINATES.get(cmd[1].lower()))
-                url += '&hourly=temperature_2m'
+                weather_params = ['temperature_2m', 'relativehumidity_2m', 'pressure_msl']
+                url += f'&hourly={",".join(weather_params)}'
                 url += '&start_date={0}&end_date={0}'.format(str(datetime.datetime.now())[:10])
                 data = InternetLoader.regular_request(url)
                 weather = json.loads(data.text)
                 time = [time[11:] for time in weather['hourly']['time']]
-                temperature = weather['hourly']['temperature_2m']
-                bgi = BaseGraphInfo('weather', 'Date', 'Temperature (°C)', time, temperature)
+                subplots = []
+                for param in weather_params:
+                    subplots.append(
+                        BaseSubGraphInfo(
+                            type='plot',
+                            xname='Date',
+                            yname=param,
+                            x=time,
+                            y=weather['hourly'][param]
+                        )
+                    )
+                bgi = BaseGraphInfo('Weather', 'weather', subplots)
                 resp['photo'] = Graph.get_base_graph(bgi)
                 resp['text'] = 'Погода на сутки'
                 return resp

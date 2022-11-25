@@ -15,7 +15,7 @@ from markup import custom_markup
 from send_service import send_dev_message
 from loggers import get_logger
 from exceptions import TBotException
-from graph import Graph, BaseGraphInfo
+from graph import Graph, BaseGraphInfo, BaseSubGraphInfo
 
 logger = get_logger(__name__)
 
@@ -468,7 +468,8 @@ class DBLoader(Loader):
                     for cur in plot_data:
                         dt.append(cur[0])
                         cnt.append(cur[1])
-                    bgi = BaseGraphInfo('statistic', 'Date', 'Count', dt, cnt)
+                    bgi = BaseGraphInfo('Statistic', 'statistic', [BaseSubGraphInfo(
+                        type='plot', color=Graph.color_map.get('blue'), xname='Date', yname='Count', x=dt, y=cnt)])
                     resp['photo'] = Graph.get_base_graph(bgi)
                 to_sort = md.LogRequests.query \
                     .join(md.Users, md.LogRequests.chat_id == md.Users.chat_id) \
