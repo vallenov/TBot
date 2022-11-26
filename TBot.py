@@ -21,6 +21,7 @@ from loaders.db_loader import DBLoader
 from send_service import send_dev_message
 from helpers import now_time, get_hash_name
 from loggers import get_logger, get_conversation_logger
+from exceptions import TBotException
 
 logger = get_logger(__name__)
 conversation_logger = get_conversation_logger()
@@ -67,16 +68,23 @@ class TBot:
                 except telebot.apihelper.ApiException:
                     logger.exception(f'Message to {chat_id} is not send')
                     TBot.safe_send(message.chat.id, {'text': f"Message to {Loader.users[str(chat_id)]} is not send"})
+                else:
+                    if chat_id != message.chat.id:
+                        TBot.safe_send(message.chat.id, {'text': f"Message to {chat_id} was sent"})
             elif chat_id and isinstance(chat_id, list):
+                is_send = []
                 is_not_send = []
                 for user_chat_id in replace['chat_id']:
                     try:
                         TBot.safe_send(user_chat_id, replace, reply_markup=replace.get('markup', None))
                     except telebot.apihelper.ApiException:
-                        logger.exception(f'Message to {user_chat_id} is not send')
                         is_not_send.append(str(user_chat_id))
+                    else:
+                        is_send.append(str(chat_id))
+                if is_send:
+                    TBot.safe_send(message.chat.id, {'text': f"Success: {' ,'.join(is_send)}"})
                 if is_not_send:
-                    TBot.safe_send(message.chat.id, {'text': f"Message to {' ,'.join(is_not_send)} is not send"})
+                    TBot.safe_send(message.chat.id, {'text': f"Was not sent: {' ,'.join(is_not_send)}"})
 
         logger.info('TBot is started')
 
@@ -124,12 +132,17 @@ class TBot:
         :param reply_markup: markup or None
         :return:
         """
+        text = replace.get('text', None)
+        photo = replace.get('photo', None)
+        if not text and not photo:
+            TBotException(code=6, message='Replace is empty')
+        if text:
+            user = Loader.users.get(str(chat_id))
+            text = text.replace('#%user_name%#', user.get('first_name', 'участник моего мини-клуба'))
         is_send = False
         current_try = 0
         start = 0
-        text = replace.get('text', None)
-        cnt_message = math.ceil(len(replace) / config.MESSAGE_MAX_LEN) if text is not None else 1
-        photo = replace.get('photo', None)
+        cnt_message = math.ceil(len(replace) / config.MESSAGE_MAX_LEN) if text else 1
         parse_mode = replace.get('parse_mode', None)
         for cnt in range(cnt_message):
             while current_try < config.MAX_TRY:
@@ -161,19 +174,16 @@ class TBot:
                     time.sleep(1)
                 except telebot.apihelper.ApiException as e:
                     logger.exception(f'Message to {chat_id} is not send')
-                    send_dev_message({'subject': repr(e)[:-2],
-                                      'text': f'Chat_id: {chat_id}\n'
-                                              f'Replace: {replace}\n'
-                                              f'Error: {traceback.format_exc()}'})
+                    raise
                 except Exception as ex:
                     logger.exception(f'Unrecognized exception during a send: {traceback.format_exc()}')
                     if not is_send:
                         send_dev_message({'subject': repr(ex)[:-2], 'text': f'{traceback.format_exc()}'})
                         is_send = True
                 else:
-                    if text is not None:
+                    if text:
                         conversation_logger.info('Response: ' + text.replace('\n', ' '))
-                    else:
+                    if photo:
                         conversation_logger.info(f'Response: {photo}')
                     logger.info(f'Number of attempts: {current_try}')
                     logger.info(f'Send successful')
