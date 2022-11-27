@@ -7,7 +7,7 @@ from helpers import now_time
 
 BaseGraphInfo = namedtuple('BaseGraphInfo', ['title', 'type', 'subplots'])
 BaseSubGraphInfo = namedtuple('BaseSubGraphInfo', [
-    'type', 'color', 'xname', 'yname', 'x', 'y'
+    'type', 'linewidth', 'color', 'xname', 'yname', 'x', 'y'
 ])
 
 
@@ -42,7 +42,7 @@ class Graph:
             plt.subplot(len(base.subplots), 1, i+1)
             plot = Graph.type_map.get(splot.type, plt.plot)
             random_color = Graph.color_map[colors.pop(random.randint(0, len(colors)-1))]
-            plot(splot.x, splot.y, color=splot.color or random_color, linewidth=5)
+            plot(splot.x, splot.y, color=splot.color or random_color, linewidth=splot.linewidth)
             plt.title(base.title, size=25) if not i else plt.title('')
             plt.xlabel(splot.xname, fontsize=14)
             plt.ylabel(splot.yname, fontsize=14)
