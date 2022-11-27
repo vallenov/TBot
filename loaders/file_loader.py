@@ -22,8 +22,7 @@ class FileLoader(Loader):
     Work with files
     """
 
-    def __init__(self, name):
-        super().__init__(name)
+    def __init__(self):
         self.files_list = ['poems.xlsx']
         self._check_file_db()
         self.poems = []
