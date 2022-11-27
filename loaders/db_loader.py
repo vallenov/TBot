@@ -25,8 +25,7 @@ class DBLoader(Loader):
     Work with DB
     """
 
-    def __init__(self, name):
-        super().__init__(name)
+    def __init__(self):
         if config.USE_DB:
             self.get_users_from_db()
             logger.info('Connection to DB success')
