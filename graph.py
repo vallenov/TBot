@@ -43,7 +43,7 @@ class Graph:
             plot = Graph.type_map.get(splot.type, plt.plot)
             random_color = Graph.color_map[colors.pop(random.randint(0, len(colors)-1))]
             plot(splot.x, splot.y, color=splot.color or random_color, linewidth=5)
-            plt.title(base.title) if not i else plt.title('')
+            plt.title(base.title, size=25) if not i else plt.title('')
             plt.xlabel(splot.xname, fontsize=14)
             plt.ylabel(splot.yname, fontsize=14)
             plt.grid()
