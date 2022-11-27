@@ -24,8 +24,8 @@ class InternetLoader(Loader):
     Work with internet
     """
 
-    def __init__(self, name):
-        super().__init__(name)
+    def __init__(self):
+        self.get_cities_coordinates()
         self.book_genres = {}
 
     @staticmethod
@@ -103,6 +103,26 @@ class InternetLoader(Loader):
             e.send_error(traceback.format_exc())
             return e.return_message()
 
+    def get_cities_coordinates(self):
+        """
+        Get cities coordinates from internet to variable
+        :param:
+        :return:
+        """
+        url = check_config_attribute('city_coordinates_url')
+        soup = InternetLoader.site_to_lxml(url)
+        table_raw = soup.find('table', class_='tablesorter')
+        tr_raw = table_raw.find_all('tr')
+        self.city_coordinates = {}
+        for tr in tr_raw[1:]:
+            coords = tr.find_all('td')
+            if len(coords) < 3:
+                continue
+            try:
+                self.city_coordinates[coords[0].text] = (float(coords[1].text), float(coords[2].text))
+            except ValueError:
+                continue
+
     @check_permission()
     def get_weather(self, text: str, **kwargs) -> dict:
         """
@@ -116,12 +136,18 @@ class InternetLoader(Loader):
             if len(cmd) == 1:
                 resp['text'] = 'Выберите город'
                 resp['markup'] = custom_markup('weather',
-                                               [city.capitalize() for city in config.CITY_COORDINATES.keys()],
+                                               [city for city in self.city_coordinates.keys()
+                                                if city in config.CITY_WEATHER],
                                                '⛅')
                 return resp
             elif len(cmd) == 2:
                 url = check_config_attribute('weather_url')
-                url += '?latitude={0}&longitude={1}'.format(*config.CITY_COORDINATES.get(cmd[1].lower()))
+                needed_coordinates = self.city_coordinates.get(cmd[1])
+                if not needed_coordinates:
+                    raise TBotException(code=6,
+                                        return_message=f'Я не умею определять погоду в городе: {cmd[1]}\n\n'
+                                                       f'Список доступных городов: {", ".join(self.city_coordinates.keys())}')
+                url += '?latitude={0}&longitude={1}'.format(*needed_coordinates)
                 weather_params = ['temperature_2m', 'relativehumidity_2m', 'pressure_msl']
                 url += f'&hourly={",".join(weather_params)}'
                 url += '&start_date={0}&end_date={0}'.format(str(datetime.datetime.now())[:10])
@@ -133,7 +159,7 @@ class InternetLoader(Loader):
                     subplots.append(BaseSubGraphInfo('plot', None, 'Date', param, time, weather['hourly'][param]))
                 bgi = BaseGraphInfo('Weather', 'weather', subplots)
                 resp['photo'] = Graph.get_base_graph(bgi)
-                resp['text'] = 'Погода на сутки'
+                resp['text'] = f'Погода на сутки в городе {cmd[1]}'
                 return resp
             else:
                 raise TBotException(code=6, return_message=f'Wrong parameters count: {len(cmd)}')
@@ -423,7 +449,7 @@ class InternetLoader(Loader):
             number = is_phone_number(lst[1])
             res = requests.post(url, data={'number': number})
             if 'Ошибка: Номер не найден' in res.text:
-                return Loader.error_resp('Number not found/Номер не найден')
+                raise TBotException(code=1, returt_message='Номер не найден')
             soup = BeautifulSoup(res.text, 'lxml')
             div_raw = soup.find('div', class_='content__in')
             table = div_raw.find('table', class_='teltr tel-mobile')
@@ -474,31 +500,36 @@ class InternetLoader(Loader):
                         act_year_to = act_year_from
                         year_from = act_year_from
                         year_to = act_year_to
-                    except ValueError as e:
-                        return Loader.error_resp('Format of data is not valid')
+                    except ValueError:
+                        raise TBotException(code=6, return_message=f'Неправильный тип параметра: {command[1]}')
                     else:
                         if act_year_from < 1890 or act_year_to > 2022:
-                            return Loader.error_resp(f'Year may be from 1890 to {datetime.datetime.now().year}')
+                            raise TBotException(code=6,
+                                                return_message=f'Год должен быть между 1890 и '
+                                                               f'{datetime.datetime.now().year}')
                 else:
                     try:
                         split_years = command[1].split('-')
                         act_year_from = int(split_years[0])
                         act_year_to = int(split_years[1])
                         if act_year_from < 1890 or act_year_to > 2022:
-                            return Loader.error_resp(f'Year may be from 1890 to {datetime.datetime.now().year}')
+                            raise TBotException(code=6,
+                                                return_message=f'Год должен быть между 1890 и '
+                                                               f'{datetime.datetime.now().year}')
                         elif act_year_from > act_year_to:
-                            return Loader.error_resp(f'Start year may be greater then finish year')
+                            raise TBotException(code=6, return_message='Год начала должен быть меньше, '
+                                                                       'чем год конца интервала')
                         year_from = random.choice(range(int(split_years[0]), int(split_years[1]) + 1))
                         year_to = year_from
-                    except ValueError as e:
-                        return Loader.error_resp('Format of data is not valid')
+                    except ValueError:
+                        raise TBotException(code=6, return_message='Неправильный тип параметра')
             url = check_config_attribute('random_movie_url')
             soup = InternetLoader.site_to_lxml(url)
             result_top = soup.find('div', class_='search_results_top')
             span_raw = result_top.find('span')
             is_result = int(span_raw.text.split(' ')[-1])
             if not is_result:
-                return Loader.error_resp(f'Movies by {year_from}-{year_to} is not found')
+                raise TBotException(code=1, return_message=f'Фильмы {year_from}-{year_to} не найдены')
             div_raw = soup.find('div', class_='search_results search_results_last')
             div_nav = div_raw.find('div', class_='navigator')
             from_to = div_nav.find('div', class_='pagesFromTo').text.split(' ')[0].split('—')
@@ -557,6 +588,7 @@ class InternetLoader(Loader):
             for genre in genre_raw:
                 title_raw = genre.find('a', class_='main-genre-title')
                 if title_raw.text:
+                    print(title_raw.text)
                     self.book_genres[title_raw.text] = title_raw.get('href')
         except TBotException as e:
             logger.exception(e.context)
@@ -582,10 +614,10 @@ class InternetLoader(Loader):
                 return resp
             category = ''
             for genre in self.book_genres.keys():
-                if genre.lower().startswith(lst[1]):
-                    category = self.book_genres[genre]
+                if genre.startswith(lst[1]):
+                    category = self.book_genres[genre].lower()
             if not category:
-                return Loader.error_resp('Genre is not valid')
+                raise TBotException(code=2, return_message='Жанр не найден')
             site = '/'.join(config.LINKS['book_url'].split('/')[:3])
             soup = InternetLoader.site_to_lxml(f'{site}{category}/listview/biglist/~6')
             a_raw = soup.find_all('a', class_='pagination-page pagination-wide')
@@ -628,8 +660,7 @@ class InternetLoader(Loader):
             if picture:
                 resp['photo'] = picture
             else:
-                logger.info('Picture not found')
-                Loader.error_resp()
+                raise TBotException(code=1, message='Картина не найдена')
             text = img_raw.get('title')
             if text:
                 text = text.split('900')[0]

@@ -34,7 +34,6 @@ class Graph:
         if not os.path.exists('tmp'):
             os.mkdir('tmp')
         img_path = os.path.join('tmp', f'{base.type}_{now_time()}.png')
-        plt.title(base.title)
         plt.figure(figsize=(15, 5 * len(base.subplots)))
         colors = None
         for i, splot in enumerate(base.subplots):
@@ -44,6 +43,7 @@ class Graph:
             plot = Graph.type_map.get(splot.type, plt.plot)
             random_color = Graph.color_map[colors.pop(random.randint(0, len(colors)-1))]
             plot(splot.x, splot.y, color=splot.color or random_color, linewidth=5)
+            plt.title(base.title) if not i else plt.title('')
             plt.xlabel(splot.xname, fontsize=14)
             plt.ylabel(splot.yname, fontsize=14)
             plt.grid()

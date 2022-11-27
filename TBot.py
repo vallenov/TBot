@@ -90,9 +90,9 @@ class TBot:
 
     @staticmethod
     def init_loaders():
-        TBot.internet_loader = InternetLoader('ILoader')
-        TBot.db_loader = DBLoader('DBLoader')
-        TBot.file_loader = FileLoader('FLoader')
+        TBot.internet_loader = InternetLoader()
+        TBot.db_loader = DBLoader()
+        TBot.file_loader = FileLoader()
 
     @staticmethod
     def init_dirs():
@@ -337,8 +337,6 @@ class TBot:
             'systemctl': TBot.internet_loader.systemctl,
             'allow_connection': TBot.internet_loader.allow_connection
         }
-        if not config.USE_DB:
-            TBot.file_loader.load_poems()
         if config.PROD:
             logger.info(f'Send start message to root users')
             send_dev_message({'text': 'TBot is started'}, 'telegram')

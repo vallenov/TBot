@@ -25,8 +25,7 @@ class DBLoader(Loader):
     Work with DB
     """
 
-    def __init__(self, name):
-        super().__init__(name)
+    def __init__(self):
         if config.USE_DB:
             self.get_users_from_db()
             logger.info('Connection to DB success')
@@ -99,7 +98,7 @@ class DBLoader(Loader):
                 md.LibPrivileges.value == privileges
             ).one_or_none()
             if not data:
-                raise TBotException(code=3, message=f'Privileges {privileges} not found')
+                raise TBotException(code=3, message=f'Привилегия {privileges} не найдена')
         except TBotException as e:
             logger.exception(e.context)
             e.send_error(traceback.format_exc())
@@ -172,7 +171,7 @@ class DBLoader(Loader):
         try:
             if len(cmd) < 4:
                 raise TBotException(code=6,
-                                    return_message=f'Wrong parameters count: {len(cmd)}',
+                                    return_message=f'Неправильное количество параметров: {len(cmd)}',
                                     parameres_count=len(cmd))
             else:
                 chat_id = cmd[2]
@@ -182,7 +181,7 @@ class DBLoader(Loader):
                     new_value = int(cmd[3])
                 else:
                     raise TBotException(code=6,
-                                        return_message=f'Wrong parameter value: {cmd[1]}',
+                                        return_message=f'Неправильное значение параметра: {cmd[1]}',
                                         parameres_value=cmd[2])
             if config.USE_DB:
                 user = md.Users.query.filter(
@@ -191,9 +190,9 @@ class DBLoader(Loader):
                     (md.Users.first_name == chat_id)
                 ).all()
                 if not user:
-                    raise TBotException(code=3, return_message=f'User {chat_id} not found')
+                    raise TBotException(code=3, return_message=f'Пользователь {chat_id} не найден')
                 if len(user) > 1:
-                    raise TBotException(code=3, message='Count of founded data greater then 1', send=True)
+                    raise TBotException(code=3, return_message='Найдено несколько пользователей')
                 if cmd[1] == 'privileges':
                     new_value = self.get_p_id(new_value)
                 for u in user:
@@ -212,7 +211,7 @@ class DBLoader(Loader):
                 resp['text'] = f'User {chat_id} {cmd[1]} updated'
                 return resp
             else:
-                return Loader.error_resp('DB does not using')
+                return Loader.error_resp('Нет подключения к БД')
         except TBotException as e:
             logger.exception(e.context)
             e.send_error(traceback.format_exc())
@@ -238,7 +237,7 @@ class DBLoader(Loader):
                     max_rows_lens[i] = cur_rows_lens[i-1] if cur_rows_lens[i-1] > max_rows_lens[i] else max_rows_lens[i]
                 cnt += 1
             if not len(users):
-                raise TBotException(code=3, return_message='Users not found')
+                raise TBotException(code=3, return_message='Пользователь не найден')
             else:
                 for key, value in users.items():
                     tmp = ''
@@ -264,13 +263,13 @@ class DBLoader(Loader):
         lst = text.split()
         try:
             if len(lst) < 3:
-                raise TBotException(code=6, return_message=f'Wrong parameters count: {len(lst)}')
+                raise TBotException(code=6, return_message=f'Неправильное количество параметров: {len(lst)}')
             try:
                 chat_id = int(lst[1])
             except ValueError:
-                raise TBotException(code=6, return_message=f'Wrong parameter value: {lst[1]}')
+                raise TBotException(code=6, return_message=f'Неправильное значение параметра: {lst[1]}')
             if str(chat_id) not in Loader.users.keys():
-                raise TBotException(code=3, return_message=f'User {lst[1]} not found')
+                raise TBotException(code=3, return_message=f'Пользователь {lst[1]} не найден')
             resp['chat_id'] = chat_id
             resp['text'] = cut_commands(text, 2)
             return resp
@@ -290,7 +289,7 @@ class DBLoader(Loader):
         lst = text.split()
         try:
             if len(lst) < 2:
-                raise TBotException(code=6, return_message=f'Wrong parameters count: {len(lst)}')
+                raise TBotException(code=6, return_message=f'Неправильное количество параметров: {len(lst)}')
             resp['chat_id'] = []
             for chat_id in Loader.users.keys():
                 try:
@@ -316,7 +315,7 @@ class DBLoader(Loader):
         lst = text.split()
         try:
             if len(lst) < 2:
-                raise TBotException(code=6, return_message=f'Wrong parameters count: {len(lst)}')
+                raise TBotException(code=6, return_message=f'Неправильное количество параметров: {len(lst)}')
             resp['chat_id'] = int(config.USERS['root_id']['chat_id'])
             resp['text'] = str(f"Message from {Loader.users[kwargs['chat_id']]['first_name'] or kwargs['chat_id']}\n"
                                f"Text: {cut_commands(text, 1)}")
@@ -352,7 +351,7 @@ class DBLoader(Loader):
                 if len(lst) == 1:
                     poem = self._get_random_poem()
                     if not poem:
-                        raise TBotException(code=3, message='Poem not found')
+                        raise TBotException(code=3, message='Стих не найден')
                 else:
                     search_string = ' '.join(lst[1:])
                     poems = md.Poems.query.filter(
@@ -361,11 +360,11 @@ class DBLoader(Loader):
                     if poems:
                         poem = random.choice(poems)
                     else:
-                        raise TBotException(code=3, message='Poem not found')
+                        raise TBotException(code=3, message='Стих не найден')
                 resp['text'] = f"{poem.author}\n\n{poem.name}\n\n{poem.text}"
                 return resp
             else:
-                raise TBotException(code=3, return_message='DB does not using')
+                raise TBotException(code=3, return_message='Нет подключения к БД')
         except TBotException as e:
             logger.exception(e.context)
             e.send_error(traceback.format_exc())
@@ -420,7 +419,10 @@ class DBLoader(Loader):
                     number_of_quatrain = int(cmd[1])
                     resp['text'] = quatrains[number_of_quatrain - 1]
                 except ValueError:
-                    raise TBotException(code=6, message='Wrong parameter type', parameter=cmd[1], type=type(cmd[1]))
+                    raise TBotException(code=6,
+                                        message='Неправильный тип параметра',
+                                        parameter=cmd[1],
+                                        type=type(cmd[1]))
                 except IndexError:
                     raise TBotException(code=7,
                                         return_message=f'Отсутствует сохраненный стих. Нажми на гадание еще разок',
@@ -487,7 +489,7 @@ class DBLoader(Loader):
                     resp['text'] += ' '.join([str(i) for i in cur]) + '\n'
                 return resp
             else:
-                raise TBotException(code=3, return_message='DB does not using')
+                raise TBotException(code=3, return_message='Нет подключения к БД')
         except TBotException as e:
             logger.exception(e.context)
             e.send_error(traceback.format_exc())
