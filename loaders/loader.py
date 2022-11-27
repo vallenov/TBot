@@ -44,7 +44,6 @@ class Loader:
     Common loaders class
     """
 
-    loaders = []
     users = {}
     if config.USE_DB:
         try:
@@ -57,17 +56,6 @@ class Loader:
             exit()
     else:
         privileges_levels = config.PRIVILEGES_LEVELS
-
-    def __init__(self, name):
-        self.name = name
-        Loader.loaders.append(self.name)
-
-    @staticmethod
-    def get_loaders():
-        """
-        Get all available loaders
-        """
-        return Loader.loaders
 
     @staticmethod
     def error_resp(error_text: str = 'Something wrong'):
