@@ -94,7 +94,7 @@ class FileLoader(Loader):
                 if authors_poems_list:
                     random_poem = random.choice(authors_poems_list)
                 else:
-                    raise TBotException(code=3, message='Poem not found')
+                    raise TBotException(code=3, return_message='Стих не найден')
             author = random_poem['author']
             name = random_poem['name']
             text = random_poem['text']
@@ -154,7 +154,10 @@ class FileLoader(Loader):
                     number_of_quatrain = int(cmd[1])
                     resp['text'] = quatrains[number_of_quatrain - 1]
                 except ValueError:
-                    raise TBotException(code=6, message='Wrong parameter type', parameter=cmd[1], type=type(cmd[1]))
+                    raise TBotException(code=6,
+                                        return_message='Неправильный тип параметра',
+                                        parameter=cmd[1],
+                                        type=type(cmd[1]))
                 except IndexError:
                     raise TBotException(code=7,
                                         return_message=f'Отсутствует сохраненный стих. Нажми на гадание еще разок',
