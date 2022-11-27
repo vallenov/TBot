@@ -90,9 +90,9 @@ class TBot:
 
     @staticmethod
     def init_loaders():
-        TBot.internet_loader = InternetLoader('ILoader')
-        TBot.db_loader = DBLoader('DBLoader')
-        TBot.file_loader = FileLoader('FLoader')
+        TBot.internet_loader = InternetLoader()
+        TBot.db_loader = DBLoader()
+        TBot.file_loader = FileLoader()
 
     @staticmethod
     def init_dirs():
