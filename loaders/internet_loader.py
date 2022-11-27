@@ -144,7 +144,6 @@ class InternetLoader(Loader):
             elif len(cmd) == 2:
                 url = check_config_attribute('weather_url')
                 needed_coordinates = self.city_coordinates.get(cmd[1])
-                print(needed_coordinates)
                 if not needed_coordinates:
                     raise TBotException(code=6,
                                         return_message=f'Я не умею определять погоду в городе: {cmd[1]}\n\n'
