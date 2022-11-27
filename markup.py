@@ -27,7 +27,6 @@ def custom_markup(command, category, smile='🔹', row_width=1):
     for cat in item:
         short_cat = cat.split()[0]
         short_cat = short_cat.replace(',', '')
-        short_cat = short_cat.lower()
         markup.add(InlineKeyboardButton(f'{smile} {cat}', callback_data=f'{command} {short_cat}'))
     return markup
 
