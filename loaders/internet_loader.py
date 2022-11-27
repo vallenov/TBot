@@ -26,6 +26,7 @@ class InternetLoader(Loader):
 
     def __init__(self, name):
         super().__init__(name)
+        self.get_cities_coordinates()
         self.book_genres = {}
 
     @staticmethod
@@ -103,6 +104,26 @@ class InternetLoader(Loader):
             e.send_error(traceback.format_exc())
             return e.return_message()
 
+    def get_cities_coordinates(self):
+        """
+        Get cities coordinates from internet to variable
+        :param:
+        :return:
+        """
+        url = check_config_attribute('city_coordinates_url')
+        soup = InternetLoader.site_to_lxml(url)
+        table_raw = soup.find('table', class_='tablesorter')
+        tr_raw = table_raw.find_all('tr')
+        self.city_coordinates = {}
+        for tr in tr_raw[1:]:
+            coords = tr.find_all('td')
+            if len(coords) < 3:
+                continue
+            try:
+                self.city_coordinates[coords[0].text] = (float(coords[1].text), float(coords[2].text))
+            except ValueError:
+                continue
+
     @check_permission()
     def get_weather(self, text: str, **kwargs) -> dict:
         """
@@ -116,12 +137,19 @@ class InternetLoader(Loader):
             if len(cmd) == 1:
                 resp['text'] = 'Выберите город'
                 resp['markup'] = custom_markup('weather',
-                                               [city.capitalize() for city in config.CITY_COORDINATES.keys()],
+                                               [city for city in self.city_coordinates.keys()
+                                                if city in config.CITY_WEATHER],
                                                '⛅')
                 return resp
             elif len(cmd) == 2:
                 url = check_config_attribute('weather_url')
-                url += '?latitude={0}&longitude={1}'.format(*config.CITY_COORDINATES.get(cmd[1].lower()))
+                needed_coordinates = self.city_coordinates.get(cmd[1])
+                print(needed_coordinates)
+                if not needed_coordinates:
+                    raise TBotException(code=6,
+                                        return_message=f'Я не умею определять погоду в городе: {cmd[1]}\n\n'
+                                                       f'Список доступных городов: {", ".join(self.city_coordinates.keys())}')
+                url += '?latitude={0}&longitude={1}'.format(*needed_coordinates)
                 weather_params = ['temperature_2m', 'relativehumidity_2m', 'pressure_msl']
                 url += f'&hourly={",".join(weather_params)}'
                 url += '&start_date={0}&end_date={0}'.format(str(datetime.datetime.now())[:10])
@@ -133,7 +161,7 @@ class InternetLoader(Loader):
                     subplots.append(BaseSubGraphInfo('plot', None, 'Date', param, time, weather['hourly'][param]))
                 bgi = BaseGraphInfo('Weather', 'weather', subplots)
                 resp['photo'] = Graph.get_base_graph(bgi)
-                resp['text'] = 'Погода на сутки'
+                resp['text'] = f'Погода на сутки в городе {cmd[1]}'
                 return resp
             else:
                 raise TBotException(code=6, return_message=f'Wrong parameters count: {len(cmd)}')
