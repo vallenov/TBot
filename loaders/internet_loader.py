@@ -660,8 +660,7 @@ class InternetLoader(Loader):
             if picture:
                 resp['photo'] = picture
             else:
-                logger.info('Picture not found')
-                Loader.error_resp()
+                raise TBotException(code=1, message='Картина не найдена')
             text = img_raw.get('title')
             if text:
                 text = text.split('900')[0]
