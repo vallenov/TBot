@@ -27,6 +27,8 @@ class FileLoader(Loader):
         self.files_list = ['poems.xlsx']
         self._check_file_db()
         self.poems = []
+        if not config.USE_DB:
+            self.load_poems()
 
     def _check_file_db(self):
         """
