@@ -156,7 +156,7 @@ class InternetLoader(Loader):
                 time = [time[11:] for time in weather['hourly']['time']]
                 subplots = []
                 for param in weather_params:
-                    subplots.append(BaseSubGraphInfo('plot', None, 'Date', param, time, weather['hourly'][param]))
+                    subplots.append(BaseSubGraphInfo('plot', 5, None, 'Date', param, time, weather['hourly'][param]))
                 bgi = BaseGraphInfo('Weather', 'weather', subplots)
                 resp['photo'] = Graph.get_base_graph(bgi)
                 resp['text'] = f'Погода на сутки в городе {cmd[1]}'
