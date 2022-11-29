@@ -25,8 +25,12 @@ class InternetLoader(Loader):
     """
 
     def __init__(self):
-        self.get_cities_coordinates()
-        self.book_genres = {}
+        try:
+            self.get_cities_coordinates()
+            self.book_genres = {}
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
 
     @staticmethod
     def regular_request(url: str, method: str = 'GET', data: dict = None):
@@ -132,6 +136,10 @@ class InternetLoader(Loader):
         """
         resp = {}
         try:
+            if not self.city_coordinates:
+                raise TBotException(code=1,
+                                    message=f"Coordinates is empty",
+                                    send=True)
             cmd = text.split()
             if len(cmd) == 1:
                 resp['text'] = 'Выберите город'
