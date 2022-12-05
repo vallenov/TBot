@@ -243,10 +243,9 @@ class TBot:
                 privileges=privileges,
                 chat_id=chat_id
             )
-            if not inspect.iscoroutinefunction(func.__wrapped__):
-                res = func(**_kwargs)
-            else:
-                res = asyncio.run(func(**_kwargs))
+            res = asyncio.run(func(**_kwargs)) \
+                if inspect.iscoroutinefunction(func.__wrapped__) \
+                else func(**_kwargs)
         duration = datetime.datetime.now() - start
         dur = float(str(duration.seconds) + '.' + str(duration.microseconds)[:3])
         logger.info(f'Duration: {dur} sec')
