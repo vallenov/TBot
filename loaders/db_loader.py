@@ -211,7 +211,7 @@ class DBLoader(Loader):
                 resp['text'] = f'User {chat_id} {cmd[1]} updated'
                 return resp
             else:
-                return Loader.error_resp('Нет подключения к БД')
+                raise TBotException(code=3, return_message='Нет подключения к БД')
         except TBotException as e:
             logger.exception(e.context)
             e.send_error(traceback.format_exc())
