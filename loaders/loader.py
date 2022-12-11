@@ -29,7 +29,7 @@ def check_permission(needed_level: str = 'regular'):
                         f'needed permission: {Loader.privileges_levels[needed_level]}')
             if user_permission < Loader.privileges_levels[needed_level]:
                 logger.info('Access denied')
-                return Loader.error_resp('Permission denied')
+                return dict(text='Permission denied')
             else:
                 logger.info('Access allowed')
                 logger.info(func.__qualname__)
