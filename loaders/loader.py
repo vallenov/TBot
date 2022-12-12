@@ -58,17 +58,6 @@ class Loader:
         privileges_levels = config.PRIVILEGES_LEVELS
 
     @staticmethod
-    def error_resp(error_text: str = 'Something wrong'):
-        """
-        Return error response with variable text
-        :param error_text: error description string
-        :return: error response
-        """
-        resp = dict()
-        resp['text'] = error_text
-        return resp
-
-    @staticmethod
     def get_root_users() -> list:
         root_users = []
         for key, value in Loader.users.items():
