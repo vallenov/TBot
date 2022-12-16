@@ -39,39 +39,38 @@ def main_markup(privileges: int):
     Main markup
     """
     markup = InlineKeyboardMarkup()
-    markup.row_width = 1
-    buttons_w = config.BUTTON_WIDTH
+    markup.row_width = 2
     if Loader.privileges_levels['untrusted'] <= privileges:
         pass
     if Loader.privileges_levels['test'] <= privileges:
         pass
     if Loader.privileges_levels['regular'] <= privileges:
-        markup.add(InlineKeyboardButton("📜 Скрытые функции".center(buttons_w), callback_data="hidden_functions"),
-                   InlineKeyboardButton("💵 Курс валют".center(buttons_w), callback_data="exchange"),
-                   InlineKeyboardButton("⛅️Погода".center(buttons_w), callback_data="weather"),
-                   InlineKeyboardButton("💭 Цитата".center(buttons_w), callback_data="quote"),
-                   InlineKeyboardButton("🤗 Пожелание".center(buttons_w), callback_data="wish"),
-                   InlineKeyboardButton("📰 Новости".center(buttons_w), callback_data="news"),
-                   InlineKeyboardButton("🧘‍♀️Аффирмация".center(buttons_w), callback_data="affirmation"),
-                   InlineKeyboardButton("🎭 Мероприятия".center(buttons_w), callback_data="events"),
-                   InlineKeyboardButton("🍲 Еда".center(buttons_w), callback_data="food"),
-                   InlineKeyboardButton("🪶 Стих".center(buttons_w), callback_data="poem"),
-                   InlineKeyboardButton("🔮 Гадание".center(buttons_w), callback_data="divination"),
-                   InlineKeyboardButton("🎞 Фильм".center(buttons_w), callback_data="movie"),
-                   InlineKeyboardButton("📖 Книга".center(buttons_w), callback_data="book"),
-                   InlineKeyboardButton("🎑 Метафорическая карта".center(buttons_w),
+        markup.add(InlineKeyboardButton("📜 Скрытые функции", callback_data="hidden_functions"),
+                   InlineKeyboardButton("💵 Курс валют", callback_data="exchange"),
+                   InlineKeyboardButton("⛅️Погода", callback_data="weather"),
+                   InlineKeyboardButton("💭 Цитата", callback_data="quote"),
+                   InlineKeyboardButton("🤗 Пожелание", callback_data="wish"),
+                   InlineKeyboardButton("📰 Новости", callback_data="news"),
+                   InlineKeyboardButton("🧘‍♀️Аффирмация", callback_data="affirmation"),
+                   InlineKeyboardButton("🎭 Мероприятия", callback_data="events"),
+                   InlineKeyboardButton("🍲 Еда", callback_data="food"),
+                   InlineKeyboardButton("🪶 Стих", callback_data="poem"),
+                   InlineKeyboardButton("🔮 Гадание", callback_data="divination"),
+                   InlineKeyboardButton("🎞 Фильм", callback_data="movie"),
+                   InlineKeyboardButton("📖 Книга", callback_data="book"),
+                   InlineKeyboardButton("🎑 Метафорическая карта",
                                         callback_data="metaphorical_card"),
-                   InlineKeyboardButton("🏞 Русская картина".center(buttons_w), callback_data="russian_painting"))
+                   InlineKeyboardButton("🏞 Русская картина", callback_data="russian_painting"))
     if Loader.privileges_levels['trusted'] <= privileges:
         pass
     if Loader.privileges_levels['root'] <= privileges:
-        markup.add(InlineKeyboardButton("🛠 Руководство админу".center(buttons_w), callback_data="admins_help"),
-                   InlineKeyboardButton("🔁 Перезагрузка бота".center(buttons_w), callback_data="restart_bot"),
-                   InlineKeyboardButton("🔃 Перезагрузка системы".center(buttons_w), callback_data="restart_system"),
-                   InlineKeyboardButton("🖥 Ngrok".center(buttons_w), callback_data="ngrok"),
-                   InlineKeyboardButton("📦 Ngrok DB".center(buttons_w), callback_data="ngrok_db"),
-                   InlineKeyboardButton("📷 Камера".center(buttons_w), callback_data="camera"),
-                   InlineKeyboardButton("👥 Пользователи".center(buttons_w), callback_data="users"),
-                   InlineKeyboardButton("🌐 IP-адрес сервера".center(buttons_w), callback_data="ip"),
-                   InlineKeyboardButton("📊 Статистика".center(buttons_w), callback_data="statistic"))
+        markup.add(InlineKeyboardButton("🛠 Руководство админу", callback_data="admins_help"),
+                   InlineKeyboardButton("🔁 Перезагрузка бота", callback_data="restart_bot"),
+                   InlineKeyboardButton("🔃 Перезагрузка системы", callback_data="restart_system"),
+                   InlineKeyboardButton("🖥 Ngrok", callback_data="ngrok"),
+                   InlineKeyboardButton("📦 Ngrok DB", callback_data="ngrok_db"),
+                   InlineKeyboardButton("📷 Камера", callback_data="camera"),
+                   InlineKeyboardButton("👥 Пользователи", callback_data="users"),
+                   InlineKeyboardButton("🌐 IP-адрес сервера", callback_data="ip"),
+                   InlineKeyboardButton("📊 Статистика", callback_data="statistic"))
     return markup
