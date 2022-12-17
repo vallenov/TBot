@@ -1,6 +1,5 @@
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-import config
 from loaders.loader import Loader
 from loggers import get_logger
 from exceptions import TBotException
