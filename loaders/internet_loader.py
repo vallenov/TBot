@@ -108,7 +108,7 @@ class InternetLoader(Loader):
             e.send_error(traceback.format_exc())
             return e.return_message()
 
-    def get_cities_coordinates(self):
+    def get_cities_coordinates(self) -> None:
         """
         Get cities coordinates from internet to variable
         :param:
