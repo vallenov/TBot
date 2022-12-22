@@ -605,7 +605,7 @@ class InternetLoader(Loader):
             return e.return_message()
 
     @check_permission()
-    def get_book(self, text, **kwargs):
+    def get_book(self, text, **kwargs) -> dict:
         """
         Get random book from internet
         :param:
