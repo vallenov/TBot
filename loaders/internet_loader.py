@@ -582,7 +582,7 @@ class InternetLoader(Loader):
             e.send_error(traceback.format_exc())
             return e.return_message()
 
-    def get_book_genres(self):
+    def get_book_genres(self) -> None or dict:
         """
         Get list of book's genres
         :param:
