@@ -106,7 +106,7 @@ class FileLoader(Loader):
             return e.return_message()
 
     @check_permission()
-    def poem_divination(self, text: str, **kwargs):
+    def poem_divination(self, text: str, **kwargs) -> dict:
         """
         Poem divination
         """
