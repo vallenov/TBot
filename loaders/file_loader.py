@@ -39,7 +39,7 @@ class FileLoader(Loader):
             if os.path.exists(file_path):
                 self.fife_db[file] = file_path
 
-    def load_poems(self):
+    def load_poems(self) -> None:
         """
         Load poems from file to memory
         """
