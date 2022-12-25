@@ -29,7 +29,7 @@ class FileLoader(Loader):
         if not config.USE_DB:
             self.load_poems()
 
-    def _check_file_db(self):
+    def _check_file_db(self) -> None:
         """
         Check available files in directories
         """
