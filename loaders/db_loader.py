@@ -34,12 +34,11 @@ class DBLoader(Loader):
             logger.info('Load from config success')
 
     @staticmethod
-    def get_users_from_db():
+    def get_users_from_db() -> None:
         """
         Get all users' information from DB to memory
         """
         logger.info('get_users_from_db')
-        users = None
         try:
             users = md.Users.query \
                 .join(md.LibPrivileges, md.Users.privileges_id == md.LibPrivileges.p_id) \
