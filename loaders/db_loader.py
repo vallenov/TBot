@@ -67,7 +67,7 @@ class DBLoader(Loader):
             Loader.users[user.chat_id] = user_data
 
     @staticmethod
-    def get_users_from_config():
+    def get_users_from_config() -> None:
         """
         Get all users' information from config to memory
         """
