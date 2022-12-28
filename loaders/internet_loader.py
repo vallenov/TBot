@@ -33,7 +33,7 @@ class InternetLoader(Loader):
             e.send_error(traceback.format_exc())
 
     @staticmethod
-    def regular_request(url: str, method: str = 'GET', data: dict = None) -> requests.models.Response or TBotException:
+    def regular_request(url: str, method: str = 'GET', data: dict = None) -> requests.models.Response:
         """
         Regular request to site
         """
