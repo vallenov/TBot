@@ -106,7 +106,7 @@ class DBLoader(Loader):
             return data.p_id
 
     @staticmethod
-    def log_request(chat_id: str):
+    def log_request(chat_id: str) -> None:
         """
         Insert base request info to DB
         :param chat_id: person chat_id
