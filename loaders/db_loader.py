@@ -119,7 +119,7 @@ class DBLoader(Loader):
             logger.exception(f'DB connection error: {e}')
             raise
 
-    def add_user(self, chat_id: str, privileges: int, login: str, first_name: str):
+    def add_user(self, chat_id: str, privileges: int, login: str, first_name: str) -> None:
         """
         Add new user to DB and memory
         """
