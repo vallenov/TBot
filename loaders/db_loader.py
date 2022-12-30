@@ -142,7 +142,7 @@ class DBLoader(Loader):
         Loader.users[chat_id]['value'] = privileges
 
     @staticmethod
-    def update_user(chat_id: str, login: str, first_name: str):
+    def update_user(chat_id: str, login: str, first_name: str) -> None:
         """
         Update user info in DB and memory
         :param chat_id: unique user_id
