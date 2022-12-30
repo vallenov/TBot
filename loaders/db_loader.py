@@ -252,7 +252,7 @@ class DBLoader(Loader):
             return e.return_message()
 
     @check_permission(needed_level='root')
-    def send_other(self, text: str, **kwargs):
+    def send_other(self, text: str, **kwargs) -> dict:
         """
         Send message to other user
         :param text: string "command chat_id message"
