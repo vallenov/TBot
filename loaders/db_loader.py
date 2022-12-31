@@ -278,7 +278,7 @@ class DBLoader(Loader):
             return e.return_message()
 
     @check_permission(needed_level='root')
-    def send_to_all_users(self, text: str, **kwargs):
+    def send_to_all_users(self, text: str, **kwargs) -> dict:
         """
         Send message to all users
         :param text: string "command chat_id message"
