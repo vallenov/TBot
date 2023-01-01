@@ -304,7 +304,7 @@ class DBLoader(Loader):
             return e.return_message()
 
     @check_permission()
-    def send_to_admin(self, text: str, **kwargs):
+    def send_to_admin(self, text: str, **kwargs) -> dict:
         """
         Send message to admin
         :param text: string "command chat_id message"
