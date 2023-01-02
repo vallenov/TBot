@@ -349,6 +349,7 @@ class DBLoader(Loader):
                 lst = text.split()
                 if len(lst) == 1:
                     poem = self._get_random_poem()
+                    print(type(poem))
                     if not poem:
                         raise TBotException(code=3, message='Стих не найден')
                 else:
@@ -370,7 +371,7 @@ class DBLoader(Loader):
             return e.return_message()
 
     @check_permission()
-    def poem_divination(self, text: str, **kwargs):
+    def poem_divination(self, text: str, **kwargs) -> dict:
         """
         Poem divination
         """
