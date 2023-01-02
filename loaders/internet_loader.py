@@ -52,7 +52,6 @@ class InternetLoader(Loader):
             if resp.status_code == 200:
                 resp.encoding = 'utf-8'
                 logger.info(f'Get successful')
-                print(type(resp))
                 return resp
             else:
                 logger.error(f'Bad status of response: {resp.status_code}')
