@@ -82,7 +82,7 @@ def is_phone_number(number: str) -> str or None:
     return raw_num
 
 
-def check_config_attribute(attr: str) -> str or Exception:
+def check_config_attribute(attr: str) -> str:
     if config.LINKS.get(attr, None):
         return config.LINKS[attr]
     else:
