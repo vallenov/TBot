@@ -34,7 +34,7 @@ class TBotException(Exception):
             self.context[key] = value
         super().__init__(*args)
 
-    def send_error(self, trace):
+    def send_error(self, trace) -> None:
         if self.context.get('send', False) is True:
             send_dev_message(
                 data=dict(
