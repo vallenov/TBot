@@ -43,5 +43,5 @@ class TBotException(Exception):
                 )
             )
 
-    def return_message(self):
+    def return_message(self) -> dict:
         return dict(text=self.context.get('return_message', 'Something wrong'))
