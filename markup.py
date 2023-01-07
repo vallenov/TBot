@@ -33,7 +33,7 @@ def custom_markup(command, category, smile='🔹', row_width=1) -> InlineKeyboar
     return markup
 
 
-def main_markup(privileges: int):
+def main_markup(privileges: int) -> InlineKeyboardMarkup:
     """
     Main markup
     """
