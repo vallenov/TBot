@@ -7,7 +7,7 @@ from exceptions import TBotException
 logger = get_logger(__name__)
 
 
-def custom_markup(command, category, smile='🔹', row_width=1) -> InlineKeyboardMarkup:
+def custom_markup(command, category: list or dict, smile='🔹', row_width=1) -> InlineKeyboardMarkup:
     """
     Make custom markup
     :param command: input action
