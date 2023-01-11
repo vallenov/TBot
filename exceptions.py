@@ -10,6 +10,7 @@ RESPONSE_CODES_MAPPING = {
     5: 'HTTP_ERROR',
     6: 'PARAMETERS_ERROR',
     7: 'CACHE_ERROR',
+    8: 'MARKUP_ERROR',
     100: 'UNKNOWN_ERROR'
 }
 
@@ -33,7 +34,7 @@ class TBotException(Exception):
             self.context[key] = value
         super().__init__(*args)
 
-    def send_error(self, trace):
+    def send_error(self, trace) -> None:
         if self.context.get('send', False) is True:
             send_dev_message(
                 data=dict(
@@ -42,5 +43,5 @@ class TBotException(Exception):
                 )
             )
 
-    def return_message(self):
+    def return_message(self) -> dict:
         return dict(text=self.context.get('return_message', 'Something wrong'))

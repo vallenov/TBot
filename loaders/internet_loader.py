@@ -33,7 +33,7 @@ class InternetLoader(Loader):
             e.send_error(traceback.format_exc())
 
     @staticmethod
-    def regular_request(url: str, method: str = 'GET', data: dict = None):
+    def regular_request(url: str, method: str = 'GET', data: dict = None) -> requests.models.Response:
         """
         Regular request to site
         """
@@ -107,7 +107,7 @@ class InternetLoader(Loader):
             e.send_error(traceback.format_exc())
             return e.return_message()
 
-    def get_cities_coordinates(self):
+    def get_cities_coordinates(self) -> None:
         """
         Get cities coordinates from internet to variable
         :param:
@@ -581,7 +581,7 @@ class InternetLoader(Loader):
             e.send_error(traceback.format_exc())
             return e.return_message()
 
-    def get_book_genres(self):
+    def get_book_genres(self) -> None or dict:
         """
         Get list of book's genres
         :param:
@@ -604,7 +604,7 @@ class InternetLoader(Loader):
             return e.return_message()
 
     @check_permission()
-    def get_book(self, text, **kwargs):
+    def get_book(self, text, **kwargs) -> dict:
         """
         Get random book from internet
         :param:

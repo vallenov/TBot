@@ -34,12 +34,11 @@ class DBLoader(Loader):
             logger.info('Load from config success')
 
     @staticmethod
-    def get_users_from_db():
+    def get_users_from_db() -> None:
         """
         Get all users' information from DB to memory
         """
         logger.info('get_users_from_db')
-        users = None
         try:
             users = md.Users.query \
                 .join(md.LibPrivileges, md.Users.privileges_id == md.LibPrivileges.p_id) \
@@ -68,7 +67,7 @@ class DBLoader(Loader):
             Loader.users[user.chat_id] = user_data
 
     @staticmethod
-    def get_users_from_config():
+    def get_users_from_config() -> None:
         """
         Get all users' information from config to memory
         """
@@ -107,7 +106,7 @@ class DBLoader(Loader):
             return data.p_id
 
     @staticmethod
-    def log_request(chat_id: str):
+    def log_request(chat_id: str) -> None:
         """
         Insert base request info to DB
         :param chat_id: person chat_id
@@ -120,7 +119,7 @@ class DBLoader(Loader):
             logger.exception(f'DB connection error: {e}')
             raise
 
-    def add_user(self, chat_id: str, privileges: int, login: str, first_name: str):
+    def add_user(self, chat_id: str, privileges: int, login: str, first_name: str) -> None:
         """
         Add new user to DB and memory
         """
@@ -143,7 +142,7 @@ class DBLoader(Loader):
         Loader.users[chat_id]['value'] = privileges
 
     @staticmethod
-    def update_user(chat_id: str, login: str, first_name: str):
+    def update_user(chat_id: str, login: str, first_name: str) -> None:
         """
         Update user info in DB and memory
         :param chat_id: unique user_id
@@ -211,7 +210,7 @@ class DBLoader(Loader):
                 resp['text'] = f'User {chat_id} {cmd[1]} updated'
                 return resp
             else:
-                return Loader.error_resp('Нет подключения к БД')
+                raise TBotException(code=3, return_message='Нет подключения к БД')
         except TBotException as e:
             logger.exception(e.context)
             e.send_error(traceback.format_exc())
@@ -253,7 +252,7 @@ class DBLoader(Loader):
             return e.return_message()
 
     @check_permission(needed_level='root')
-    def send_other(self, text: str, **kwargs):
+    def send_other(self, text: str, **kwargs) -> dict:
         """
         Send message to other user
         :param text: string "command chat_id message"
@@ -279,7 +278,7 @@ class DBLoader(Loader):
             return e.return_message()
 
     @check_permission(needed_level='root')
-    def send_to_all_users(self, text: str, **kwargs):
+    def send_to_all_users(self, text: str, **kwargs) -> dict:
         """
         Send message to all users
         :param text: string "command chat_id message"
@@ -305,7 +304,7 @@ class DBLoader(Loader):
             return e.return_message()
 
     @check_permission()
-    def send_to_admin(self, text: str, **kwargs):
+    def send_to_admin(self, text: str, **kwargs) -> dict:
         """
         Send message to admin
         :param text: string "command chat_id message"
@@ -350,6 +349,7 @@ class DBLoader(Loader):
                 lst = text.split()
                 if len(lst) == 1:
                     poem = self._get_random_poem()
+                    print(type(poem))
                     if not poem:
                         raise TBotException(code=3, message='Стих не найден')
                 else:
@@ -371,7 +371,7 @@ class DBLoader(Loader):
             return e.return_message()
 
     @check_permission()
-    def poem_divination(self, text: str, **kwargs):
+    def poem_divination(self, text: str, **kwargs) -> dict:
         """
         Poem divination
         """

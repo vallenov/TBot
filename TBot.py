@@ -47,7 +47,6 @@ class TBot:
             """
             Callback reaction
             """
-            TBot.save_file(call.message)
             call.message.text = call.data
             replace = TBot.replace(call.message)
             TBot.safe_send(call.message.json['chat']['id'], replace, reply_markup=replace.get('markup', None))
@@ -57,34 +56,51 @@ class TBot:
             """
             Text reaction
             """
-            TBot.save_file(message)
-            replace = TBot.replace(message)
-            chat_id = replace.get('chat_id', None)
-            if not chat_id:
-                chat_id = message.chat.id
-            if chat_id and isinstance(chat_id, int):
-                try:
-                    TBot.safe_send(chat_id, replace, reply_markup=replace.get('markup', None))
-                except telebot.apihelper.ApiException:
-                    logger.exception(f'Message to {chat_id} is not send')
-                    TBot.safe_send(message.chat.id, {'text': f"Message to {Loader.users[str(chat_id)]} is not send"})
-                else:
-                    if chat_id != message.chat.id:
-                        TBot.safe_send(message.chat.id, {'text': f"Message to {chat_id} was sent"})
-            elif chat_id and isinstance(chat_id, list):
-                is_send = []
-                is_not_send = []
-                for user_chat_id in replace['chat_id']:
+            if message.content_type == 'text':
+                logger.info(f'Request: '
+                            f'ID - {message.chat.id}, '
+                            f'Login - {message.chat.username}, '
+                            f'FirstName - {message.chat.first_name}')
+                conversation_logger.info(f'Request: '
+                                         f'ID - {message.chat.id}, '
+                                         f'Login - {message.chat.username}, '
+                                         f'FirstName - {message.chat.first_name}, '
+                                         f'Text - {message.text}, '
+                                         f'RAW - {message.chat}')
+                replace = TBot.replace(message)
+                chat_id = replace.get('chat_id', None)
+                if not chat_id:
+                    chat_id = message.chat.id
+                if chat_id and isinstance(chat_id, int):
                     try:
-                        TBot.safe_send(user_chat_id, replace, reply_markup=replace.get('markup', None))
+                        TBot.safe_send(chat_id, replace, reply_markup=replace.get('markup', None))
                     except telebot.apihelper.ApiException:
-                        is_not_send.append(str(user_chat_id))
+                        logger.exception(f'Message to {chat_id} is not send')
+                        TBot.safe_send(message.chat.id, {'text': f"Message to {Loader.users[str(chat_id)]} is not send"})
                     else:
-                        is_send.append(str(chat_id))
-                if is_send:
-                    TBot.safe_send(message.chat.id, {'text': f"Success: {' ,'.join(is_send)}"})
-                if is_not_send:
-                    TBot.safe_send(message.chat.id, {'text': f"Was not sent: {' ,'.join(is_not_send)}"})
+                        if chat_id != message.chat.id:
+                            TBot.safe_send(message.chat.id, {'text': f"Message to {chat_id} was sent"})
+                elif chat_id and isinstance(chat_id, list):
+                    is_send = []
+                    is_not_send = []
+                    for user_chat_id in replace['chat_id']:
+                        try:
+                            TBot.safe_send(user_chat_id, replace, reply_markup=replace.get('markup', None))
+                        except telebot.apihelper.ApiException:
+                            is_not_send.append(str(user_chat_id))
+                        else:
+                            is_send.append(str(chat_id))
+                    if is_send:
+                        TBot.safe_send(message.chat.id, {'text': f"Success: {' ,'.join(is_send)}"})
+                    if is_not_send:
+                        TBot.safe_send(message.chat.id, {'text': f"Was not sent: {' ,'.join(is_not_send)}"})
+            else:
+                try:
+                    TBot.save_file(message)
+                except TBotException as e:
+                    logger.exception(e.context)
+                    e.send_error(traceback.format_exc())
+                    TBot.safe_send(message.chat.id, e.return_message())
 
         logger.info('TBot is started')
 
@@ -210,9 +226,10 @@ class TBot:
                                             login=login,
                                             first_name=first_name)
                 except (OperationalError, exc.OperationalError) as e:
-                    send_data = dict()
-                    send_data['subject'] = f'TBot DB connection error'
-                    send_data['text'] = f'{e}'
+                    send_data = dict(
+                        subject=f'TBot DB connection error',
+                        text=f'{e}'
+                    )
                     send_dev_message(data=send_data, by='telegram')
                     TBot.internet_loader.tbot_restart(privileges=privileges)  
                 send_data = dict(
@@ -243,10 +260,9 @@ class TBot:
                 privileges=privileges,
                 chat_id=chat_id
             )
-            if not inspect.iscoroutinefunction(func.__wrapped__):
-                res = func(**_kwargs)
-            else:
-                res = asyncio.run(func(**_kwargs))
+            res = asyncio.run(func(**_kwargs)) \
+                if inspect.iscoroutinefunction(func.__wrapped__) \
+                else func(**_kwargs)
         duration = datetime.datetime.now() - start
         dur = float(str(duration.seconds) + '.' + str(duration.microseconds)[:3])
         logger.info(f'Duration: {dur} sec')
@@ -259,33 +275,21 @@ class TBot:
         :param message: input message
         :return:
         """
-        file_info = None
-        file_extension = None
         curdir = os.curdir
-        if message.content_type == 'text':
-            logger.info(f'Request: '
-                        f'ID - {message.chat.id}, '
-                        f'Login - {message.chat.username}, '
-                        f'FirstName - {message.chat.first_name}')
-            conversation_logger.info(f'Request: '
-                                     f'ID - {message.chat.id}, '
-                                     f'Login - {message.chat.username}, '
-                                     f'FirstName - {message.chat.first_name}, '
-                                     f'Text - {message.text}, '
-                                     f'RAW - {message.chat}')
-            return
         if message.content_type == 'photo':
             file_extension = '.jpg'
             file_info = TBot.bot.get_file(message.photo[-1].file_id)
-        if message.content_type == 'audio':
+        elif message.content_type == 'audio':
             file_extension = '.mp3'
             file_info = TBot.bot.get_file(message.audio.file_id)
-        if message.content_type == 'voice':
+        elif message.content_type == 'voice':
             file_extension = '.mp3'
             file_info = TBot.bot.get_file(message.voice.file_id)
-        if message.content_type == 'video':
+        elif message.content_type == 'video':
             file_extension = '.mp4'
             file_info = TBot.bot.get_file(message.video.file_id)
+        else:
+            raise TBotException(code=2, return_message='Я пока не умею обрабатывать этот тип данных')
         if not os.path.exists(os.path.join(curdir, 'downloads', message.content_type)):
             os.mkdir(os.path.join(curdir, 'downloads', message.content_type))
             os.chown(os.path.join(curdir, 'downloads', message.content_type), 1000, 1000)

@@ -29,7 +29,7 @@ def check_permission(needed_level: str = 'regular'):
                         f'needed permission: {Loader.privileges_levels[needed_level]}')
             if user_permission < Loader.privileges_levels[needed_level]:
                 logger.info('Access denied')
-                return Loader.error_resp('Permission denied')
+                return dict(text='Permission denied')
             else:
                 logger.info('Access allowed')
                 logger.info(func.__qualname__)
@@ -57,21 +57,3 @@ class Loader:
     else:
         privileges_levels = config.PRIVILEGES_LEVELS
 
-    @staticmethod
-    def error_resp(error_text: str = 'Something wrong'):
-        """
-        Return error response with variable text
-        :param error_text: error description string
-        :return: error response
-        """
-        resp = dict()
-        resp['text'] = error_text
-        return resp
-
-    @staticmethod
-    def get_root_users() -> list:
-        root_users = []
-        for key, value in Loader.users.items():
-            if value['value'] == Loader.privileges_levels['root']:
-                root_users.append(key)
-        return root_users

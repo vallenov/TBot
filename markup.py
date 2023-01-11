@@ -1,17 +1,19 @@
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+
 from loaders.loader import Loader
 from loggers import get_logger
+from exceptions import TBotException
 
 logger = get_logger(__name__)
 
 
-def custom_markup(command, category, smile='🔹', row_width=1):
+def custom_markup(command, category: list or dict, smile='🔹', row_width=1) -> InlineKeyboardMarkup:
     """
     Make custom markup
-    :param command: input command
+    :param command: input action
     :param category: command level 2 list or dict
     :param: emoji
-    :param row_width: width of markup
+    :param row_width: width of buttons
     :return: markup
     """
     markup = InlineKeyboardMarkup()
@@ -22,8 +24,8 @@ def custom_markup(command, category, smile='🔹', row_width=1):
     if isinstance(category, list):
         item = category
     if not item:
-        logger.exception(f'Wrong type: {type(item)}')
-        raise ValueError
+        logger.exception(f'Wrong item type: {type(item)}')
+        raise TBotException(code=8, message=f'Wrong item type: {type(item)}')
     for cat in item:
         short_cat = cat.split()[0]
         short_cat = short_cat.replace(',', '')
@@ -31,12 +33,12 @@ def custom_markup(command, category, smile='🔹', row_width=1):
     return markup
 
 
-def main_markup(privileges: int):
+def main_markup(privileges: int) -> InlineKeyboardMarkup:
     """
     Main markup
     """
     markup = InlineKeyboardMarkup()
-    markup.row_width = 1
+    markup.row_width = 2
     if Loader.privileges_levels['untrusted'] <= privileges:
         pass
     if Loader.privileges_levels['test'] <= privileges:

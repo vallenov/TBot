@@ -29,7 +29,7 @@ class FileLoader(Loader):
         if not config.USE_DB:
             self.load_poems()
 
-    def _check_file_db(self):
+    def _check_file_db(self) -> None:
         """
         Check available files in directories
         """
@@ -39,7 +39,7 @@ class FileLoader(Loader):
             if os.path.exists(file_path):
                 self.fife_db[file] = file_path
 
-    def load_poems(self):
+    def load_poems(self) -> None:
         """
         Load poems from file to memory
         """
@@ -106,7 +106,7 @@ class FileLoader(Loader):
             return e.return_message()
 
     @check_permission()
-    def poem_divination(self, text: str, **kwargs):
+    def poem_divination(self, text: str, **kwargs) -> dict:
         """
         Poem divination
         """
@@ -256,6 +256,6 @@ class FileLoader(Loader):
                            f'Изменение описания пользователя - update description "chat_id" "description"\n'
                            f'Отправить сообщение другому пользователю - send_other "chat_id" "text"\n'
                            f'Массовая рассылка текста - send_all "text"\n'
-                           f'  - Последовательность #%user_name%# будет заменена на имя пользователя\n'
+                           f'  - Последовательность #%usеr_name%# (не копировать!) будет заменена на имя пользователя\n'
                            f'Управление сервисами на сервере - systemctl "action" "service"\n')
         return resp

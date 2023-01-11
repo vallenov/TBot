@@ -82,14 +82,14 @@ def is_phone_number(number: str) -> str or None:
     return raw_num
 
 
-def check_config_attribute(attr):
+def check_config_attribute(attr: str) -> str:
     if config.LINKS.get(attr, None):
         return config.LINKS[attr]
     else:
         raise TBotException(code=4, return_message="I can't do this yet😔", message=f'Attribute {attr} not found')
 
 
-def cut_commands(text: str, count_of_commands):
+def cut_commands(text: str, count_of_commands: int) -> str:
     while '  ' in text:
         text = text.replace('  ', ' ')
     for _ in range(count_of_commands):
