@@ -291,11 +291,8 @@ class InternetLoader(Loader):
         """
         async with session.get(url) as res:
             data = await res.text()
-            if res.status == 200:
-                logger.info(f'Get successful ({url})')
-            else:
-                logger.error(f'Get unsuccessful ({url})')
-                raise TBotException(code=1, message=f'Bad response status: {res.status_code}')
+            if res.status >= 400:
+                raise TBotException(code=1, message=f'URL: {url}. Bad response status: {res.status}')
             self.async_url_data.append(data)
 
     @check_permission()
@@ -596,8 +593,7 @@ class InternetLoader(Loader):
             for genre in genre_raw:
                 title_raw = genre.find('a', class_='main-genre-title')
                 if title_raw.text:
-                    print(title_raw.text)
-                    self.book_genres[title_raw.text] = title_raw.get('href')
+                    self.book_genres[title_raw.text] = title_raw.get('href').replace('/genre/', '')
         except TBotException as e:
             logger.exception(e.context)
             e.send_error(traceback.format_exc())
@@ -627,12 +623,13 @@ class InternetLoader(Loader):
             if not category:
                 raise TBotException(code=2, return_message='Жанр не найден')
             site = '/'.join(config.LINKS['book_url'].split('/')[:3])
-            soup = InternetLoader.site_to_lxml(f'{site}{category}/listview/biglist/~6')
-            a_raw = soup.find_all('a', class_='pagination-page pagination-wide')
+            soup = InternetLoader.site_to_lxml(f'{site}/genre/{category.capitalize()}/listview/biglist/~2')
+            div_raw = soup.find_all('div', class_='pagination-right')
+            a_raw = div_raw[0].find_all('a', class_='pagination-page pagination-wide')
             last_page_raw = a_raw[-1].get('href')
             last_page = last_page_raw.split('~')[-1]
             random_page = random.choice(range(1, int(last_page) + 1))
-            soup = InternetLoader.site_to_lxml(f'{site}{category}/listview/biglist/~{random_page}')
+            soup = InternetLoader.site_to_lxml(f'{site}/genre/{category.capitalize()}/listview/biglist/~{random_page}')
             div_raw = soup.find('div', class_='blist-biglist')
             book_list = div_raw.find_all('div', class_='book-item-manage')
             random_book_raw = random.choice(book_list)
