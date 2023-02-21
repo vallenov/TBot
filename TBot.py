@@ -48,8 +48,13 @@ class TBot:
             Callback reaction
             """
             call.message.text = call.data
+            chat_id = call.message.json['chat']['id']
             replace = TBot.replace(call.message)
-            TBot.safe_send(call.message.json['chat']['id'], replace, reply_markup=replace.get('markup', None))
+            try:
+                TBot.safe_send(call.message.json['chat']['id'], replace, reply_markup=replace.get('markup', None))
+            except TBotException:
+                logger.exception(f'Message to {chat_id} is not send')
+                TBot.safe_send(chat_id, {'text': f"Something is wrong"})
 
         @TBot.bot.message_handler(func=lambda message: True, content_types=config.CONTENT_TYPES)
         def send_text(message):
@@ -74,7 +79,7 @@ class TBot:
                 if chat_id and isinstance(chat_id, int):
                     try:
                         TBot.safe_send(chat_id, replace, reply_markup=replace.get('markup', None))
-                    except telebot.apihelper.ApiException:
+                    except TBotException:
                         logger.exception(f'Message to {chat_id} is not send')
                         TBot.safe_send(message.chat.id, {'text': f"Message to {Loader.users[str(chat_id)]} is not send"})
                     else:
@@ -86,7 +91,7 @@ class TBot:
                     for user_chat_id in replace['chat_id']:
                         try:
                             TBot.safe_send(user_chat_id, replace, reply_markup=replace.get('markup', None))
-                        except telebot.apihelper.ApiException:
+                        except TBotException:
                             is_not_send.append(str(user_chat_id))
                         else:
                             is_send.append(str(chat_id))
@@ -190,7 +195,7 @@ class TBot:
                     time.sleep(1)
                 except telebot.apihelper.ApiException as e:
                     logger.exception(f'Message to {chat_id} is not send')
-                    raise
+                    raise TBotException(code=1)
                 except Exception as ex:
                     logger.exception(f'Unrecognized exception during a send: {traceback.format_exc()}')
                     if not is_send:
