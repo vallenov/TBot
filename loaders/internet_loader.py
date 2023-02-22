@@ -248,7 +248,10 @@ class InternetLoader(Loader):
                 news_time = n.find('span', class_='elem-info__date')
                 text = n.find('span', class_='share')
                 if news_time and text:
-                    form_text = text.get('data-title').replace('-', r'\-')
+                    special_symbols = r'-.'
+                    form_text = text.get('data-title')
+                    for symbol in special_symbols:
+                        form_text = form_text.replace(symbol, fr'\{symbol}')
                     news[news_time.text] = f"[{form_text}]({text.get('data-url')})"
                 if len(news) == count:
                     break
