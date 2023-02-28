@@ -242,17 +242,25 @@ class InternetLoader(Loader):
                                         message=f'{lst[1]} is not int')
             url = check_config_attribute('news_url')
             soup = InternetLoader.site_to_lxml(url)
-            div_raw = soup.find_all('div', class_='cell-list__item-info')
+
             news = {}
+            # Добавление главной новости
+            main_new = soup.find('div', class_='cell-main-photo__hover')
+            main_title = main_new.find('div', class_='cell-main-photo__title').text
+            main_time = main_new.find('div', class_='cell-info__date').text
+            main_href = main_new.find('a', class_='cell-main-photo__link').get('href')
+            news[main_time] = f"[{main_title}]({main_href})"
+
+            # Добавление остальных
+            div_raw = soup.find_all('a', class_='cell-list__item-link')
             for n in div_raw:
-                news_time = n.find('span', class_='elem-info__date')
-                text = n.find('span', class_='share')
+                news_time = n.find('div', class_='cell-info__date')
                 if news_time and text:
                     special_symbols = r'-.'
-                    form_text = text.get('data-title')
+                    form_text = n.get('title')
                     for symbol in special_symbols:
                         form_text = form_text.replace(symbol, fr'\{symbol}')
-                    news[news_time.text] = f"[{form_text}]({text.get('data-url')})"
+                    news[news_time.text] = f"[{form_text}]({n.get('href')})"
                 if len(news) == count:
                     break
             resp['text'] = dict_to_str(news, ' ')
