@@ -12,7 +12,12 @@ import config
 from loaders.loader import Loader, check_permission
 from graph import Graph, BaseGraphInfo, BaseSubGraphInfo
 from markup import custom_markup
-from helpers import dict_to_str, is_phone_number, check_config_attribute
+from helpers import (
+    dict_to_str,
+    is_phone_number,
+    check_config_attribute,
+    shild_special_symbols,
+)
 from loggers import get_logger
 from exceptions import TBotException
 
@@ -247,6 +252,7 @@ class InternetLoader(Loader):
             # Добавление главной новости
             main_new = soup.find('div', class_='cell-main-photo__hover')
             main_title = main_new.find('div', class_='cell-main-photo__title').text
+            main_title = shild_special_symbols(main_title)
             main_time = main_new.find('div', class_='cell-info__date').text
             main_href = main_new.find('a', class_='cell-main-photo__link').get('href')
             news[main_time] = f"[{main_title}]({main_href})"
@@ -256,10 +262,8 @@ class InternetLoader(Loader):
             for n in div_raw:
                 news_time = n.find('div', class_='cell-info__date')
                 if news_time and text:
-                    special_symbols = r'-.'
                     form_text = n.get('title')
-                    for symbol in special_symbols:
-                        form_text = form_text.replace(symbol, fr'\{symbol}')
+                    form_text = shild_special_symbols(form_text)
                     news[news_time.text] = f"[{form_text}]({n.get('href')})"
                 if len(news) == count:
                     break
