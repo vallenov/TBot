@@ -95,3 +95,10 @@ def cut_commands(text: str, count_of_commands: int) -> str:
     for _ in range(count_of_commands):
         text = text[text.find(' ')+1:]
     return text
+
+
+def shild_special_symbols(inp: str) -> str:
+    special_symbols = r'-.'
+    for symbol in special_symbols:
+        inp = inp.replace(symbol, fr'\{symbol}')
+    return inp
