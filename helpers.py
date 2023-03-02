@@ -98,7 +98,7 @@ def cut_commands(text: str, count_of_commands: int) -> str:
 
 
 def shild_special_symbols(inp: str) -> str:
-    special_symbols = r'-.'
+    special_symbols = r'_*[]()~`>#+-=|{}.!'
     for symbol in special_symbols:
         inp = inp.replace(symbol, fr'\{symbol}')
     return inp
