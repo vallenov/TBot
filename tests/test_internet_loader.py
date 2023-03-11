@@ -5,7 +5,7 @@ from loaders.internet_loader import InternetLoader
 
 
 def test_ip():
-    il = InternetLoader('ILoader')
+    il = InternetLoader()
     res = il.get_server_ip(privileges=50)
     ip = res.get('text', False)
     assert ip, 'No response data'
@@ -18,7 +18,7 @@ def test_ip():
 
 
 def test_site_to_lxml():
-    il = InternetLoader('ILoader')
+    il = InternetLoader()
     res = il.site_to_lxml('https://ifconfig.me/ip')
     assert res, 'No response data'
     assert isinstance(res, BeautifulSoup), 'Wrong response type'
