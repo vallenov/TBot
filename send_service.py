@@ -1,6 +1,5 @@
 import requests
 
-from loaders.loader import Loader
 import config
 from loggers import get_logger
 
