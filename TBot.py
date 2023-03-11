@@ -313,6 +313,7 @@ class TBot:
         TBot.init_bot()
         TBot.init_dirs()
         TBot.init_loaders()
+        TBot.internet_loader.system_restart(text='restart allow')
         TBot.mapping = {
             'exchange': TBot.internet_loader.get_exchange,
             'weather': TBot.internet_loader.get_weather,
