@@ -346,6 +346,7 @@ class TBot:
             'systemctl': TBot.internet_loader.systemctl,
             'allow_connection': TBot.internet_loader.allow_connection
         }
+        # отправка сообщения о начале работы только с прода
         if config.PROD:
             logger.info(f'Send start message to root users')
             send_dev_message({'text': 'TBot is started'}, 'telegram')
