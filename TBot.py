@@ -48,6 +48,7 @@ class TBot:
             Callback reaction
             """
             call.message.text = call.data
+            TBot.log_request(call.message)
             chat_id = call.message.json['chat']['id']
             replace = TBot.replace(call.message)
             try:
@@ -62,16 +63,7 @@ class TBot:
             Text reaction
             """
             if message.content_type == 'text':
-                logger.info(f'Request: '
-                            f'ID - {message.chat.id}, '
-                            f'Login - {message.chat.username}, '
-                            f'FirstName - {message.chat.first_name}')
-                conversation_logger.info(f'Request: '
-                                         f'ID - {message.chat.id}, '
-                                         f'Login - {message.chat.username}, '
-                                         f'FirstName - {message.chat.first_name}, '
-                                         f'Text - {message.text}, '
-                                         f'RAW - {message.chat}')
+                TBot.log_request(message)
                 replace = TBot.replace(message)
                 chat_id = replace.get('chat_id', None)
                 if not chat_id:
@@ -108,6 +100,19 @@ class TBot:
                     TBot.safe_send(message.chat.id, e.return_message())
 
         logger.info('TBot is started')
+
+    @staticmethod
+    def log_request(message):
+        logger.info(f'Request: '
+                    f'ID - {message.chat.id}, '
+                    f'Login - {message.chat.username}, '
+                    f'FirstName - {message.chat.first_name}')
+        conversation_logger.info(f'Request: '
+                                 f'ID - {message.chat.id}, '
+                                 f'Login - {message.chat.username}, '
+                                 f'FirstName - {message.chat.first_name}, '
+                                 f'Text - {message.text}, '
+                                 f'RAW - {message.chat}')
 
     @staticmethod
     def init_loaders():
