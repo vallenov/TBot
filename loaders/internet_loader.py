@@ -539,8 +539,6 @@ class InternetLoader(Loader):
                         elif act_year_from > act_year_to:
                             raise TBotException(code=6, return_message='Год начала должен быть меньше, '
                                                                        'чем год конца интервала')
-                        year_from = random.choice(range(int(split_years[0]), int(split_years[1]) + 1))
-                        year_to = year_from
                     except ValueError:
                         raise TBotException(code=6, return_message='Неправильный тип параметра')
             url = check_config_attribute('random_movie_url')
@@ -557,6 +555,7 @@ class InternetLoader(Loader):
             page_count = int(div_nav.find('div', class_='pagesFromTo').text.split(' ')[-1]) // per_page
             current_try = 0
             max_try = 5
+            symbols = 'аоуыэяеёюибвгдйжзклмнпрстфхцчшщьъАОУЫЭЯЕЁЮИБВГДЙЖЗКЛМНПРСТФХЦЧШЩЬЪ'
             while current_try < max_try:
                 current_try += 1
                 random_page_number = str(random.choice(range(1, page_count)))
@@ -568,7 +567,6 @@ class InternetLoader(Loader):
                     logger.warning(f'No elements with poster')
                     continue
                 try_count = 0
-                symbols = 'аоуыэяеёюибвгдйжзклмнпрстфхцчшщьъАОУЫЭЯЕЁЮИБВГДЙЖЗКЛМНПРСТФХЦЧШЩЬЪ'
                 while True:
                     random_movie_raw = random.choice(div_elements)
                     p_raw = random_movie_raw.find('p', class_='name')
