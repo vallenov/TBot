@@ -167,6 +167,8 @@ class InternetLoader(Loader):
                 data = InternetLoader.regular_request(url)
                 weather = json.loads(data.text)
                 time = [time[11:] for time in weather['hourly']['time']]
+                # переводим hPa в mmhg
+                weather['hourly']['pressure_msl'] = [int(press * 0.75) for press in weather['hourly']['pressure_msl']]
                 subplots = []
                 for param in weather_params:
                     subplots.append(BaseSubGraphInfo('plot', 5, None, 'Date', param, time, weather['hourly'][param]))
