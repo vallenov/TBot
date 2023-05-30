@@ -217,34 +217,26 @@ class DBLoader(Loader):
             return e.return_message()
 
     @check_permission(needed_level='root')
-    def show_users(self, **kwargs) -> dict:
+    def show_users(self, text: str, **kwargs) -> dict:
         """
         Show current users information
         """
         resp = {}
-        cnt = 1
-        users = dict()
-        users[0] = ['chat_id', 'login', 'first_name', 'privileges', 'description']
-        max_rows_lens = [0] + list(map(lambda x: len(x), users[0]))
         try:
-            for key, value in Loader.users.items():
-                if value['value'] > Loader.privileges_levels['trusted']:
-                    continue
-                users[cnt] = [key, value['login'], value['first_name'], str(value['value']), value['description']]
-                cur_rows_lens = list(map(lambda x: 0 if not x else len(x), users[cnt]))
-                for i in range(1, 6):
-                    max_rows_lens[i] = cur_rows_lens[i-1] if cur_rows_lens[i-1] > max_rows_lens[i] else max_rows_lens[i]
-                cnt += 1
-            if not len(users):
-                raise TBotException(code=3, return_message='Пользователь не найден')
+            lst = text.split()
+            if len(lst) == 1:
+                users = [f"{chat_id} {user['login']} {user['first_name']}" for chat_id, user in Loader.users.items()
+                         if user['value'] <= Loader.privileges_levels['trusted']]
+                resp['text'] = 'Список пользователей'
+                resp['markup'] = custom_markup('users', users, '👥')
+            elif len(lst) == 2:
+                if not Loader.users.get(lst[1]):
+                    raise TBotException(code=3, return_message=f'User {lst[1]} not found')
+                user_info = {'chat_id': lst[1]}
+                user_info.update(Loader.users.get(lst[1]))
+                resp['text'] = dict_to_str(user_info, ': ')
             else:
-                for key, value in users.items():
-                    tmp = ''
-                    for usr in range(len(users[key])):
-                        item = users[key][usr] or 'None'
-                        tmp += item.center(max_rows_lens[usr+1] + 3)
-                    users[key] = tmp
-                resp['text'] = dict_to_str(users, '')
+                raise TBotException(code=6, return_message=f'Wrong parameters count: {len(lst)}')
             return resp
         except TBotException as e:
             logger.exception(e.context)
