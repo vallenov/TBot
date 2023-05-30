@@ -12,7 +12,7 @@ def custom_markup(command, category: list or dict, smile='🔹', row_width=1) ->
     Make custom markup
     :param command: input action
     :param category: command level 2 list or dict
-    :param: emoji
+    :param smile: emoji
     :param row_width: width of buttons
     :return: markup
     """
