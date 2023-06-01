@@ -1,4 +1,4 @@
-from models import Users as UsersModel
+from sqlalchemy.engine.row import Row
 from loggers import get_logger
 from exceptions import TBotException
 
@@ -24,11 +24,11 @@ class User:
         }
 
 
-class Users:
+class MemUsers:
     def __init__(self):
         self._users = {}
 
-    def __call__(self, user_id=None) -> dict or UsersModel:
+    def __call__(self, user_id=None) -> list or User:
         if not user_id:
             return self._users.values()
         else:
@@ -43,7 +43,7 @@ class Users:
                     first_name = user.get('first_name')
                     privileges = user.get('privileges')
                     description = user.get('description')
-                elif isinstance(user, UsersModel):
+                elif isinstance(user, Row):
                     chat_id = user.chat_id
                     login = user.login
                     first_name = user.first_name
@@ -62,4 +62,4 @@ class Users:
         return True if item in self._users.keys() else False
 
 
-tbot_users = Users()
+tbot_users = MemUsers()
