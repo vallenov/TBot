@@ -11,6 +11,7 @@ from loaders.loader import Loader, check_permission
 from markup import main_markup
 from loggers import get_logger
 from markup import custom_markup
+from users import tbot_users
 
 from exceptions import TBotException
 
@@ -113,14 +114,14 @@ class FileLoader(Loader):
         resp = {}
         try:
             cmd = text.split()
-            if kwargs['chat_id'] not in Loader.users.keys():
+            if kwargs['chat_id'] not in tbot_users:
                 raise TBotException(code=3, chat_id=f"{kwargs['chat_id']}")
-            if not Loader.users[kwargs['chat_id']].get('cache'):
-                Loader.users[kwargs['chat_id']]['cache'] = dict()
+            if not tbot_users(kwargs['chat_id']).cache:
+                tbot_users(kwargs['chat_id']).cache = dict()
             if len(cmd) == 1:
-                if 'poem' in Loader.users[kwargs['chat_id']]['cache']:
-                    Loader.users[kwargs['chat_id']]['cache'].pop('poem')
-                if not Loader.users[kwargs['chat_id']]['cache'].get('poem'):
+                if 'poem' in tbot_users(kwargs['chat_id']).cache:
+                    tbot_users(kwargs['chat_id']).cache.pop('poem')
+                if not tbot_users(kwargs['chat_id']).cache.get('poem'):
                     while True:
                         poem = random.choice(self.poems)
                         count_of_quatrains = poem['text'].count('\n\n')
@@ -136,12 +137,12 @@ class FileLoader(Loader):
                             count_of_quatrains = len(quatrains)
                         if count_of_quatrains:
                             break
-                    Loader.users[kwargs['chat_id']]['cache']['poem'] = poem
+                    tbot_users(kwargs['chat_id']).cache['poem'] = poem
                     resp['text'] = 'Выберите четверостишие'
                     resp['markup'] = custom_markup('divination', [str(i) for i in range(1, count_of_quatrains+1)], '🔮')
                     return resp
             else:
-                poem = Loader.users[kwargs['chat_id']]['cache'].get('poem')
+                poem = tbot_users(kwargs['chat_id']).cache.get('poem')
                 if not poem:
                     raise TBotException(code=7,
                                         return_message=f'Отсутствует сохраненный стих. Нажми на гадание еще разок',
