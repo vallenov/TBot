@@ -16,6 +16,7 @@ from send_service import send_dev_message
 from loggers import get_logger
 from exceptions import TBotException
 from graph import Graph, BaseGraphInfo, BaseSubGraphInfo
+from users import tbot_users
 
 logger = get_logger(__name__)
 
@@ -58,13 +59,7 @@ class DBLoader(Loader):
             logger.exception(e.context)
             e.send_error(traceback.format_exc())
             exit()
-        for user in users:
-            user_data = dict()
-            user_data['login'] = user.login
-            user_data['first_name'] = user.first_name
-            user_data['value'] = user.value
-            user_data['description'] = user.description
-            Loader.users[user.chat_id] = user_data
+        tbot_users.add_users(users)
 
     @staticmethod
     def get_users_from_config() -> None:
@@ -75,13 +70,7 @@ class DBLoader(Loader):
         try:
             if not config.USERS:
                 raise TBotException(code=4, message='USERS')
-            for value in config.USERS.values():
-                Loader.users[value['chat_id']] = {
-                    'login': value['login'],
-                    'first_name': value['first_name'],
-                    'value': value['privileges'],
-                    'description': value['description']
-                }
+            tbot_users.add_users(config.USERS.values())
         except TBotException as e:
             logger.exception(e.context)
             e.send_error(traceback.format_exc())
@@ -119,7 +108,7 @@ class DBLoader(Loader):
             logger.exception(f'DB connection error: {e}')
             raise
 
-    def add_user(self, chat_id: str, privileges: int, login: str, first_name: str) -> None:
+    def add_user(self, chat_id: str, login: str, first_name: str, privileges: int) -> None:
         """
         Add new user to DB and memory
         """
@@ -136,10 +125,7 @@ class DBLoader(Loader):
             logger.exception(f'DB connection error: {e}')
             raise
         logger.info(f'New user {chat_id} added')
-        Loader.users[chat_id] = dict()
-        Loader.users[chat_id]['login'] = login
-        Loader.users[chat_id]['first_name'] = first_name
-        Loader.users[chat_id]['value'] = privileges
+        tbot_users.add_user(chat_id, login, first_name, privileges)
 
     @staticmethod
     def update_user(chat_id: str, login: str, first_name: str) -> None:
@@ -155,8 +141,8 @@ class DBLoader(Loader):
             user.login = login
             user.first_name = first_name
             db.session.commit()
-        Loader.users[chat_id]['login'] = login
-        Loader.users[chat_id]['first_name'] = first_name
+        tbot_users(chat_id).login = login
+        tbot_users(chat_id).first_name = first_name
         logger.info('User info updated')
 
     @check_permission(needed_level='root')
@@ -166,7 +152,6 @@ class DBLoader(Loader):
         """
         resp = {}
         cmd = text.split()
-        cmd = [word.lower() for word in cmd]
         try:
             if len(cmd) < 4:
                 raise TBotException(code=6,
@@ -174,15 +159,16 @@ class DBLoader(Loader):
                                     parameres_count=len(cmd))
             else:
                 chat_id = cmd[2]
-                if cmd[1] == 'description':
-                    new_value = ' '.join(cmd[3:])
-                elif cmd[1] == 'privileges':
+                if cmd[1].lower() == 'description':
+                    new_value = cut_commands(text, 3)
+                elif cmd[1].lower() == 'privileges':
                     new_value = int(cmd[3])
                 else:
                     raise TBotException(code=6,
                                         return_message=f'Неправильное значение параметра: {cmd[1]}',
                                         parameres_value=cmd[2])
             if config.USE_DB:
+                logger.info(f'Updating DB')
                 user = md.Users.query.filter(
                     (md.Users.chat_id == chat_id) |
                     (md.Users.login == chat_id) |
@@ -201,16 +187,14 @@ class DBLoader(Loader):
                     if cmd[1] == 'privileges':
                         u.privileges_id = new_value
                 db.session.commit()
-                logger.info(f'Updating memory')
-                if cmd[1] == 'privileges':
-                    Loader.users[chat_id]['value'] = int(cmd[3])
-                if cmd[1] == 'description':
-                    Loader.users[chat_id]['description'] = new_value
-                logger.info(f'User {chat_id} {cmd[1]} updated')
-                resp['text'] = f'User {chat_id} {cmd[1]} updated'
-                return resp
-            else:
-                raise TBotException(code=3, return_message='Нет подключения к БД')
+            logger.info(f'Updating memory')
+            if cmd[1] == 'privileges':
+                tbot_users(chat_id).privileges = int(cmd[3])
+            if cmd[1] == 'description':
+                tbot_users(chat_id).description = new_value
+            logger.info(f'User {chat_id} {cmd[1]} updated')
+            resp['text'] = f'User {chat_id} {cmd[1]} updated'
+            return resp
         except TBotException as e:
             logger.exception(e.context)
             e.send_error(traceback.format_exc())
@@ -225,15 +209,15 @@ class DBLoader(Loader):
         try:
             lst = text.split()
             if len(lst) == 1:
-                users = [f"{chat_id} {user['login']} {user['first_name']}" for chat_id, user in Loader.users.items()
-                         if user['value'] <= Loader.privileges_levels['trusted']]
+                users = [f"{user.chat_id} {user.login} {user.first_name}" for user in tbot_users()
+                         if user.privileges <= Loader.privileges_levels['trusted']]
                 resp['text'] = 'Список пользователей'
                 resp['markup'] = custom_markup('users', users, '👥')
             elif len(lst) == 2:
-                if not Loader.users.get(lst[1]):
+                if not tbot_users(lst[1]):
                     raise TBotException(code=3, return_message=f'User {lst[1]} not found')
                 user_info = {'chat_id': lst[1]}
-                user_info.update(Loader.users.get(lst[1]))
+                user_info.update(tbot_users(lst[1]).as_dict())
                 resp['text'] = dict_to_str(user_info, ': ')
             else:
                 raise TBotException(code=6, return_message=f'Wrong parameters count: {len(lst)}')
@@ -259,7 +243,7 @@ class DBLoader(Loader):
                 chat_id = int(lst[1])
             except ValueError:
                 raise TBotException(code=6, return_message=f'Неправильное значение параметра: {lst[1]}')
-            if str(chat_id) not in Loader.users.keys():
+            if str(chat_id) not in tbot_users:
                 raise TBotException(code=3, return_message=f'Пользователь {lst[1]} не найден')
             resp['chat_id'] = chat_id
             resp['text'] = cut_commands(text, 2)
@@ -282,7 +266,7 @@ class DBLoader(Loader):
             if len(lst) < 2:
                 raise TBotException(code=6, return_message=f'Неправильное количество параметров: {len(lst)}')
             resp['chat_id'] = []
-            for chat_id in Loader.users.keys():
+            for chat_id in tbot_users:
                 try:
                     chat_id = int(chat_id)
                 except ValueError:
@@ -308,7 +292,7 @@ class DBLoader(Loader):
             if len(lst) < 2:
                 raise TBotException(code=6, return_message=f'Неправильное количество параметров: {len(lst)}')
             resp['chat_id'] = int(config.USERS['root_id']['chat_id'])
-            resp['text'] = str(f"Message from {Loader.users[kwargs['chat_id']]['first_name'] or kwargs['chat_id']}\n"
+            resp['text'] = str(f"Message from {tbot_users(kwargs['chat_id']).first_name or kwargs['chat_id']}\n"
                                f"Text: {cut_commands(text, 1)}")
             return resp
         except TBotException as e:
@@ -341,7 +325,6 @@ class DBLoader(Loader):
                 lst = text.split()
                 if len(lst) == 1:
                     poem = self._get_random_poem()
-                    print(type(poem))
                     if not poem:
                         raise TBotException(code=3, message='Стих не найден')
                 else:
@@ -370,14 +353,14 @@ class DBLoader(Loader):
         resp = {}
         try:
             cmd = text.split()
-            if kwargs['chat_id'] not in Loader.users.keys():
+            if kwargs['chat_id'] not in tbot_users:
                 raise TBotException(code=3, message=f'User {kwargs["chat_id"]} not found')
-            if not Loader.users[kwargs['chat_id']].get('cache'):
-                Loader.users[kwargs['chat_id']]['cache'] = dict()
+            if not tbot_users(kwargs['chat_id']).cache:
+                tbot_users(kwargs['chat_id']).cache = dict()
             if len(cmd) == 1:
-                if 'poem' in Loader.users[kwargs['chat_id']]['cache']:
-                    Loader.users[kwargs['chat_id']]['cache'].pop('poem')
-                if not Loader.users[kwargs['chat_id']]['cache'].get('poem'):
+                if 'poem' in tbot_users(kwargs['chat_id']).cache:
+                    tbot_users(kwargs['chat_id']).cache.pop('poem')
+                if not tbot_users(kwargs['chat_id']).cache.get('poem'):
                     while True:
                         poem = self._get_random_poem()
                         count_of_quatrains = poem.text.count('\n\n')
@@ -393,13 +376,13 @@ class DBLoader(Loader):
                             count_of_quatrains = len(quatrains)
                         if count_of_quatrains:
                             break
-                    Loader.users[kwargs['chat_id']]['cache']['poem'] = poem
+                    tbot_users(kwargs['chat_id']).cache['poem'] = poem
                     resp['text'] = 'Выберите четверостишие'
                     resp['markup'] = custom_markup('divination', [str(i) for i in range(1, count_of_quatrains + 1)],
                                                    '🔮')
                     return resp
             else:
-                poem = Loader.users[kwargs['chat_id']]['cache'].get('poem')
+                poem = tbot_users(kwargs['chat_id']).cache.get('poem')
                 if not poem:
                     raise TBotException(code=7,
                                         return_message=f'Отсутствует сохраненный стих. Нажми на гадание еще разок',
