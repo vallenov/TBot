@@ -44,7 +44,6 @@ class Loader:
     Common loaders class
     """
 
-    users = {}
     if config.USE_DB:
         try:
             privileges_levels = {privileges.name: privileges.value
