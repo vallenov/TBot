@@ -22,6 +22,7 @@ from send_service import send_dev_message
 from helpers import now_time, get_hash_name
 from loggers import get_logger, get_conversation_logger
 from exceptions import TBotException
+from users import tbot_users
 
 logger = get_logger(__name__)
 conversation_logger = get_conversation_logger()
@@ -32,9 +33,9 @@ class TBot:
     Main class
     """
     bot = None
-    internet_loader = None
-    file_loader = None
-    db_loader = None
+    internet_loader: InternetLoader = None
+    file_loader: FileLoader = None
+    db_loader: DBLoader = None
     mapping = None
 
     @staticmethod
@@ -73,7 +74,7 @@ class TBot:
                         TBot.safe_send(chat_id, replace, reply_markup=replace.get('markup', None))
                     except TBotException:
                         logger.exception(f'Message to {chat_id} is not send')
-                        TBot.safe_send(message.chat.id, {'text': f"Message to {Loader.users[str(chat_id)]} is not send"})
+                        TBot.safe_send(message.chat.id, {'text': f"Message to {chat_id} is not send"})
                     else:
                         if chat_id != message.chat.id:
                             TBot.safe_send(message.chat.id, {'text': f"Message to {chat_id} was sent"})
@@ -163,8 +164,8 @@ class TBot:
         if not text and not photo:
             TBotException(code=6, message='Replace is empty')
         if text:
-            user = Loader.users.get(str(chat_id))
-            text = text.replace('#%user_name%#', user.get('first_name', 'участник моего мини-клуба'))
+            user = tbot_users(str(chat_id))
+            text = text.replace('#%user_name%#', user.first_name or 'участник моего мини-клуба')
         is_send = False
         current_try = 0
         start = 0
@@ -228,7 +229,7 @@ class TBot:
         if config.USE_DB:
             login = message.json['chat'].get('username', None)
             first_name = message.json['chat'].get('first_name', None)
-            if chat_id not in Loader.users.keys():
+            if chat_id not in tbot_users:
                 privileges = Loader.privileges_levels['regular']
                 try:
                     TBot.db_loader.add_user(chat_id=chat_id,
@@ -251,10 +252,10 @@ class TBot:
                 if mail_resp['res'] == 'ERROR' or telegram_resp['res'] == 'ERROR':
                     logger.warning(f'Message do not received. MAIL = {mail_resp}, Telegram = {telegram_resp}')
             else:
-                if Loader.users[chat_id]['login'] != login or \
-                        Loader.users[chat_id]['first_name'] != first_name:
+                if tbot_users(chat_id).login != login or \
+                        tbot_users(chat_id).first_name != first_name:
                     DBLoader.update_user(chat_id, login, first_name)
-        privileges = Loader.users[chat_id]['value']
+        privileges = tbot_users(chat_id).privileges
         if config.USE_DB:
             try:
                 TBot.db_loader.log_request(chat_id)
