@@ -86,7 +86,7 @@ class DBLoader(Loader):
                 md.LibPrivileges.value == privileges
             ).one_or_none()
             if not data:
-                raise TBotException(code=3, message=f'Привилегия {privileges} не найдена')
+                raise TBotException(code=3, message=f'Privilege {privileges} not found')
         except TBotException as e:
             logger.exception(e.context)
             e.send_error(traceback.format_exc())
@@ -215,12 +215,12 @@ class DBLoader(Loader):
                 resp['markup'] = custom_markup('users', users, '👥')
             elif len(lst) == 2:
                 if not tbot_users(lst[1]):
-                    raise TBotException(code=3, return_message=f'User {lst[1]} not found')
+                    raise TBotException(code=3, return_message=f'Пользователь {lst[1]} не найден')
                 user_info = {'chat_id': lst[1]}
                 user_info.update(tbot_users(lst[1]).as_dict())
                 resp['text'] = dict_to_str(user_info, ': ')
             else:
-                raise TBotException(code=6, return_message=f'Wrong parameters count: {len(lst)}')
+                raise TBotException(code=6, return_message=f'Неверное количество параметров: {len(lst)}')
             return resp
         except TBotException as e:
             logger.exception(e.context)
@@ -394,15 +394,11 @@ class DBLoader(Loader):
                     number_of_quatrain = int(cmd[1])
                     resp['text'] = quatrains[number_of_quatrain - 1]
                 except ValueError:
-                    raise TBotException(code=6,
-                                        message='Неправильный тип параметра',
-                                        parameter=cmd[1],
-                                        type=type(cmd[1]))
+                    raise TBotException(code=6, return_message=f'Неправильный тип параметра {type(cmd[1])}')
                 except IndexError:
                     raise TBotException(code=7,
                                         return_message=f'Отсутствует сохраненный стих. Нажми на гадание еще разок',
-                                        chat_id=kwargs.get('chat_id'),
-                                        cache_field='poem')
+                                        chat_id=kwargs.get('chat_id'))
                 return resp
         except TBotException as e:
             logger.exception(e.context)
@@ -432,7 +428,7 @@ class DBLoader(Loader):
                                 'month': 30,
                                 'all': 100000}
                 if lst[1] not in interval_map.keys():
-                    raise TBotException(code=6, return_message=f'Wrong parameter value: {lst[1]}')
+                    raise TBotException(code=6, return_message=f'Неправильное значение параметра: {lst[1]}')
                 interval = datetime.datetime.now() - datetime.timedelta(days=interval_map[lst[1]])
                 if lst[1] != 'today':
                     plot_data = md.LogRequests.query \
