@@ -68,7 +68,7 @@ class FileLoader(Loader):
                         self.poems.append(poem)
                     logger.info(f'{file_path} download. len = {len(self.poems)}')
                 else:
-                    raise TBotException(code=2, message='File poems.xlsx do not found', send=True)
+                    raise TBotException(code=2, message='Файл poems.xlsx не найден', send=True)
             except TBotException as e:
                 logger.exception(e.context)
                 e.send_error(traceback.format_exc())
@@ -202,7 +202,7 @@ class FileLoader(Loader):
                     return resp
                 time.sleep(1)
                 i += 1
-            raise TBotException(code=2, message='Unable to create capture')
+            raise TBotException(code=2)
         except TBotException as e:
             logger.exception(e.context)
             e.send_error(traceback.format_exc())
@@ -241,7 +241,7 @@ class FileLoader(Loader):
         if Loader.privileges_levels['trusted'] <= kwargs['privileges']:
             pass
         if Loader.privileges_levels['root'] <= kwargs['privileges']:
-            resp['text'] = f'You are a root user'
+            resp['text'] = f'Вы root-пользователь'
         resp['markup'] = main_markup(kwargs['privileges'])
         return resp
 
