@@ -42,14 +42,19 @@ class DBLoader(Loader):
         logger.info('get_users_from_db')
         try:
             users = md.Users.query \
-                .join(md.LibPrivileges, md.Users.privileges_id == md.LibPrivileges.p_id) \
+                .join(
+                    md.LibPrivileges,
+                    md.Users.privileges_id == md.LibPrivileges.p_id
+                ) \
                 .add_columns(md.Users.chat_id,
                              md.Users.login,
                              md.Users.first_name,
                              md.LibPrivileges.value,
                              md.Users.description,
                              md.Users.active) \
-                .all()
+                .filter(
+                    md.Users.active.is_(True)
+                )
             if not users:
                 raise TBotException(code=3, message='TBot.users is empty', send=True)
         except exc.DatabaseError:
@@ -60,7 +65,7 @@ class DBLoader(Loader):
             logger.exception(e.context)
             e.send_error(traceback.format_exc())
             exit()
-        tbot_users.add_users(users)
+        tbot_users.add_users(users.all())
 
     @staticmethod
     def get_users_from_config() -> None:
@@ -96,7 +101,7 @@ class DBLoader(Loader):
             return data.p_id
 
     @staticmethod
-    def log_request(chat_id: str, action: str = 'get_hello') -> None:
+    def log_request(chat_id: str, action: str = 'hello') -> None:
         """
         Insert base request info to DB
         :param chat_id: person chat_id
@@ -175,6 +180,8 @@ class DBLoader(Loader):
                     new_value = cut_commands(text, 3)
                 elif cmd[1].lower() == 'privileges':
                     new_value = int(cmd[3])
+                elif cmd[1].lower() == 'active':
+                    new_value = bool(cmd[3])
                 else:
                     raise TBotException(code=6,
                                         return_message=f'Неправильное значение параметра: {cmd[1]}',
@@ -196,8 +203,10 @@ class DBLoader(Loader):
                     chat_id = u.chat_id
                     if cmd[1] == 'description':
                         u.description = new_value
-                    if cmd[1] == 'privileges':
+                    elif cmd[1] == 'privileges':
                         u.privileges_id = new_value
+                    elif cmd[1] == 'active':
+                        u.active = new_value
                 db.session.commit()
             logger.info(f'Updating memory')
             if cmd[1] == 'privileges':
