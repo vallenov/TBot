@@ -253,10 +253,12 @@ class FileLoader(Loader):
         :return:
         """
         resp = dict()
-        resp['text'] = str(f'Изменение привилегий пользователя - update privileges "chat_id" "privileges"\n'
-                           f'Изменение описания пользователя - update description "chat_id" "description"\n'
-                           f'Отправить сообщение другому пользователю - send_other "chat_id" "text"\n'
-                           f'Массовая рассылка текста - send_all "text"\n'
-                           f'  - Последовательность #%usеr_name%# (не копировать!) будет заменена на имя пользователя\n'
-                           f'Управление сервисами на сервере - systemctl "action" "service"\n')
+        resp['text'] = str(
+            f'Изменение привилегий пользователя - update privileges "chat_id" "privileges" 10-50\n'
+            f'Изменение описания пользователя - update description "chat_id" "description"\n'
+            f'Изменение активности пользователя (вместо удаления) - update description "chat_id" "active" 1 или 0\n'
+            f'Отправить сообщение другому пользователю - send_other "chat_id" "text"\n'
+            f'Массовая рассылка текста - send_all "text"\n'
+            f'  - Последовательность #%usеr_name%# (не копировать!) будет заменена на имя пользователя\n'
+            f'Управление сервисами на сервере - systemctl "action" "service"\n')
         return resp
