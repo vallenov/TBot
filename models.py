@@ -26,6 +26,7 @@ class Users(db.Model):
     date_ins = db.Column(db.DateTime(timezone=True),
                          server_default=func.now())
     description = db.Column(db.String(300))
+    active = db.Column(db.Boolean, default=True)
 
 
 class Poems(db.Model):
@@ -50,3 +51,4 @@ class LogRequests(db.Model):
     chat_id = db.Column(db.String(20), db.ForeignKey(Users.chat_id))
     date_ins = db.Column(db.DateTime(timezone=True),
                          server_default=func.now())
+    action = db.Column(db.String(200))
