@@ -245,7 +245,7 @@ class DBLoader(Loader):
                 tbot_users(chat_id).privileges = new_value
             elif cmd[1] == 'description':
                 tbot_users(chat_id).description = new_value
-            elif cmd[1] == 'description':
+            elif cmd[1] == 'active':
                 tbot_users(chat_id).active = new_value
             logger.info(f'User {chat_id} {cmd[1]} updated')
             resp['text'] = f'User {chat_id} {cmd[1]} updated'
