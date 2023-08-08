@@ -6,13 +6,32 @@ logger = get_logger(__name__)
 
 
 class User:
-    def __init__(self, chat_id: str, login: str, first_name: str, privileges: int, description: str):
+    def __init__(
+            self,
+            chat_id: str,
+            login: str,
+            first_name: str,
+            privileges: int,
+            description: str,
+            active: bool = True
+    ):
         self.chat_id = chat_id
         self.login = login
         self.first_name = first_name
         self.privileges = privileges
         self.description = description
+        self.active = active
         self.cache = None
+
+    def __repr__(self):
+        return f'''(
+        chat_id: {self.chat_id}, 
+        login: {self.login}, 
+        first_name: {self.first_name}, 
+        privileges: {self.privileges}, 
+        description: {self.description}, 
+        action: {self.active}
+        )'''
 
     def as_dict(self):
         return {
@@ -20,7 +39,8 @@ class User:
             'login': self.login,
             'first_name': self.first_name,
             'privileges': self.privileges,
-            'description': self.description
+            'description': self.description,
+            'active': self.active
         }
 
 
@@ -43,20 +63,44 @@ class MemUsers:
                     first_name = user.get('first_name')
                     privileges = user.get('privileges')
                     description = user.get('description')
+                    active = user.get('active')
                 elif isinstance(user, Row):
                     chat_id = user.chat_id
                     login = user.login
                     first_name = user.first_name
                     privileges = user.value
                     description = user.description
+                    active = user.active
                 else:
                     raise TBotException(code=6, message=f'Bad type of user: {type(user)}')
-                self.add_user(chat_id, login, first_name, privileges, description)
+                self.add_user(
+                    chat_id=chat_id,
+                    login=login,
+                    first_name=first_name,
+                    privileges=privileges,
+                    description=description,
+                    active=active
+                )
         else:
             raise TBotException(code=6, message=f'Input data is empty')
 
-    def add_user(self, chat_id: str, login: str, first_name: str, privileges: int, description: str):
-        self._users[chat_id] = User(chat_id, login, first_name, privileges, description)
+    def add_user(
+            self,
+            chat_id: str,
+            privileges: int,
+            login: str = None,
+            first_name: str = None,
+            description: str = None,
+            active: bool = True
+    ):
+        self._users[chat_id] = User(
+            chat_id=chat_id,
+            login=login,
+            first_name=first_name,
+            privileges=privileges,
+            description=description,
+            active=active
+        )
 
     def __contains__(self, item):
         return True if item in self._users.keys() else False
