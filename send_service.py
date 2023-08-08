@@ -32,5 +32,6 @@ def send_dev_message(data: dict, by: str = 'mail') -> dict:
         else:
             logger.info('Send successful')
             resp['res'] = res.text
+            data.pop('to')
             return resp
     logger.error('Max try exceeded')

@@ -42,12 +42,16 @@ class DBLoader(Loader):
         logger.info('get_users_from_db')
         try:
             users = md.Users.query \
-                .join(md.LibPrivileges, md.Users.privileges_id == md.LibPrivileges.p_id) \
+                .join(
+                    md.LibPrivileges,
+                    md.Users.privileges_id == md.LibPrivileges.p_id
+                ) \
                 .add_columns(md.Users.chat_id,
                              md.Users.login,
                              md.Users.first_name,
                              md.LibPrivileges.value,
-                             md.Users.description) \
+                             md.Users.description,
+                             md.Users.active) \
                 .all()
             if not users:
                 raise TBotException(code=3, message='TBot.users is empty', send=True)
@@ -77,7 +81,7 @@ class DBLoader(Loader):
             exit()
 
     @staticmethod
-    def get_p_id(privileges: int) -> int or None:
+    def _get_p_id(privileges: int) -> int or None:
         """
         Get privileges id by privileges value
         """
@@ -95,14 +99,38 @@ class DBLoader(Loader):
             return data.p_id
 
     @staticmethod
-    def log_request(chat_id: str) -> None:
+    def _get_privileges(p_id: int) -> int or None:
+        """
+        Get privileges id by privileges value
+        """
+        try:
+            data = md.LibPrivileges.query.filter(
+                md.LibPrivileges.p_id == p_id
+            ).one_or_none()
+            if not data:
+                raise TBotException(code=3, message=f'P_id {p_id} not found')
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return None
+        else:
+            return data.value
+
+    @staticmethod
+    def log_request(chat_id: str, action: str = 'hello') -> None:
         """
         Insert base request info to DB
         :param chat_id: person chat_id
+        :param action: user action
         :return:
         """
         try:
-            db.session.add(md.LogRequests(chat_id=chat_id))
+            db.session.add(
+                md.LogRequests(
+                    chat_id=chat_id,
+                    action=action
+                )
+            )
             db.session.commit()
         except (OperationalError, exc.OperationalError) as e:
             logger.exception(f'DB connection error: {e}')
@@ -115,7 +143,7 @@ class DBLoader(Loader):
         logger.info('add_user')
         try:
             if config.USE_DB:
-                p_id = self.get_p_id(privileges)
+                p_id = self._get_p_id(privileges)
                 db.session.add(md.Users(chat_id=chat_id,
                                         login=login,
                                         first_name=first_name,
@@ -125,7 +153,12 @@ class DBLoader(Loader):
             logger.exception(f'DB connection error: {e}')
             raise
         logger.info(f'New user {chat_id} added')
-        tbot_users.add_user(chat_id, login, first_name, privileges)
+        tbot_users.add_user(
+            chat_id=chat_id,
+            login=login,
+            first_name=first_name,
+            privileges=privileges
+        )
 
     @staticmethod
     def update_user(chat_id: str, login: str, first_name: str) -> None:
@@ -159,14 +192,25 @@ class DBLoader(Loader):
                                     parameres_count=len(cmd))
             else:
                 chat_id = cmd[2]
-                if cmd[1].lower() == 'description':
-                    new_value = cut_commands(text, 3)
-                elif cmd[1].lower() == 'privileges':
-                    new_value = int(cmd[3])
-                else:
-                    raise TBotException(code=6,
-                                        return_message=f'Неправильное значение параметра: {cmd[1]}',
-                                        parameres_value=cmd[2])
+                try:
+                    if cmd[1].lower() == 'description':
+                        new_value = cut_commands(text, 3)
+                    elif cmd[1].lower() == 'privileges':
+                        new_value = int(cmd[3])
+                    elif cmd[1].lower() == 'active':
+                        new_value = bool(int(cmd[3]))
+                    else:
+                        raise TBotException(
+                            code=6,
+                            return_message=f'Неправильное значение параметра: {cmd[1]}'
+                        )
+                except TBotException:
+                    raise
+                except ValueError:
+                    raise TBotException(
+                        code=6,
+                        return_message=f'Неправильный тип параметра: {cmd[3]}',
+                    )
             if config.USE_DB:
                 logger.info(f'Updating DB')
                 user = md.Users.query.filter(
@@ -179,19 +223,30 @@ class DBLoader(Loader):
                 if len(user) > 1:
                     raise TBotException(code=3, return_message='Найдено несколько пользователей')
                 if cmd[1] == 'privileges':
-                    new_value = self.get_p_id(new_value)
+                    new_value = self._get_p_id(new_value)
                 for u in user:
                     chat_id = u.chat_id
                     if cmd[1] == 'description':
                         u.description = new_value
-                    if cmd[1] == 'privileges':
+                    elif cmd[1] == 'privileges':
                         u.privileges_id = new_value
+                    elif cmd[1] == 'active':
+                        u.active = new_value
+                        if new_value:
+                            tbot_users.add_user(
+                                chat_id=chat_id,
+                                login=u.login,
+                                first_name=u.first_name,
+                                privileges=self._get_privileges(u.privileges_id)
+                            )
                 db.session.commit()
             logger.info(f'Updating memory')
             if cmd[1] == 'privileges':
-                tbot_users(chat_id).privileges = int(cmd[3])
-            if cmd[1] == 'description':
+                tbot_users(chat_id).privileges = new_value
+            elif cmd[1] == 'description':
                 tbot_users(chat_id).description = new_value
+            elif cmd[1] == 'description':
+                tbot_users(chat_id).active = new_value
             logger.info(f'User {chat_id} {cmd[1]} updated')
             resp['text'] = f'User {chat_id} {cmd[1]} updated'
             return resp
@@ -209,7 +264,7 @@ class DBLoader(Loader):
         try:
             lst = text.split()
             if len(lst) == 1:
-                users = [f"{user.chat_id} {user.login} {user.first_name}" for user in tbot_users()
+                users = [f"{user.chat_id} {user.login} {user.first_name}" for user in tbot_users.all()
                          if user.privileges <= Loader.privileges_levels['trusted']]
                 resp['text'] = 'Список пользователей'
                 resp['markup'] = custom_markup('users', users, '👥')
@@ -266,9 +321,9 @@ class DBLoader(Loader):
             if len(lst) < 2:
                 raise TBotException(code=6, return_message=f'Неправильное количество параметров: {len(lst)}')
             resp['chat_id'] = []
-            for chat_id in tbot_users:
+            for user in tbot_users.active():
                 try:
-                    chat_id = int(chat_id)
+                    chat_id = int(user.chat_id)
                 except ValueError:
                     logger.exception(f'Chat {chat_id} is not convert to int')
                 resp['chat_id'].append(chat_id)

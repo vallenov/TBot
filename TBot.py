@@ -256,16 +256,25 @@ class TBot:
                         tbot_users(chat_id).first_name != first_name:
                     DBLoader.update_user(chat_id, login, first_name)
         privileges = tbot_users(chat_id).privileges
-        if config.USE_DB:
-            try:
-                TBot.db_loader.log_request(chat_id)
-            except (OperationalError, exc.OperationalError) as e:
-                send_data = dict(subject=f'TBot DB connection error', text=f'{e}')
-                send_dev_message(data=send_data, by='telegram')
-                TBot.internet_loader.tbot_restart(privileges=privileges)
         if message.content_type == 'text':
             form_text = message.text.strip().rstrip()
-            func = TBot.mapping.get(form_text.split()[0].lower(), TBot.file_loader.get_hello)
+            action = form_text.split()[0].lower()
+            func = TBot.mapping.get(action, TBot.file_loader.get_hello)
+
+            if config.USE_DB:
+                try:
+                    _kw = {
+                        'chat_id': chat_id
+                    }
+                    if action in TBot.mapping.keys():
+                        _kw['action'] = action
+                    TBot.db_loader.log_request(
+                        **_kw
+                    )
+                except (OperationalError, exc.OperationalError) as e:
+                    send_data = dict(subject=f'TBot DB connection error', text=f'{e}')
+                    send_dev_message(data=send_data, by='telegram')
+                    TBot.internet_loader.tbot_restart(privileges=privileges)
             _kwargs = dict(
                 text=form_text,
                 privileges=privileges,
