@@ -1,4 +1,5 @@
 from sqlalchemy.engine.row import Row
+
 from loggers import get_logger
 from exceptions import TBotException
 
@@ -50,7 +51,7 @@ class MemUsers:
 
     def __call__(self, user_id=None) -> list or User:
         if not user_id:
-            return self._users.values()
+            return self.all()
         else:
             return self._users[user_id] if user_id in self._users.keys() else None
 
@@ -101,6 +102,18 @@ class MemUsers:
             description=description,
             active=active
         )
+
+    def del_user(self, chat_id: str):
+        if not chat_id:
+            raise TBotException(code=2, message=f'User {chat_id} not found')
+        else:
+            self._users.pop(chat_id)
+
+    def all(self):
+        return self._users.values()
+
+    def active(self):
+        return list(filter(lambda u: u.active, self._users.values()))
 
     def __contains__(self, item):
         return True if item in self._users.keys() else False
