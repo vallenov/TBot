@@ -87,7 +87,7 @@ class TBot:
                         except TBotException:
                             is_not_send.append(str(user_chat_id))
                         else:
-                            is_send.append(str(chat_id))
+                            is_send.append(str(user_chat_id))
                     if is_send:
                         TBot.safe_send(message.chat.id, {'text': f"Success: {' ,'.join(is_send)}"})
                     if is_not_send:
