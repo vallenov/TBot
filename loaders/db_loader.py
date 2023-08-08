@@ -47,7 +47,8 @@ class DBLoader(Loader):
                              md.Users.login,
                              md.Users.first_name,
                              md.LibPrivileges.value,
-                             md.Users.description) \
+                             md.Users.description,
+                             md.Users.active) \
                 .all()
             if not users:
                 raise TBotException(code=3, message='TBot.users is empty', send=True)
@@ -95,14 +96,20 @@ class DBLoader(Loader):
             return data.p_id
 
     @staticmethod
-    def log_request(chat_id: str) -> None:
+    def log_request(chat_id: str, action: str = 'get_hello') -> None:
         """
         Insert base request info to DB
         :param chat_id: person chat_id
+        :param action: user action
         :return:
         """
         try:
-            db.session.add(md.LogRequests(chat_id=chat_id))
+            db.session.add(
+                md.LogRequests(
+                    chat_id=chat_id,
+                    action=action
+                )
+            )
             db.session.commit()
         except (OperationalError, exc.OperationalError) as e:
             logger.exception(f'DB connection error: {e}')
@@ -125,7 +132,12 @@ class DBLoader(Loader):
             logger.exception(f'DB connection error: {e}')
             raise
         logger.info(f'New user {chat_id} added')
-        tbot_users.add_user(chat_id, login, first_name, privileges)
+        tbot_users.add_user(
+            chat_id=chat_id,
+            login=login,
+            first_name=first_name,
+            privileges=privileges
+        )
 
     @staticmethod
     def update_user(chat_id: str, login: str, first_name: str) -> None:
