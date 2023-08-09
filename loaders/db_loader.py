@@ -232,13 +232,6 @@ class DBLoader(Loader):
                         u.privileges_id = new_value
                     elif cmd[1] == 'active':
                         u.active = new_value
-                        if new_value:
-                            tbot_users.add_user(
-                                chat_id=chat_id,
-                                login=u.login,
-                                first_name=u.first_name,
-                                privileges=self._get_privileges(u.privileges_id)
-                            )
                 db.session.commit()
             logger.info(f'Updating memory')
             if cmd[1] == 'privileges':
