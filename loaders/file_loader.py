@@ -139,7 +139,11 @@ class FileLoader(Loader):
                             break
                     tbot_users(kwargs['chat_id']).cache['poem'] = poem
                     resp['text'] = 'Выберите четверостишие'
-                    resp['markup'] = custom_markup('divination', [str(i) for i in range(1, count_of_quatrains+1)], '🔮')
+                    resp['markup'] = custom_markup(
+                        command='divination',
+                        category=[str(i) for i in range(1, count_of_quatrains+1)],
+                        smile='🔮'
+                    )
                     return resp
             else:
                 poem = tbot_users(kwargs['chat_id']).cache.get('poem')
