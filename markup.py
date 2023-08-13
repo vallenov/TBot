@@ -7,17 +7,24 @@ from exceptions import TBotException
 logger = get_logger(__name__)
 
 
-def custom_markup(command, category: list or dict, smile='🔹', row_width=1) -> InlineKeyboardMarkup:
+def custom_markup(
+        command: str,
+        category: list or dict,
+        subcommands: list = [],
+        smile: str = '🔹',
+        row_width=1) -> InlineKeyboardMarkup:
     """
     Make custom markup
     :param command: input action
     :param category: command level 2 list or dict
+    :parm subcommands: list of subcommands
     :param smile: emoji
     :param row_width: width of buttons
     :return: markup
     """
     markup = InlineKeyboardMarkup()
     markup.row_width = row_width
+    subcommands = ' '.join([sub for sub in subcommands]) if subcommands else ""
     item = None
     if isinstance(category, dict):
         item = category.keys()
@@ -29,7 +36,12 @@ def custom_markup(command, category: list or dict, smile='🔹', row_width=1) ->
     for cat in item:
         short_cat = cat.split()[0]
         short_cat = short_cat.replace(',', '')
-        markup.add(InlineKeyboardButton(f'{smile} {cat}', callback_data=f'{command} {short_cat}'))
+        markup.add(
+            InlineKeyboardButton(
+                f'{smile} {cat}',
+                callback_data=f'{command} {subcommands} {short_cat}' if subcommands else f'{command} {short_cat}'
+            )
+        )
     return markup
 
 
