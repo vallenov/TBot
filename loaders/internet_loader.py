@@ -150,12 +150,14 @@ class InternetLoader(Loader):
             cmd = text.split()
             if len(cmd) == 1:
                 resp['text'] = 'Выберите город'
-                resp['markup'] = custom_markup(command='weather',
-                                               category=[
-                                                   city for city in self.city_coordinates.keys()
-                                                   if city in config.CITY_WEATHER
-                                               ],
-                                               smile='⛅')
+                resp['markup'] = custom_markup(
+                    command='weather',
+                    category=[
+                       city for city in self.city_coordinates.keys()
+                       if city in config.CITY_WEATHER
+                    ],
+                    smile='⛅'
+                )
                 return resp
             elif len(cmd) == 2:
                 url = check_config_attribute('weather_url')
@@ -514,10 +516,14 @@ class InternetLoader(Loader):
                                     parameres_count=len(command))
             if len(command) == 1:
                 resp['text'] = 'Выберите промежуток'
-                resp['markup'] = custom_markup('movie',
-                                               ['1950-1960', '1960-1970', '1970-1980',
-                                                '1980-1990', '1990-2000', '2000-2010', '2010-2020'],
-                                               '🎞')
+                resp['markup'] = custom_markup(
+                    command='movie',
+                    category=[
+                       '1950-1960', '1960-1970', '1970-1980',
+                       '1980-1990', '1990-2000', '2000-2010', '2010-2020'
+                    ],
+                    smile='🎞'
+                )
                 return resp
             elif len(command) == 2:
                 if '-' not in command[1]:
@@ -633,7 +639,11 @@ class InternetLoader(Loader):
             lst = text.split()
             if len(lst) == 1:
                 resp['text'] = 'Выберите жанр'
-                resp['markup'] = custom_markup('book', self.book_genres, '📖')
+                resp['markup'] = custom_markup(
+                    command='book',
+                    category=self.book_genres,
+                    smile='📖'
+                )
                 return resp
             category = ''
             for genre in self.book_genres.keys():
@@ -732,9 +742,11 @@ class InternetLoader(Loader):
                 raise TBotException(code=6, return_message=f'Неверное количество параметров: {len(command)}')
             if len(command) == 1:
                 resp['text'] = 'Выберите действие'
-                resp['markup'] = custom_markup('ngrok',
-                                               valid_actions,
-                                               '🖥')
+                resp['markup'] = custom_markup(
+                    command='ngrok',
+                    category=valid_actions,
+                    smile='🖥'
+                )
                 return resp
             action = command[1].lower()
             if action not in valid_actions:
@@ -776,9 +788,11 @@ class InternetLoader(Loader):
                 raise TBotException(code=6, return_message=f'Неверное количество параметров: {len(command)}')
             if len(command) == 1:
                 resp['text'] = 'Выберите действие'
-                resp['markup'] = custom_markup('ngrok_db',
-                                               valid_actions,
-                                               '📦')
+                resp['markup'] = custom_markup(
+                    command='ngrok_db',
+                    category=valid_actions,
+                    smile='📦'
+                )
                 return resp
             action = command[1].lower()
             if action not in valid_actions:
@@ -820,7 +834,11 @@ class InternetLoader(Loader):
             cmd = text.split()
             if len(cmd) == 1:
                 resp['text'] = 'Подтвердите перезагрузку'
-                resp['markup'] = custom_markup('restart_system', ['allow'], '✅')
+                resp['markup'] = custom_markup(
+                    command='restart_system',
+                    category=['allow'],
+                    smile='✅'
+                )
                 return resp
             elif len(cmd) == 2:
                 if cmd[1].lower() == 'allow':
