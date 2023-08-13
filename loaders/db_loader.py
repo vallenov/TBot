@@ -2,7 +2,7 @@ import random
 import datetime
 from mysql.connector.errors import OperationalError
 import traceback
-from sqlalchemy import cast, Date, exc
+from sqlalchemy import cast, Date, exc, desc
 from sqlalchemy.sql import func
 
 import config
@@ -466,47 +466,117 @@ class DBLoader(Loader):
         try:
             if config.USE_DB:
                 if len(lst) == 1:
+                    resp['text'] = 'Выберите тип статистики'
+                    resp['markup'] = custom_markup(command='statistic',
+                                                   category=['count', 'functions'],
+                                                   smile='📋')
+                    return resp
+                elif len(lst) == 2:
+                    if lst[1] not in ('count', 'functions'):
+                        raise TBotException(code=6, return_message=f'Неправильное значение параметра: {lst[1]}')
                     resp['text'] = 'Выберите интервал'
-                    resp['markup'] = custom_markup('statistic',
-                                                   ['Today', 'Week', 'Month', 'All'],
-                                                   '📋')
+                    resp['markup'] = custom_markup(
+                        command='statistic',
+                        category=['Today', 'Week', 'Month', 'All'],
+                        subcommands=[lst[1]],
+                        smile='📋')
                     return resp
                 interval_map = {'today': 1,
                                 'week': 7,
                                 'month': 30,
                                 'all': 100000}
-                if lst[1] not in interval_map.keys():
-                    raise TBotException(code=6, return_message=f'Неправильное значение параметра: {lst[1]}')
-                interval = datetime.datetime.now() - datetime.timedelta(days=interval_map[lst[1]])
-                if lst[1] != 'today':
-                    plot_data = md.LogRequests.query \
-                        .with_entities(cast(md.LogRequests.date_ins, Date), func.count(md.LogRequests.chat_id)) \
-                        .group_by(cast(md.LogRequests.date_ins, Date)) \
-                        .filter(md.LogRequests.date_ins >= interval) \
-                        .all()
-                    dt = []
+                if lst[2] not in interval_map.keys():
+                    raise TBotException(code=6, return_message=f'Неправильное значение параметра: {lst[2]}')
+                interval = datetime.datetime.now() - datetime.timedelta(days=interval_map[lst[2]])
+                if lst[1] == 'count':
+                    if lst[2] != 'today':
+                        plot_data = md.LogRequests.query.with_entities(
+                            cast(md.LogRequests.date_ins, Date),
+                            func.count(md.LogRequests.chat_id)
+                        ).filter(
+                            md.LogRequests.date_ins >= interval
+                        ).group_by(
+                            cast(md.LogRequests.date_ins, Date)
+                        ).order_by(
+
+                        ).all()
+                        dt = []
+                        cnt = []
+                        for cur in plot_data:
+                            dt.append(cur[0])
+                            cnt.append(cur[1])
+                        bgi = BaseGraphInfo(
+                            'Statistic',
+                            'statistic',
+                            [
+                                BaseSubGraphInfo(
+                                    'plot', None, 'blue', 'Date', 'Count', dt, cnt
+                                )
+                            ]
+                        )
+                        resp['photo'] = Graph.get_base_graph(bgi)
+                    to_sort = md.LogRequests.query.join(
+                        md.Users,
+                        md.LogRequests.chat_id == md.Users.chat_id
+                    ).filter(
+                        md.LogRequests.date_ins >= interval
+                    ).with_entities(
+                        func.count(md.Users.chat_id),
+                        md.Users.login,
+                        md.Users.first_name
+                    ).group_by(
+                        md.Users.chat_id
+                    ).all()
+                    for index_i in range(len(to_sort)):
+                        for index_j in range(len(to_sort) - 1):
+                            if index_i == index_j:
+                                continue
+                            elif to_sort[index_j][0] < to_sort[index_j + 1][0]:
+                                to_sort[index_j], to_sort[index_j + 1] = to_sort[index_j + 1], to_sort[index_j]
+                    for cur in to_sort:
+                        resp['text'] += ' '.join([str(i) for i in cur]) + '\n'
+                    return resp
+                elif lst[1] == 'functions':
+                    bar_data = md.LogRequests.query.with_entities(
+                        md.LogRequests.action,
+                        func.count(md.LogRequests.action)
+                    ).filter(
+                        md.LogRequests.date_ins >= interval,
+                        md.LogRequests.action.is_not(None),
+                        md.LogRequests.action != 'hello'
+                    ).group_by(
+                        md.LogRequests.action
+                    ).order_by(
+                        desc(func.count(md.LogRequests.action))
+                    ).all()
+                    func_name = []
                     cnt = []
-                    for cur in plot_data:
-                        dt.append(cur[0])
+                    for cur in bar_data:
+                        func_name.append(cur[0])
                         cnt.append(cur[1])
-                    bgi = BaseGraphInfo('Statistic', 'statistic', [
-                        BaseSubGraphInfo('plot', None, 'blue', 'Date', 'Count', dt, cnt)])
+                    subbars = []
+                    if len(func_name) > 10:
+                        index = 10
+                        while func_name:
+                            subbars.append(
+                                BaseSubGraphInfo(
+                                    'bar', None, 'green', 'Name of function', 'Count of requests', func_name[:index], cnt[:index]
+                                )
+                            )
+                            func_name = func_name[index:]
+                            cnt = cnt[index:]
+                            index = 10 if len(func_name) > 10 else len(func_name)
+                    bgi = BaseGraphInfo(
+                        'Statistic',
+                        'statistic',
+                        subbars or [
+                            BaseSubGraphInfo(
+                                'bar', None, 'green', 'Name of function', 'Count of requests', func_name, cnt
+                            )
+                        ]
+                    )
                     resp['photo'] = Graph.get_base_graph(bgi)
-                to_sort = md.LogRequests.query \
-                    .join(md.Users, md.LogRequests.chat_id == md.Users.chat_id) \
-                    .filter(md.LogRequests.date_ins >= interval) \
-                    .with_entities(func.count(md.Users.chat_id), md.Users.login, md.Users.first_name) \
-                    .group_by(md.Users.chat_id) \
-                    .all()
-                for index_i in range(len(to_sort)):
-                    for index_j in range(len(to_sort) - 1):
-                        if index_i == index_j:
-                            continue
-                        elif to_sort[index_j][0] < to_sort[index_j + 1][0]:
-                            to_sort[index_j], to_sort[index_j + 1] = to_sort[index_j + 1], to_sort[index_j]
-                for cur in to_sort:
-                    resp['text'] += ' '.join([str(i) for i in cur]) + '\n'
-                return resp
+                    return resp
             else:
                 raise TBotException(code=3, return_message='Нет подключения к БД')
         except TBotException as e:

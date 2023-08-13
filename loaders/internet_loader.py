@@ -142,16 +142,20 @@ class InternetLoader(Loader):
         resp = {}
         try:
             if not self.city_coordinates:
-                raise TBotException(code=1,
-                                    message=f"Coordinates is empty",
-                                    send=True)
+                raise TBotException(
+                    code=1,
+                    message=f"Coordinates is empty",
+                    send=True
+                )
             cmd = text.split()
             if len(cmd) == 1:
                 resp['text'] = 'Выберите город'
-                resp['markup'] = custom_markup('weather',
-                                               [city for city in self.city_coordinates.keys()
-                                                if city in config.CITY_WEATHER],
-                                               '⛅')
+                resp['markup'] = custom_markup(command='weather',
+                                               category=[
+                                                   city for city in self.city_coordinates.keys()
+                                                   if city in config.CITY_WEATHER
+                                               ],
+                                               smile='⛅')
                 return resp
             elif len(cmd) == 2:
                 url = check_config_attribute('weather_url')
