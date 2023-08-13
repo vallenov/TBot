@@ -554,10 +554,22 @@ class DBLoader(Loader):
                     for cur in bar_data:
                         func_name.append(cur[0])
                         cnt.append(cur[1])
+                    subbars = []
+                    if len(func_name) > 10:
+                        index = 10
+                        while func_name:
+                            subbars.append(
+                                BaseSubGraphInfo(
+                                    'bar', None, 'green', 'Name of function', 'Count of requests', func_name[:index], cnt[:index]
+                                )
+                            )
+                            func_name = func_name[index:]
+                            cnt = cnt[index:]
+                            index = 10 if len(func_name) > 10 else len(func_name)
                     bgi = BaseGraphInfo(
                         'Statistic',
                         'statistic',
-                        [
+                        subbars or [
                             BaseSubGraphInfo(
                                 'bar', None, 'green', 'Name of function', 'Count of requests', func_name, cnt
                             )
