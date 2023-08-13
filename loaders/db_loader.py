@@ -260,7 +260,11 @@ class DBLoader(Loader):
                 users = [f"{user.chat_id} {user.login} {user.first_name}" for user in tbot_users.all()
                          if user.privileges <= Loader.privileges_levels['trusted']]
                 resp['text'] = 'Список пользователей'
-                resp['markup'] = custom_markup('users', users, '👥')
+                resp['markup'] = custom_markup(
+                    command='users',
+                    category=users,
+                    smile='👥'
+                )
             elif len(lst) == 2:
                 if not tbot_users(lst[1]):
                     raise TBotException(code=3, return_message=f'Пользователь {lst[1]} не найден')
@@ -426,8 +430,11 @@ class DBLoader(Loader):
                             break
                     tbot_users(kwargs['chat_id']).cache['poem'] = poem
                     resp['text'] = 'Выберите четверостишие'
-                    resp['markup'] = custom_markup('divination', [str(i) for i in range(1, count_of_quatrains + 1)],
-                                                   '🔮')
+                    resp['markup'] = custom_markup(
+                        command='divination',
+                        category=[str(i) for i in range(1, count_of_quatrains + 1)],
+                        smile='🔮'
+                    )
                     return resp
             else:
                 poem = tbot_users(kwargs['chat_id']).cache.get('poem')
@@ -467,9 +474,11 @@ class DBLoader(Loader):
             if config.USE_DB:
                 if len(lst) == 1:
                     resp['text'] = 'Выберите тип статистики'
-                    resp['markup'] = custom_markup(command='statistic',
-                                                   category=['count', 'functions'],
-                                                   smile='📋')
+                    resp['markup'] = custom_markup(
+                        command='statistic',
+                        category=['count', 'functions'],
+                        smile='📋'
+                    )
                     return resp
                 elif len(lst) == 2:
                     if lst[1] not in ('count', 'functions'):
