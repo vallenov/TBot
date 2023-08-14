@@ -14,7 +14,7 @@ import config
 from mysql.connector.errors import OperationalError
 from sqlalchemy import exc
 
-from loaders.loader import Loader
+from loaders.loader import Loader, LoaderResponse
 from loaders.internet_loader import InternetLoader
 from loaders.file_loader import FileLoader
 from loaders.db_loader import DBLoader
@@ -53,10 +53,10 @@ class TBot:
             chat_id = call.message.json['chat']['id']
             replace = TBot.replace(call.message)
             try:
-                TBot.safe_send(call.message.json['chat']['id'], replace, reply_markup=replace.get('markup', None))
+                TBot.safe_send(call.message.json['chat']['id'], replace, reply_markup=replace.markup)
             except TBotException:
                 logger.exception(f'Message to {chat_id} is not send')
-                TBot.safe_send(chat_id, {'text': f"Something is wrong"})
+                TBot.safe_send(chat_id, LoaderResponse(text=f"Something is wrong"))
 
         @TBot.bot.message_handler(func=lambda message: True, content_types=config.CONTENT_TYPES)
         def send_text(message):
@@ -66,32 +66,32 @@ class TBot:
             if message.content_type == 'text':
                 TBot.log_request(message)
                 replace = TBot.replace(message)
-                chat_id = replace.get('chat_id', None)
+                chat_id = replace.chat_id
                 if not chat_id:
                     chat_id = message.chat.id
                 if chat_id and isinstance(chat_id, int):
                     try:
-                        TBot.safe_send(chat_id, replace, reply_markup=replace.get('markup', None))
+                        TBot.safe_send(chat_id, replace, reply_markup=replace.markup)
                     except TBotException:
                         logger.exception(f'Message to {chat_id} is not send')
-                        TBot.safe_send(message.chat.id, {'text': f"Message to {chat_id} is not send"})
+                        TBot.safe_send(message.chat.id, LoaderResponse(text=f"Something is wrong"))
                     else:
                         if chat_id != message.chat.id:
-                            TBot.safe_send(message.chat.id, {'text': f"Message to {chat_id} was sent"})
+                            TBot.safe_send(message.chat.id, LoaderResponse(text=f"Something is wrong"))
                 elif chat_id and isinstance(chat_id, list):
                     is_send = []
                     is_not_send = []
-                    for user_chat_id in replace['chat_id']:
+                    for user_chat_id in replace.chat_id:
                         try:
-                            TBot.safe_send(user_chat_id, replace, reply_markup=replace.get('markup', None))
+                            TBot.safe_send(user_chat_id, replace, reply_markup=replace.markup)
                         except TBotException:
                             is_not_send.append(str(user_chat_id))
                         else:
                             is_send.append(str(user_chat_id))
                     if is_send:
-                        TBot.safe_send(message.chat.id, {'text': f"Success: {' ,'.join(is_send)}"})
+                        TBot.safe_send(message.chat.id, LoaderResponse(text=f"Something is wrong"))
                     if is_not_send:
-                        TBot.safe_send(message.chat.id, {'text': f"Was not sent: {' ,'.join(is_not_send)}"})
+                        TBot.safe_send(message.chat.id, LoaderResponse(text=f"Something is wrong"))
             else:
                 try:
                     TBot.save_file(message)
@@ -151,7 +151,7 @@ class TBot:
             logger.info(f'Connection to bot success')
 
     @staticmethod
-    def safe_send(chat_id: int, replace: dict, reply_markup=None):
+    def safe_send(chat_id: int, replace: LoaderResponse, reply_markup=None):
         """
         Send message with several tries
         :param chat_id: id of users chat
@@ -159,8 +159,8 @@ class TBot:
         :param reply_markup: markup or None
         :return:
         """
-        text = replace.get('text', None)
-        photo = replace.get('photo', None)
+        text = replace.text
+        photo = replace.photo
         if not text and not photo:
             TBotException(code=6, message='Replace is empty')
         if text:
@@ -169,8 +169,8 @@ class TBot:
         is_send = False
         current_try = 0
         start = 0
-        cnt_message = math.ceil(len(replace) / config.MESSAGE_MAX_LEN) if text else 1
-        parse_mode = replace.get('parse_mode', None)
+        cnt_message = math.ceil(len(replace.text) / config.MESSAGE_MAX_LEN) if text else 1
+        parse_mode = replace.parse_mode
         for cnt in range(cnt_message):
             while current_try < config.MAX_TRY:
                 current_try += 1
@@ -180,7 +180,7 @@ class TBot:
                             photo = open(photo, 'rb')
                         TBot.bot.send_photo(chat_id, photo=photo, caption=text)
                     elif text is not None:
-                        if start + config.MESSAGE_MAX_LEN >= len(replace):
+                        if start + config.MESSAGE_MAX_LEN >= len(replace.text):
                             TBot.bot.send_message(chat_id, text[start:],
                                                   reply_markup=reply_markup,
                                                   parse_mode=parse_mode)
@@ -217,7 +217,7 @@ class TBot:
                     break
 
     @staticmethod
-    def replace(message) -> dict:
+    def replace(message) -> LoaderResponse:
         """
         Send result message to chat
         :param message: message from user
@@ -260,29 +260,27 @@ class TBot:
             form_text = message.text.strip().rstrip()
             action = form_text.split()[0].lower()
             func = TBot.mapping.get(action, TBot.file_loader.get_hello)
-
-            if config.USE_DB:
-                try:
-                    _kw = {
-                        'chat_id': chat_id
-                    }
-                    if action in TBot.mapping.keys():
-                        _kw['action'] = action
-                    TBot.db_loader.log_request(
-                        **_kw
-                    )
-                except (OperationalError, exc.OperationalError) as e:
-                    send_data = dict(subject=f'TBot DB connection error', text=f'{e}')
-                    send_dev_message(data=send_data, by='telegram')
-                    TBot.internet_loader.tbot_restart(privileges=privileges)
             _kwargs = dict(
                 text=form_text,
                 privileges=privileges,
                 chat_id=chat_id
             )
+            log_request = None
+            if config.USE_DB:
+                try:
+                    log_request = TBot.db_loader.log_request(
+                        chat_id=chat_id
+                    )
+                except (OperationalError, exc.OperationalError) as e:
+                    send_data = dict(subject=f'TBot DB connection error', text=f'{e}')
+                    send_dev_message(data=send_data, by='telegram')
+                    TBot.internet_loader.tbot_restart(privileges=privileges)
+
             res = asyncio.run(func(**_kwargs)) \
                 if inspect.iscoroutinefunction(func.__wrapped__) \
                 else func(**_kwargs)
+            if config.USE_DB and res.is_extra_log:
+                res.extra_log(request_id=log_request.lr_id, action=action)
         duration = datetime.datetime.now() - start
         dur = float(str(duration.seconds) + '.' + str(duration.microseconds)[:3])
         logger.info(f'Duration: {dur} sec')
