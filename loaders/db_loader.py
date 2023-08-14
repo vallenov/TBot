@@ -7,7 +7,7 @@ from sqlalchemy.sql import func
 
 import config
 
-from loaders.loader import Loader, check_permission
+from loaders.loader import Loader, check_permission, LoaderResponse
 from helpers import dict_to_str, cut_commands
 import models as md
 from extentions import db
@@ -117,7 +117,7 @@ class DBLoader(Loader):
             return data.value
 
     @staticmethod
-    def log_request(chat_id: str, action: str = 'hello') -> None:
+    def log_request(chat_id: str) -> md.LogRequests:
         """
         Insert base request info to DB
         :param chat_id: person chat_id
@@ -125,13 +125,12 @@ class DBLoader(Loader):
         :return:
         """
         try:
-            db.session.add(
-                md.LogRequests(
-                    chat_id=chat_id,
-                    action=action
-                )
+            req = md.LogRequests(
+                chat_id=chat_id
             )
+            db.session.add(req)
             db.session.commit()
+            return req
         except (OperationalError, exc.OperationalError) as e:
             logger.exception(f'DB connection error: {e}')
             raise
@@ -179,11 +178,11 @@ class DBLoader(Loader):
         logger.info('User info updated')
 
     @check_permission(needed_level='root')
-    def update_user_data(self, text: str, **kwargs) -> dict:
+    def update_user_data(self, text: str, **kwargs) -> LoaderResponse:
         """
         Update user privileges in DB and memory
         """
-        resp = {}
+        resp = LoaderResponse()
         cmd = text.split()
         try:
             if len(cmd) < 4:
@@ -241,7 +240,7 @@ class DBLoader(Loader):
             elif cmd[1] == 'active':
                 tbot_users(chat_id).active = new_value
             logger.info(f'User {chat_id} {cmd[1]} updated')
-            resp['text'] = f'User {chat_id} {cmd[1]} updated'
+            resp.text = f'User {chat_id} {cmd[1]} updated'
             return resp
         except TBotException as e:
             logger.exception(e.context)
@@ -249,18 +248,18 @@ class DBLoader(Loader):
             return e.return_message()
 
     @check_permission(needed_level='root')
-    def show_users(self, text: str, **kwargs) -> dict:
+    def show_users(self, text: str, **kwargs) -> LoaderResponse:
         """
         Show current users information
         """
-        resp = {}
+        resp = LoaderResponse()
         try:
             lst = text.split()
             if len(lst) == 1:
                 users = [f"{user.chat_id} {user.login} {user.first_name}" for user in tbot_users.all()
                          if user.privileges <= Loader.privileges_levels['trusted']]
-                resp['text'] = 'Список пользователей'
-                resp['markup'] = custom_markup(
+                resp.text = 'Список пользователей'
+                resp.markup = custom_markup(
                     command='users',
                     category=users,
                     smile='👥'
@@ -270,7 +269,7 @@ class DBLoader(Loader):
                     raise TBotException(code=3, return_message=f'Пользователь {lst[1]} не найден')
                 user_info = {'chat_id': lst[1]}
                 user_info.update(tbot_users(lst[1]).as_dict())
-                resp['text'] = dict_to_str(user_info, ': ')
+                resp.text = dict_to_str(user_info, ': ')
             else:
                 raise TBotException(code=6, return_message=f'Неверное количество параметров: {len(lst)}')
             return resp
@@ -280,13 +279,13 @@ class DBLoader(Loader):
             return e.return_message()
 
     @check_permission(needed_level='root')
-    def send_other(self, text: str, **kwargs) -> dict:
+    def send_other(self, text: str, **kwargs) -> LoaderResponse:
         """
         Send message to other user
         :param text: string "command chat_id message"
         :return: dict {'chat_id': 1234567, 'text': 'some'}
         """
-        resp = {}
+        resp = LoaderResponse()
         lst = text.split()
         try:
             if len(lst) < 3:
@@ -297,8 +296,8 @@ class DBLoader(Loader):
                 raise TBotException(code=6, return_message=f'Неправильное значение параметра: {lst[1]}')
             if str(chat_id) not in tbot_users:
                 raise TBotException(code=3, return_message=f'Пользователь {lst[1]} не найден')
-            resp['chat_id'] = chat_id
-            resp['text'] = cut_commands(text, 2)
+            resp.chat_id = chat_id
+            resp.text = cut_commands(text=text, count_of_commands=2)
             return resp
         except TBotException as e:
             logger.exception(e.context)
@@ -306,25 +305,25 @@ class DBLoader(Loader):
             return e.return_message()
 
     @check_permission(needed_level='root')
-    def send_to_all_users(self, text: str, **kwargs) -> dict:
+    def send_to_all_users(self, text: str, **kwargs) -> LoaderResponse:
         """
         Send message to all users
         :param text: string "command chat_id message"
         :return: dict {'chat_id': [1234567, 4637499], 'text': 'some'}
         """
-        resp = {}
+        resp = LoaderResponse()
         lst = text.split()
         try:
             if len(lst) < 2:
                 raise TBotException(code=6, return_message=f'Неправильное количество параметров: {len(lst)}')
-            resp['chat_id'] = []
+            resp.chat_id = []
             for user in tbot_users.active():
                 try:
                     chat_id = int(user.chat_id)
                 except ValueError:
                     logger.exception(f'Chat {chat_id} is not convert to int')
-                resp['chat_id'].append(chat_id)
-            resp['text'] = cut_commands(text, 1)
+                resp.chat_id.append(chat_id)
+            resp.text = cut_commands(text=text, count_of_commands=1)
             return resp
         except TBotException as e:
             logger.exception(e.context)
@@ -332,20 +331,20 @@ class DBLoader(Loader):
             return e.return_message()
 
     @check_permission()
-    def send_to_admin(self, text: str, **kwargs) -> dict:
+    def send_to_admin(self, text: str, **kwargs) -> LoaderResponse:
         """
         Send message to admin
         :param text: string "command chat_id message"
         :return: dict {'chat_id': admin_id, 'text': 'some'}
         """
-        resp = {}
+        resp = LoaderResponse()
         lst = text.split()
         try:
             if len(lst) < 2:
                 raise TBotException(code=6, return_message=f'Неправильное количество параметров: {len(lst)}')
-            resp['chat_id'] = int(config.USERS['root_id']['chat_id'])
-            resp['text'] = str(f"Message from {tbot_users(kwargs['chat_id']).first_name or kwargs['chat_id']}\n"
-                               f"Text: {cut_commands(text, 1)}")
+            resp.chat_id = int(config.USERS['root_id']['chat_id'])
+            resp.text = str(f"Message from {tbot_users(kwargs['chat_id']).first_name or kwargs['chat_id']}\n"
+                            f"Text: {cut_commands(text=text, count_of_commands=1)}")
             return resp
         except TBotException as e:
             logger.exception(e.context)
@@ -365,13 +364,13 @@ class DBLoader(Loader):
             ).one_or_none()
 
     @check_permission()
-    def get_poem(self, text: str, **kwargs) -> dict:
+    def get_poem(self, text: str, **kwargs) -> LoaderResponse:
         """
         Get poem from DB
         :param:
         :return: poesy string
         """
-        resp = {}
+        resp = LoaderResponse()
         try:
             if config.USE_DB:
                 lst = text.split()
@@ -388,7 +387,7 @@ class DBLoader(Loader):
                         poem = random.choice(poems)
                     else:
                         raise TBotException(code=3, message='Стих не найден')
-                resp['text'] = f"{poem.author}\n\n{poem.name}\n\n{poem.text}"
+                resp.text = f"{poem.author}\n\n{poem.name}\n\n{poem.text}"
                 return resp
             else:
                 raise TBotException(code=3, return_message='Нет подключения к БД')
@@ -398,11 +397,11 @@ class DBLoader(Loader):
             return e.return_message()
 
     @check_permission()
-    def poem_divination(self, text: str, **kwargs) -> dict:
+    def poem_divination(self, text: str, **kwargs) -> LoaderResponse:
         """
         Poem divination
         """
-        resp = {}
+        resp = LoaderResponse()
         try:
             cmd = text.split()
             if kwargs['chat_id'] not in tbot_users:
@@ -429,12 +428,13 @@ class DBLoader(Loader):
                         if count_of_quatrains:
                             break
                     tbot_users(kwargs['chat_id']).cache['poem'] = poem
-                    resp['text'] = 'Выберите четверостишие'
-                    resp['markup'] = custom_markup(
+                    resp.text = 'Выберите четверостишие'
+                    resp.markup = custom_markup(
                         command='divination',
                         category=[str(i) for i in range(1, count_of_quatrains + 1)],
                         smile='🔮'
                     )
+                    resp.is_extra_log = False
                     return resp
             else:
                 poem = tbot_users(kwargs['chat_id']).cache.get('poem')
@@ -447,7 +447,7 @@ class DBLoader(Loader):
                 cmd = text.split()
                 try:
                     number_of_quatrain = int(cmd[1])
-                    resp['text'] = quatrains[number_of_quatrain - 1]
+                    resp.text = quatrains[number_of_quatrain - 1]
                 except ValueError:
                     raise TBotException(code=6, return_message=f'Неправильный тип параметра {type(cmd[1])}')
                 except IndexError:
@@ -461,34 +461,36 @@ class DBLoader(Loader):
             return e.return_message()
 
     @check_permission(needed_level='root')
-    def get_statistic(self, text, **kwargs) -> dict:
+    def get_statistic(self, text, **kwargs) -> LoaderResponse:
         """
         Get statistic
         :param text: command string
         :return: statistic
         """
-        resp = {'text': ''}
+        resp = LoaderResponse()
         lst = text.split()
         lst = [word.lower() for word in lst]
         try:
             if config.USE_DB:
                 if len(lst) == 1:
-                    resp['text'] = 'Выберите тип статистики'
-                    resp['markup'] = custom_markup(
+                    resp.text = 'Выберите тип статистики'
+                    resp.markup = custom_markup(
                         command='statistic',
-                        category=['count', 'functions'],
+                        category=['Count', 'Functions'],
                         smile='📋'
                     )
+                    resp.is_extra_log = False
                     return resp
                 elif len(lst) == 2:
-                    if lst[1] not in ('count', 'functions'):
+                    if lst[1].lower() not in ('count', 'functions'):
                         raise TBotException(code=6, return_message=f'Неправильное значение параметра: {lst[1]}')
-                    resp['text'] = 'Выберите интервал'
-                    resp['markup'] = custom_markup(
+                    resp.text = 'Выберите интервал'
+                    resp.markup = custom_markup(
                         command='statistic',
                         category=['Today', 'Week', 'Month', 'All'],
                         subcommands=[lst[1]],
                         smile='📋')
+                    resp.is_extra_log = False
                     return resp
                 interval_map = {'today': 1,
                                 'week': 7,
@@ -523,7 +525,7 @@ class DBLoader(Loader):
                                 )
                             ]
                         )
-                        resp['photo'] = Graph.get_base_graph(bgi)
+                        resp.photo = Graph.get_base_graph(bgi)
                     to_sort = md.LogRequests.query.join(
                         md.Users,
                         md.LogRequests.chat_id == md.Users.chat_id
@@ -543,7 +545,7 @@ class DBLoader(Loader):
                             elif to_sort[index_j][0] < to_sort[index_j + 1][0]:
                                 to_sort[index_j], to_sort[index_j + 1] = to_sort[index_j + 1], to_sort[index_j]
                     for cur in to_sort:
-                        resp['text'] += ' '.join([str(i) for i in cur]) + '\n'
+                        resp.text += ' '.join([str(i) for i in cur]) + '\n'
                     return resp
                 elif lst[1] == 'functions':
                     bar_data = md.LogRequests.query.with_entities(
@@ -584,7 +586,7 @@ class DBLoader(Loader):
                             )
                         ]
                     )
-                    resp['photo'] = Graph.get_base_graph(bgi)
+                    resp.photo = Graph.get_base_graph(bgi)
                     return resp
             else:
                 raise TBotException(code=3, return_message='Нет подключения к БД')

@@ -1,4 +1,5 @@
 from send_service import send_dev_message
+from loaders.loader import LoaderResponse
 
 
 RESPONSE_CODES_MAPPING = {
@@ -43,5 +44,7 @@ class TBotException(Exception):
                 )
             )
 
-    def return_message(self) -> dict:
-        return dict(text=self.context.get('return_message', 'Что-то пошло не так'))
+    def return_message(self) -> LoaderResponse:
+        resp = LoaderResponse()
+        resp.text = self.context.get('return_message', 'Что-то пошло не так')
+        return resp
