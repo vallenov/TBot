@@ -9,7 +9,7 @@ import traceback
 
 import config
 
-from loaders.loader import Loader, check_permission
+from loaders.loader import Loader, check_permission, LoaderResponse
 from graph import Graph, BaseGraphInfo, BaseSubGraphInfo
 from markup import custom_markup
 from helpers import (
@@ -31,7 +31,7 @@ class InternetLoader(Loader):
 
     def __init__(self):
         try:
-            self.get_cities_coordinates()
+            #self.get_cities_coordinates()
             self.book_genres = {}
         except TBotException as e:
             logger.exception(e.context)
@@ -87,13 +87,13 @@ class InternetLoader(Loader):
             raise
 
     @check_permission()
-    def get_exchange(self, **kwargs) -> dict:
+    def get_exchange(self, **kwargs) -> LoaderResponse:
         """
         Get exchange from internet
         :param:
         :return: string like {'USD': '73,6059', 'EUR':'83,1158'}
         """
-        resp = {}
+        resp = LoaderResponse()
         try:
             url = check_config_attribute('exchange_url')
             ex = ['USD', 'EUR']
@@ -105,7 +105,7 @@ class InternetLoader(Loader):
                 if inf[1].text not in ex:
                     continue
                 exchange[inf[1].text] = inf[4].text
-            resp['text'] = dict_to_str(exchange, ' = ')
+            resp.text = dict_to_str(exchange, ' = ')
             return resp
         except TBotException as e:
             logger.exception(e.context)
@@ -133,13 +133,13 @@ class InternetLoader(Loader):
                 continue
 
     @check_permission()
-    def get_weather(self, text: str, **kwargs) -> dict:
+    def get_weather(self, text: str, **kwargs) -> LoaderResponse:
         """
         Get weather from internet
         :param:
         :return: picture with graph
         """
-        resp = {}
+        resp = LoaderResponse()
         try:
             if not self.city_coordinates:
                 raise TBotException(
@@ -149,8 +149,8 @@ class InternetLoader(Loader):
                 )
             cmd = text.split()
             if len(cmd) == 1:
-                resp['text'] = 'Выберите город'
-                resp['markup'] = custom_markup(
+                resp.text = 'Выберите город'
+                resp.markup = custom_markup(
                     command='weather',
                     category=[
                        city for city in self.city_coordinates.keys()
@@ -158,6 +158,7 @@ class InternetLoader(Loader):
                     ],
                     smile='⛅'
                 )
+                resp.is_extra_log = False
                 return resp
             elif len(cmd) == 2:
                 url = check_config_attribute('weather_url')
@@ -179,8 +180,8 @@ class InternetLoader(Loader):
                 for param in weather_params:
                     subplots.append(BaseSubGraphInfo('plot', 5, None, 'Date', param, time, weather['hourly'][param]))
                 bgi = BaseGraphInfo('Weather', 'weather', subplots)
-                resp['photo'] = Graph.get_base_graph(bgi)
-                resp['text'] = f'Погода на сутки в городе {cmd[1]}'
+                resp.photo = Graph.get_base_graph(bgi)
+                resp.text = f'Погода на сутки в городе {cmd[1]}'
                 return resp
             else:
                 raise TBotException(code=6, return_message=f'Неверное количество параметров: {len(cmd)}')
@@ -190,13 +191,13 @@ class InternetLoader(Loader):
             return e.return_message()
 
     @check_permission()
-    def get_quote(self, **kwargs) -> dict:
+    def get_quote(self, **kwargs) -> LoaderResponse:
         """
         Get quote from internet
         :param:
         :return: dict like {'text': 'quote_text\n author'}
         """
-        resp = {}
+        resp = LoaderResponse()
         try:
             url = check_config_attribute('quote_url')
             soup = InternetLoader.site_to_lxml(url)
@@ -206,7 +207,7 @@ class InternetLoader(Loader):
             text = random_quote.find('div', class_='quote_name')
             quote = dict()
             quote[text.text] = author.text
-            resp['text'] = dict_to_str(quote, '\n')
+            resp.text = dict_to_str(quote, '\n')
             return resp
         except TBotException as e:
             logger.exception(e.context)
@@ -214,19 +215,19 @@ class InternetLoader(Loader):
             return e.return_message()
 
     @check_permission()
-    def get_wish(self, **kwargs) -> dict:
+    def get_wish(self, **kwargs) -> LoaderResponse:
         """
         Get wish from internet
         :param:
         :return: wish string
         """
-        resp = {}
+        resp = LoaderResponse()
         try:
             url = check_config_attribute('wish_url')
             soup = InternetLoader.site_to_lxml(url)
             wishes = soup.find_all('ol')
             wish_list = wishes[0].find_all('li')
-            resp['text'] = random.choice(wish_list).text
+            resp.text = random.choice(wish_list).text
             return resp
         except TBotException as e:
             logger.exception(e.context)
@@ -234,14 +235,14 @@ class InternetLoader(Loader):
             return e.return_message()
 
     @check_permission()
-    def get_news(self, text: str, **kwargs) -> dict:
+    def get_news(self, text: str, **kwargs) -> LoaderResponse:
         """
         Get news from internet
         :param:
         :return: wish string
         """
-        resp = {}
-        count = 5
+        resp = LoaderResponse()
+        count = 10
         lst = text.split()
         try:
             if len(lst) > 2:
@@ -275,8 +276,8 @@ class InternetLoader(Loader):
                     news[news_time.text] = f"[{form_text}]({n.get('href')})"
                 if len(news) == count:
                     break
-            resp['text'] = dict_to_str(news, ' ')
-            resp['parse_mode'] = 'MarkdownV2'
+            resp.text = dict_to_str(news, ' ')
+            resp.parse_mode = 'MarkdownV2'
             return resp
         except TBotException as e:
             logger.exception(e.context)
@@ -284,13 +285,13 @@ class InternetLoader(Loader):
             return e.return_message()
 
     @check_permission()
-    def get_affirmation(self, **kwargs) -> dict:
+    def get_affirmation(self, **kwargs) -> LoaderResponse:
         """
         Get affirmation from internet
         :param:
         :return: affirmation string
         """
-        resp = {}
+        resp = LoaderResponse()
         try:
             url = check_config_attribute('affirmation_url')
             soup = InternetLoader.site_to_lxml(url)
@@ -301,7 +302,7 @@ class InternetLoader(Loader):
                 for em in li:
                     if em.text[0].isupper():
                         aff_list.append(em.text)
-            resp['text'] = random.choice(aff_list)
+            resp.text = random.choice(aff_list)
             return resp
         except TBotException as e:
             logger.exception(e.context)
@@ -319,7 +320,7 @@ class InternetLoader(Loader):
             self.async_url_data.append(data)
 
     @check_permission()
-    async def async_events(self, **kwargs) -> dict:
+    async def async_events(self, **kwargs) -> LoaderResponse:
         """
         Get events from internet (async)
         :param:
@@ -327,7 +328,7 @@ class InternetLoader(Loader):
         """
         self.async_url_data = []
         tasks = []
-        resp = {}
+        resp = LoaderResponse()
         try:
             url = check_config_attribute('events_url')
             async with aiohttp.ClientSession() as session:
@@ -361,7 +362,7 @@ class InternetLoader(Loader):
                             descr = a.text.replace('\n', '')
                             events_links.append(f"{descr}\n{a.get('href')}\n")
                     events[name] = random.choice(events_links)
-                resp['text'] = dict_to_str(events, '\n')
+                resp.text = dict_to_str(events, '\n')
                 return resp
         except TBotException as e:
             logger.exception(e.context)
@@ -369,13 +370,13 @@ class InternetLoader(Loader):
             return e.return_message()
 
     @check_permission()
-    def get_restaurant(self, **kwargs) -> dict:
+    def get_restaurant(self, **kwargs) -> LoaderResponse:
         """
         Get restaurant from internet
         :param:
         :return: restaurant string
         """
-        resp = {}
+        resp = LoaderResponse()
         try:
             url = check_config_attribute('restaurant_url')
             soup = InternetLoader.site_to_lxml(url + '/msk/catalog/restaurants/all/')
@@ -403,7 +404,7 @@ class InternetLoader(Loader):
                 if name is not None and value is not None:
                     final_restaurant[name] = value
             final_restaurant[1] = config.LINKS['restaurant_url'] + restaurant.get('href')
-            resp['text'] = dict_to_str(final_restaurant, ' ')
+            resp.text = dict_to_str(final_restaurant, ' ')
             return resp
         except TBotException as e:
             logger.exception(e.context)
@@ -411,13 +412,13 @@ class InternetLoader(Loader):
             return e.return_message()
 
     @check_permission()
-    def get_poem(self, **kwargs) -> dict:
+    def get_poem(self, **kwargs) -> LoaderResponse:
         """
         Get poem from internet
         :param:
         :return: poesy string
         """
-        resp = {}
+        resp = LoaderResponse()
         try:
             url = check_config_attribute('poesy_url')
             soup = InternetLoader.site_to_lxml(url)
@@ -456,7 +457,7 @@ class InternetLoader(Loader):
                 quatrain = quatrain.replace('<br/>', '\n')
                 quatrains.append(quatrain)
             poem = '\n\n'.join(quatrains)
-            resp['text'] = f'{author}\n\n{name}\n\n{poem}{year}'
+            resp.text = f'{author}\n\n{name}\n\n{poem}{year}'
             return resp
         except TBotException as e:
             logger.exception(e.context)
@@ -464,13 +465,13 @@ class InternetLoader(Loader):
             return e.return_message()
 
     @check_permission()
-    def get_phone_number_info(self, text: str, **kwargs) -> dict:
+    def get_phone_number_info(self, text: str, **kwargs) -> LoaderResponse:
         """
         Get phone number info from internet
         :param:
         :return: poesy string
         """
-        resp = {}
+        resp = LoaderResponse()
         try:
             url = check_config_attribute('kodi_url')
             lst = text.split()
@@ -491,7 +492,7 @@ class InternetLoader(Loader):
             p_raw = div_raw.find('p', style='')
             span_raw = p_raw.find_all('span')
             phone_info['Текущий оператор'] = span_raw[-1].text
-            resp['text'] = dict_to_str(phone_info, ': ')
+            resp.text = dict_to_str(phone_info, ': ')
             return resp
         except TBotException as e:
             logger.exception(e.context)
@@ -499,13 +500,13 @@ class InternetLoader(Loader):
             return e.return_message()
 
     @check_permission()
-    def get_random_movie(self, text: str, **kwargs) -> dict:
+    def get_random_movie(self, text: str, **kwargs) -> LoaderResponse:
         """
         Get random movie from internet
         :param:
         :return: random movie string
         """
-        resp = {}
+        resp = LoaderResponse()
         command = text.split(' ')
         year_from = 0
         year_to = 0
@@ -515,8 +516,8 @@ class InternetLoader(Loader):
                                     return_message=f'Неверное количество параметров: {len(command)}',
                                     parameres_count=len(command))
             if len(command) == 1:
-                resp['text'] = 'Выберите промежуток'
-                resp['markup'] = custom_markup(
+                resp.text = 'Выберите промежуток'
+                resp.markup = custom_markup(
                     command='movie',
                     category=[
                        '1950-1960', '1960-1970', '1970-1980',
@@ -524,6 +525,7 @@ class InternetLoader(Loader):
                     ],
                     smile='🎞'
                 )
+                resp.is_extra_log = False
                 return resp
             elif len(command) == 2:
                 if '-' not in command[1]:
@@ -591,7 +593,7 @@ class InternetLoader(Loader):
                             movie_url = '/'.join(url.split('/')[:3])
                             text = f'Случайный фильм {act_year_from}-{act_year_to} годов'
                             link = movie_url + movie_id
-                            resp['text'] = f'{text}\n{link}'
+                            resp.text = f'{text}\n{link}'
                             return resp
                     try_count += 1
                     if try_count > per_page:
@@ -625,25 +627,26 @@ class InternetLoader(Loader):
             return e.return_message()
 
     @check_permission()
-    def get_book(self, text, **kwargs) -> dict:
+    def get_book(self, text, **kwargs) -> LoaderResponse:
         """
         Get random book from internet
         :param:
         :return: book
         """
-        resp = {}
+        resp = LoaderResponse()
         try:
             err = self.get_book_genres()
             if err:
                 return err
             lst = text.split()
             if len(lst) == 1:
-                resp['text'] = 'Выберите жанр'
-                resp['markup'] = custom_markup(
+                resp.text = 'Выберите жанр'
+                resp.markup = custom_markup(
                     command='book',
                     category=self.book_genres,
                     smile='📖'
                 )
+                resp.is_extra_log = False
                 return resp
             category = ''
             for genre in self.book_genres.keys():
@@ -663,7 +666,7 @@ class InternetLoader(Loader):
             book_list = div_raw.find_all('div', class_='book-item-manage')
             random_book_raw = random.choice(book_list)
             random_book = random_book_raw.find('a', class_='brow-book-name with-cycle')
-            resp['text'] = f"{random_book.get('title')}\n{site}{random_book.get('href')}"
+            resp.text = f"{random_book.get('title')}\n{site}{random_book.get('href')}"
             return resp
         except TBotException as e:
             logger.exception(e.context)
@@ -671,13 +674,13 @@ class InternetLoader(Loader):
             return e.return_message()
 
     @check_permission()
-    def get_russian_painting(self, **kwargs) -> dict:
+    def get_russian_painting(self, **kwargs) -> LoaderResponse:
         """
         Get russian painting from internet
         :param:
         :return: dict
         """
-        resp = {}
+        resp = LoaderResponse()
         try:
             url = check_config_attribute('russian_painting_url')
             soup = InternetLoader.site_to_lxml(url)
@@ -692,7 +695,7 @@ class InternetLoader(Loader):
             img_raw = p_raw.find('img')
             picture = img_raw.get('src')
             if picture:
-                resp['photo'] = picture
+                resp.photo = picture
             else:
                 raise TBotException(code=1, return_message='Картина не найдена')
             text = img_raw.get('title')
@@ -700,7 +703,7 @@ class InternetLoader(Loader):
                 text = text.split('900')[0]
             else:
                 text = 'Picture'
-            resp['text'] = text
+            resp.text = text
             return resp
         except TBotException as e:
             logger.exception(e.context)
@@ -708,18 +711,18 @@ class InternetLoader(Loader):
             return e.return_message()
 
     @check_permission(needed_level='root')
-    def get_server_ip(self, **kwargs) -> dict:
+    def get_server_ip(self, **kwargs) -> LoaderResponse:
         """
         Get server ip
         :param:
         :return: dict with ip
         """
-        resp = {}
+        resp = LoaderResponse()
         try:
             url = check_config_attribute('system-monitor')
             data = InternetLoader.regular_request(url + 'ip')
             data_dict = json.loads(data.text)
-            resp['text'] = data_dict.get('ip')
+            resp.text = data_dict.get('ip')
             return resp
         except TBotException as e:
             logger.exception(e.context)
@@ -727,13 +730,13 @@ class InternetLoader(Loader):
             return e.return_message()
 
     @check_permission(needed_level='root')
-    def ngrok(self, text: str, **kwargs) -> dict:
+    def ngrok(self, text: str, **kwargs) -> LoaderResponse:
         """
         Actions with ngrok
         :param:
         :return: operation status or tunnel's info
         """
-        resp = {}
+        resp = LoaderResponse()
         try:
             url = check_config_attribute('system-monitor')
             command = text.split()
@@ -741,12 +744,13 @@ class InternetLoader(Loader):
             if len(command) > 2:
                 raise TBotException(code=6, return_message=f'Неверное количество параметров: {len(command)}')
             if len(command) == 1:
-                resp['text'] = 'Выберите действие'
-                resp['markup'] = custom_markup(
+                resp.text = 'Выберите действие'
+                resp.markup = custom_markup(
                     command='ngrok',
                     category=valid_actions,
                     smile='🖥'
                 )
+                resp.is_extra_log = False
                 return resp
             action = command[1].lower()
             if action not in valid_actions:
@@ -754,12 +758,12 @@ class InternetLoader(Loader):
             data = InternetLoader.regular_request(url + f'ngrok_{action}')
             sys_mon_res = json.loads(data.text)
             if isinstance(sys_mon_res['msg'], str):
-                resp['text'] = sys_mon_res['msg']
+                resp.text = sys_mon_res['msg']
             elif isinstance(sys_mon_res['msg'], list):
                 if len(sys_mon_res['msg']) == 0:
                     resp['text'] = 'Отсутствуют открытые туннели'
                     return resp
-                resp['text'] = '\n\n'.join(
+                resp.text = '\n\n'.join(
                     ['\n'.join([f"url: {i['url']}",
                                 f"port: {i['port']}",
                                 f"protocol: {i['protocol']}",
@@ -773,13 +777,13 @@ class InternetLoader(Loader):
             return e.return_message()
 
     @check_permission(needed_level='root')
-    def ngrok_db(self, text: str, **kwargs) -> dict:
+    def ngrok_db(self, text: str, **kwargs) -> LoaderResponse:
         """
         Actions with ngrok_db
         :param:
         :return: operation status
         """
-        resp = {}
+        resp = LoaderResponse()
         try:
             url = check_config_attribute('system-monitor')
             command = text.split(' ')
@@ -787,19 +791,20 @@ class InternetLoader(Loader):
             if len(command) > 2:
                 raise TBotException(code=6, return_message=f'Неверное количество параметров: {len(command)}')
             if len(command) == 1:
-                resp['text'] = 'Выберите действие'
-                resp['markup'] = custom_markup(
+                resp.text = 'Выберите действие'
+                resp.markup = custom_markup(
                     command='ngrok_db',
                     category=valid_actions,
                     smile='📦'
                 )
+                resp.is_extra_log = False
                 return resp
             action = command[1].lower()
             if action not in valid_actions:
                 raise TBotException(code=6, return_message=f'Неправильное значение параметра: {action}')
             data = InternetLoader.regular_request(url + f'ngrok_db_{action}')
             sys_mon_res = json.loads(data.text)
-            resp['text'] = sys_mon_res['msg']
+            resp.text = sys_mon_res.get('msg', 'Ошибка')
             return resp
         except TBotException as e:
             logger.exception(e.context)
@@ -807,7 +812,7 @@ class InternetLoader(Loader):
             return e.return_message()
 
     @check_permission(needed_level='root')
-    def tbot_restart(self, **kwargs) -> dict:
+    def tbot_restart(self, **kwargs) -> LoaderResponse:
         """
         Restart TBot
         :param:
@@ -822,23 +827,24 @@ class InternetLoader(Loader):
             return e.return_message()
 
     @check_permission(needed_level='root')
-    def system_restart(self, text: str, **kwargs) -> dict:
+    def system_restart(self, text: str, **kwargs) -> LoaderResponse:
         """
         Restart system
         :param:
         :return:
         """
-        resp = {}
+        resp = LoaderResponse()
         try:
             url = check_config_attribute('system-monitor')
             cmd = text.split()
             if len(cmd) == 1:
-                resp['text'] = 'Подтвердите перезагрузку'
-                resp['markup'] = custom_markup(
+                resp.text = 'Подтвердите перезагрузку'
+                resp.markup = custom_markup(
                     command='restart_system',
                     category=['allow'],
                     smile='✅'
                 )
+                resp.is_extra_log = False
                 return resp
             elif len(cmd) == 2:
                 if cmd[1].lower() == 'allow':
@@ -853,12 +859,13 @@ class InternetLoader(Loader):
             return e.return_message()
 
     @check_permission(needed_level='root')
-    def systemctl(self, text: str, **kwargs) -> dict:
+    def systemctl(self, text: str, **kwargs) -> LoaderResponse:
         """
         Services control
         :param text: input command
         :return:
         """
+        resp = LoaderResponse()
         try:
             url = check_config_attribute('system-monitor')
             cmd = text.split()
@@ -870,9 +877,7 @@ class InternetLoader(Loader):
                 raise TBotException(code=6, return_message=f'Неправильное значение параметра: {f"{action} + {service}"}')
             data = InternetLoader.regular_request(url + f'systemctl?action={action}&service={service}')
             text = json.loads(data.text)
-            resp = {
-                'text': text.get('msg', 'Complete')
-            }
+            resp.text = text.get('msg', 'Ошибка')
             return resp
         except TBotException as e:
             logger.exception(e.context)
@@ -880,18 +885,17 @@ class InternetLoader(Loader):
             return e.return_message()
 
     @check_permission(needed_level='root')
-    def allow_connection(self, **kwargs) -> dict:
+    def allow_connection(self, **kwargs) -> LoaderResponse:
         """
         Allow ssh connection
         :return:
         """
+        resp = LoaderResponse()
         try:
             url = check_config_attribute('system-monitor')
             data = InternetLoader.regular_request(url + f'allow_connection')
             text = json.loads(data.text)
-            resp = {
-                'text': text.get('msg', 'Complete')
-            }
+            resp.text = text.get('msg', 'Ошибка')
             return resp
         except TBotException as e:
             logger.exception(e.context)
