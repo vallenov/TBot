@@ -7,7 +7,7 @@ import pandas as pd
 import datetime
 
 import config
-from loaders.loader import Loader, check_permission
+from loaders.loader import Loader, check_permission, LoaderResponse
 from markup import main_markup
 from loggers import get_logger
 from markup import custom_markup
@@ -74,14 +74,14 @@ class FileLoader(Loader):
                 e.send_error(traceback.format_exc())
 
     @check_permission()
-    def get_poem(self, text: str, **kwargs) -> dict:
+    def get_poem(self, text: str, **kwargs) -> LoaderResponse:
         """
         Get poem from file
         :param:
         :return: poesy string
         """
         lst = text.split()
-        resp = {}
+        resp = LoaderResponse()
         try:
             if len(lst) == 1:
                 random_poem = random.choice(self.poems)
@@ -99,7 +99,7 @@ class FileLoader(Loader):
             name = random_poem['name']
             text = random_poem['text']
             str_poem = f"{author}\n\n{name}\n\n{text}"
-            resp['text'] = str_poem
+            resp.text = str_poem
             return resp
         except TBotException as e:
             logger.exception(e.context)
@@ -107,11 +107,11 @@ class FileLoader(Loader):
             return e.return_message()
 
     @check_permission()
-    def poem_divination(self, text: str, **kwargs) -> dict:
+    def poem_divination(self, text: str, **kwargs) -> LoaderResponse:
         """
         Poem divination
         """
-        resp = {}
+        resp = LoaderResponse()
         try:
             cmd = text.split()
             if kwargs['chat_id'] not in tbot_users:
@@ -138,12 +138,13 @@ class FileLoader(Loader):
                         if count_of_quatrains:
                             break
                     tbot_users(kwargs['chat_id']).cache['poem'] = poem
-                    resp['text'] = 'Выберите четверостишие'
-                    resp['markup'] = custom_markup(
+                    resp.text = 'Выберите четверостишие'
+                    resp.markup = custom_markup(
                         command='divination',
                         category=[str(i) for i in range(1, count_of_quatrains+1)],
                         smile='🔮'
                     )
+                    resp.is_extra_log = False
                     return resp
             else:
                 poem = tbot_users(kwargs['chat_id']).cache.get('poem')
@@ -156,7 +157,7 @@ class FileLoader(Loader):
                 cmd = text.split()
                 try:
                     number_of_quatrain = int(cmd[1])
-                    resp['text'] = quatrains[number_of_quatrain - 1]
+                    resp.text = quatrains[number_of_quatrain - 1]
                 except ValueError:
                     raise TBotException(code=6,
                                         return_message='Неправильный тип параметра',
@@ -187,13 +188,13 @@ class FileLoader(Loader):
         return resp
 
     @check_permission(needed_level='root')
-    def get_camera_capture(self, **kwargs) -> dict:
+    def get_camera_capture(self, **kwargs) -> LoaderResponse:
         """
         Get photo from camera
         :param:
         :return: dict with path to file
         """
-        resp = {}
+        resp = LoaderResponse()
         unique_name = 'camera_' + str(datetime.datetime.now()).replace(':', '').replace(' ', '')[:16]
         path = os.path.join('tmp', unique_name)
         cmd = f"raspistill -o {path} -rot 180 -w 640 -h 480"
@@ -202,7 +203,7 @@ class FileLoader(Loader):
         try:
             while i < config.MAX_TRY:
                 if os.path.exists(path):
-                    resp['photo'] = path
+                    resp.photo = path
                     return resp
                 time.sleep(1)
                 i += 1
@@ -213,20 +214,22 @@ class FileLoader(Loader):
             return e.return_message()
 
     @check_permission()
-    def get_help(self, **kwargs) -> dict:
+    def get_help(self, **kwargs) -> LoaderResponse:
         """
         Get bot functions
         :return: {'res': 'OK or ERROR', 'text': 'message'}
         """
-        resp = dict()
-        resp['text'] = ''
+        resp = LoaderResponse()
+        resp.text = ''
         if Loader.privileges_levels['regular'] <= kwargs['privileges']:
-            resp['text'] += str(f'Ты можешь написать "новости", "стих" и "фильм" с параметром\n'
-                                f'Новости "количество новостей"\n'
-                                f'Стих "имя автора или название"\n'
-                                f'Фильм "год выпуска" или "промежуток", например "фильм 2001-2005"\n'
-                                f'Так же, ты можешь написать phone и номер телефона, что бы узнать информацию о нем\n'
-                                f'Что бы отправить сообщение админу, напиши to_admin и все что угодно после\n')
+            resp.text += str(
+                f'Ты можешь написать "новости", "стих" и "фильм" с параметром\n'
+                f'Новости "количество новостей"\n'
+                f'Стих "имя автора или название"\n'
+                f'Фильм "год выпуска" или "промежуток", например "фильм 2001-2005"\n'
+                f'Так же, ты можешь написать phone и номер телефона, что бы узнать информацию о нем\n'
+                f'Что бы отправить сообщение админу, напиши to_admin и все что угодно после\n'
+            )
         if Loader.privileges_levels['trusted'] <= kwargs['privileges']:
             pass
         if Loader.privileges_levels['root'] <= kwargs['privileges']:
@@ -234,30 +237,31 @@ class FileLoader(Loader):
         return resp
 
     @check_permission()
-    def get_hello(self, **kwargs) -> dict:
+    def get_hello(self, **kwargs) -> LoaderResponse:
         """
         Get hello from bot
         :return: {'res': 'OK or ERROR', 'text': 'message'}
         """
-        resp = dict()
+        resp = LoaderResponse()
         if Loader.privileges_levels['regular'] <= kwargs['privileges']:
-            resp['text'] = f'Привет! Меня зовут InfoBot\n'
+            resp.text = f'Привет! Меня зовут InfoBot\n'
         if Loader.privileges_levels['trusted'] <= kwargs['privileges']:
             pass
         if Loader.privileges_levels['root'] <= kwargs['privileges']:
-            resp['text'] = f'Вы root-пользователь'
-        resp['markup'] = main_markup(kwargs['privileges'])
+            resp.text = f'Вы root-пользователь'
+        resp.markup = main_markup(kwargs['privileges'])
+        resp.is_extra_log = False
         return resp
 
     @check_permission(needed_level='root')
-    def get_admins_help(self, **kwargs) -> dict:
+    def get_admins_help(self, **kwargs) -> LoaderResponse:
         """
         Get bot functions for admin
         :param :
         :return:
         """
-        resp = dict()
-        resp['text'] = str(
+        resp = LoaderResponse()
+        resp.text = str(
             f'Изменение привилегий пользователя - update privileges "chat_id" "privileges" 10-50\n'
             f'Изменение описания пользователя - update description "chat_id" "description"\n'
             f'Изменение активности пользователя (вместо удаления) - update description "chat_id" "active" 1 или 0\n'
