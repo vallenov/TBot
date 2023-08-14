@@ -1,9 +1,11 @@
 from functools import wraps
 from sqlalchemy import exc
+from telebot.types import InlineKeyboardMarkup
 
 import config
+from extentions import db
 from loggers import get_logger
-from models import LibPrivileges
+from models import LibPrivileges, LogRequests
 
 logger = get_logger(__name__)
 
@@ -56,3 +58,29 @@ class Loader:
     else:
         privileges_levels = config.PRIVILEGES_LEVELS
 
+
+class LoaderResponse:
+    def __init__(
+            self,
+            text: str = None,
+            photo: str = None,
+            chat_id: int or list = None,
+            markup: InlineKeyboardMarkup = None,
+            parse_mode: str = None,
+            is_extra_log: bool = True  # Нужно ли логировать название функции
+    ):
+        self.text = text
+        self.photo = photo
+        self.chat_id = chat_id
+        self.markup = markup
+        self.parse_mode = parse_mode
+        self.is_extra_log = is_extra_log
+
+    @staticmethod
+    def extra_log(request_id: int, action: str):
+        lr = LogRequests.query.filter(
+            LogRequests.lr_id == request_id
+        ).one_or_none()
+        if lr:
+            lr.action = action
+            db.session.commit()
