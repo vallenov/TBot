@@ -553,7 +553,8 @@ class DBLoader(Loader):
                         func.count(md.LogRequests.action)
                     ).filter(
                         md.LogRequests.date_ins >= interval,
-                        md.LogRequests.action.is_not(None)
+                        md.LogRequests.action.is_not(None),
+                        md.LogRequests.action != 'hello'
                     ).group_by(
                         md.LogRequests.action
                     ).order_by(
