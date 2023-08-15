@@ -7,7 +7,7 @@ from sqlalchemy.sql import func
 
 import config
 
-from loaders.loader import Loader, check_permission, LoaderResponse
+from loaders.loader import Loader, check_permission, LoaderResponse, LoaderRequest
 from helpers import dict_to_str, cut_commands
 import models as md
 from extentions import db
@@ -178,12 +178,12 @@ class DBLoader(Loader):
         logger.info('User info updated')
 
     @check_permission(needed_level='root')
-    def update_user_data(self, text: str, **kwargs) -> LoaderResponse:
+    def update_user_data(self, request: LoaderRequest) -> LoaderResponse:
         """
         Update user privileges in DB and memory
         """
         resp = LoaderResponse()
-        cmd = text.split()
+        cmd = request.text.split()
         try:
             if len(cmd) < 4:
                 raise TBotException(code=6,
@@ -193,7 +193,7 @@ class DBLoader(Loader):
                 chat_id = cmd[2]
                 try:
                     if cmd[1].lower() == 'description':
-                        new_value = cut_commands(text, 3)
+                        new_value = cut_commands(text=request.text, count_of_commands=3)
                     elif cmd[1].lower() == 'privileges':
                         new_value = int(cmd[3])
                     elif cmd[1].lower() == 'active':
@@ -248,13 +248,13 @@ class DBLoader(Loader):
             return e.return_message()
 
     @check_permission(needed_level='root')
-    def show_users(self, text: str, **kwargs) -> LoaderResponse:
+    def show_users(self, request: LoaderRequest) -> LoaderResponse:
         """
         Show current users information
         """
         resp = LoaderResponse()
         try:
-            lst = text.split()
+            lst = request.text.split()
             if len(lst) == 1:
                 users = [f"{user.chat_id} {user.login} {user.first_name}" for user in tbot_users.all()
                          if user.privileges <= Loader.privileges_levels['trusted']]
@@ -279,14 +279,14 @@ class DBLoader(Loader):
             return e.return_message()
 
     @check_permission(needed_level='root')
-    def send_other(self, text: str, **kwargs) -> LoaderResponse:
+    def send_other(self, request: LoaderRequest) -> LoaderResponse:
         """
         Send message to other user
-        :param text: string "command chat_id message"
+        :param request: string "command chat_id message"
         :return: dict {'chat_id': 1234567, 'text': 'some'}
         """
         resp = LoaderResponse()
-        lst = text.split()
+        lst = request.text.split()
         try:
             if len(lst) < 3:
                 raise TBotException(code=6, return_message=f'Неправильное количество параметров: {len(lst)}')
@@ -297,7 +297,7 @@ class DBLoader(Loader):
             if str(chat_id) not in tbot_users:
                 raise TBotException(code=3, return_message=f'Пользователь {lst[1]} не найден')
             resp.chat_id = chat_id
-            resp.text = cut_commands(text=text, count_of_commands=2)
+            resp.text = cut_commands(text=request.text, count_of_commands=2)
             return resp
         except TBotException as e:
             logger.exception(e.context)
@@ -305,14 +305,14 @@ class DBLoader(Loader):
             return e.return_message()
 
     @check_permission(needed_level='root')
-    def send_to_all_users(self, text: str, **kwargs) -> LoaderResponse:
+    def send_to_all_users(self, request: LoaderRequest) -> LoaderResponse:
         """
         Send message to all users
-        :param text: string "command chat_id message"
+        :param request: string "command chat_id message"
         :return: dict {'chat_id': [1234567, 4637499], 'text': 'some'}
         """
         resp = LoaderResponse()
-        lst = text.split()
+        lst = request.text.split()
         try:
             if len(lst) < 2:
                 raise TBotException(code=6, return_message=f'Неправильное количество параметров: {len(lst)}')
@@ -323,7 +323,7 @@ class DBLoader(Loader):
                 except ValueError:
                     logger.exception(f'Chat {chat_id} is not convert to int')
                 resp.chat_id.append(chat_id)
-            resp.text = cut_commands(text=text, count_of_commands=1)
+            resp.text = cut_commands(text=request.text, count_of_commands=1)
             return resp
         except TBotException as e:
             logger.exception(e.context)
@@ -331,20 +331,20 @@ class DBLoader(Loader):
             return e.return_message()
 
     @check_permission()
-    def send_to_admin(self, text: str, **kwargs) -> LoaderResponse:
+    def send_to_admin(self, request: LoaderRequest) -> LoaderResponse:
         """
         Send message to admin
-        :param text: string "command chat_id message"
+        :param request: request
         :return: dict {'chat_id': admin_id, 'text': 'some'}
         """
         resp = LoaderResponse()
-        lst = text.split()
+        lst = request.text.split()
         try:
             if len(lst) < 2:
                 raise TBotException(code=6, return_message=f'Неправильное количество параметров: {len(lst)}')
             resp.chat_id = int(config.USERS['root_id']['chat_id'])
-            resp.text = str(f"Message from {tbot_users(kwargs['chat_id']).first_name or kwargs['chat_id']}\n"
-                            f"Text: {cut_commands(text=text, count_of_commands=1)}")
+            resp.text = str(f"Message from {tbot_users(request.chat_id).first_name or request.chat_id}\n"
+                            f"Text: {cut_commands(text=request.text, count_of_commands=1)}")
             return resp
         except TBotException as e:
             logger.exception(e.context)
@@ -364,7 +364,7 @@ class DBLoader(Loader):
             ).one_or_none()
 
     @check_permission()
-    def get_poem(self, text: str, **kwargs) -> LoaderResponse:
+    def get_poem(self, request: LoaderRequest) -> LoaderResponse:
         """
         Get poem from DB
         :param:
@@ -373,7 +373,7 @@ class DBLoader(Loader):
         resp = LoaderResponse()
         try:
             if config.USE_DB:
-                lst = text.split()
+                lst = request.text.split()
                 if len(lst) == 1:
                     poem = self._get_random_poem()
                     if not poem:
@@ -397,21 +397,21 @@ class DBLoader(Loader):
             return e.return_message()
 
     @check_permission()
-    def poem_divination(self, text: str, **kwargs) -> LoaderResponse:
+    def poem_divination(self, request: LoaderRequest) -> LoaderResponse:
         """
         Poem divination
         """
         resp = LoaderResponse()
         try:
-            cmd = text.split()
-            if kwargs['chat_id'] not in tbot_users:
-                raise TBotException(code=3, message=f'User {kwargs["chat_id"]} not found')
-            if not tbot_users(kwargs['chat_id']).cache:
-                tbot_users(kwargs['chat_id']).cache = dict()
+            cmd = request.text.split()
+            if request.chat_id not in tbot_users:
+                raise TBotException(code=3, message=f'User {request.chat_id} not found')
+            if not tbot_users(request.chat_id).cache:
+                tbot_users(request.chat_id).cache = dict()
             if len(cmd) == 1:
-                if 'poem' in tbot_users(kwargs['chat_id']).cache:
-                    tbot_users(kwargs['chat_id']).cache.pop('poem')
-                if not tbot_users(kwargs['chat_id']).cache.get('poem'):
+                if 'poem' in tbot_users(request.chat_id).cache:
+                    tbot_users(request.chat_id).cache.pop('poem')
+                if not tbot_users(request.chat_id).cache.get('poem'):
                     while True:
                         poem = self._get_random_poem()
                         count_of_quatrains = poem.text.count('\n\n')
@@ -427,7 +427,7 @@ class DBLoader(Loader):
                             count_of_quatrains = len(quatrains)
                         if count_of_quatrains:
                             break
-                    tbot_users(kwargs['chat_id']).cache['poem'] = poem
+                    tbot_users(request.chat_id).cache['poem'] = poem
                     resp.text = 'Выберите четверостишие'
                     resp.markup = custom_markup(
                         command='divination',
@@ -437,14 +437,14 @@ class DBLoader(Loader):
                     resp.is_extra_log = False
                     return resp
             else:
-                poem = tbot_users(kwargs['chat_id']).cache.get('poem')
+                poem = tbot_users(request.chat_id).cache.get('poem')
                 if not poem:
                     raise TBotException(code=7,
                                         return_message=f'Отсутствует сохраненный стих. Нажми на гадание еще разок',
-                                        chat_id=kwargs.get('chat_id'),
+                                        chat_id=request.chat_id,
                                         cache_field='poem')
                 quatrains = poem.text.split('\n\n')
-                cmd = text.split()
+                cmd = request.text.split()
                 try:
                     number_of_quatrain = int(cmd[1])
                     resp.text = quatrains[number_of_quatrain - 1]
@@ -453,7 +453,7 @@ class DBLoader(Loader):
                 except IndexError:
                     raise TBotException(code=7,
                                         return_message=f'Отсутствует сохраненный стих. Нажми на гадание еще разок',
-                                        chat_id=kwargs.get('chat_id'))
+                                        chat_id=request.chat_id)
                 return resp
         except TBotException as e:
             logger.exception(e.context)
@@ -461,14 +461,14 @@ class DBLoader(Loader):
             return e.return_message()
 
     @check_permission(needed_level='root')
-    def get_statistic(self, text, **kwargs) -> LoaderResponse:
+    def get_statistic(self, request: LoaderRequest) -> LoaderResponse:
         """
         Get statistic
-        :param text: command string
+        :param request: command string
         :return: statistic
         """
         resp = LoaderResponse()
-        lst = text.split()
+        lst = request.text.split()
         lst = [word.lower() for word in lst]
         try:
             if config.USE_DB:
