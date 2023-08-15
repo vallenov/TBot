@@ -7,7 +7,7 @@ import pandas as pd
 import datetime
 
 import config
-from loaders.loader import Loader, check_permission, LoaderResponse
+from loaders.loader import Loader, check_permission, LoaderResponse, LoaderRequest
 from markup import main_markup
 from loggers import get_logger
 from markup import custom_markup
@@ -74,13 +74,13 @@ class FileLoader(Loader):
                 e.send_error(traceback.format_exc())
 
     @check_permission()
-    def get_poem(self, text: str, **kwargs) -> LoaderResponse:
+    def get_poem(self, request: LoaderRequest) -> LoaderResponse:
         """
         Get poem from file
         :param:
         :return: poesy string
         """
-        lst = text.split()
+        lst = request.text.split()
         resp = LoaderResponse()
         try:
             if len(lst) == 1:
@@ -107,21 +107,21 @@ class FileLoader(Loader):
             return e.return_message()
 
     @check_permission()
-    def poem_divination(self, text: str, **kwargs) -> LoaderResponse:
+    def poem_divination(self, request: LoaderRequest) -> LoaderResponse:
         """
         Poem divination
         """
         resp = LoaderResponse()
         try:
-            cmd = text.split()
-            if kwargs['chat_id'] not in tbot_users:
-                raise TBotException(code=3, chat_id=f"{kwargs['chat_id']}")
-            if not tbot_users(kwargs['chat_id']).cache:
-                tbot_users(kwargs['chat_id']).cache = dict()
+            cmd = request.text.split()
+            if request.chat_id not in tbot_users:
+                raise TBotException(code=3, chat_id=f"{request.chat_id}")
+            if not tbot_users(request.chat_id).cache:
+                tbot_users(request.chat_id).cache = dict()
             if len(cmd) == 1:
-                if 'poem' in tbot_users(kwargs['chat_id']).cache:
-                    tbot_users(kwargs['chat_id']).cache.pop('poem')
-                if not tbot_users(kwargs['chat_id']).cache.get('poem'):
+                if 'poem' in tbot_users(request.chat_id).cache:
+                    tbot_users(request.chat_id).cache.pop('poem')
+                if not tbot_users(request.chat_id).cache.get('poem'):
                     while True:
                         poem = random.choice(self.poems)
                         count_of_quatrains = poem['text'].count('\n\n')
@@ -137,7 +137,7 @@ class FileLoader(Loader):
                             count_of_quatrains = len(quatrains)
                         if count_of_quatrains:
                             break
-                    tbot_users(kwargs['chat_id']).cache['poem'] = poem
+                    tbot_users(request.chat_id).cache['poem'] = poem
                     resp.text = 'Выберите четверостишие'
                     resp.markup = custom_markup(
                         command='divination',
@@ -147,14 +147,14 @@ class FileLoader(Loader):
                     resp.is_extra_log = False
                     return resp
             else:
-                poem = tbot_users(kwargs['chat_id']).cache.get('poem')
+                poem = tbot_users(request.chat_id).cache.get('poem')
                 if not poem:
                     raise TBotException(code=7,
                                         return_message=f'Отсутствует сохраненный стих. Нажми на гадание еще разок',
-                                        chat_id=kwargs.get('chat_id'),
+                                        chat_id=request.chat_id,
                                         cache_field='poem')
                 quatrains = poem['text'].split('\n\n')
-                cmd = text.split()
+                cmd = request.text.split()
                 try:
                     number_of_quatrain = int(cmd[1])
                     resp.text = quatrains[number_of_quatrain - 1]
@@ -166,7 +166,7 @@ class FileLoader(Loader):
                 except IndexError:
                     raise TBotException(code=7,
                                         return_message=f'Отсутствует сохраненный стих. Нажми на гадание еще разок',
-                                        chat_id=kwargs.get('chat_id'),
+                                        chat_id=request.chat_id,
                                         cache_field='poem')
                 return resp
         except TBotException as e:
@@ -175,20 +175,20 @@ class FileLoader(Loader):
             return e.return_message()
 
     @check_permission()
-    def get_metaphorical_card(self, **kwargs) -> dict:
+    def get_metaphorical_card(self, request: LoaderRequest) -> LoaderResponse:
         """
         Get metaphorical card from file
         :param:
         :return: metaphorical card photo
         """
-        resp = {}
+        resp = LoaderResponse()
         met_cards_path = os.path.join('file_db', 'metaphorical_cards')
         random_card = random.choice(os.listdir(met_cards_path))
-        resp['photo'] = os.path.join(met_cards_path, random_card)
+        resp.photo = os.path.join(met_cards_path, random_card)
         return resp
 
     @check_permission(needed_level='root')
-    def get_camera_capture(self, **kwargs) -> LoaderResponse:
+    def get_camera_capture(self, request: LoaderRequest) -> LoaderResponse:
         """
         Get photo from camera
         :param:
@@ -214,14 +214,14 @@ class FileLoader(Loader):
             return e.return_message()
 
     @check_permission()
-    def get_help(self, **kwargs) -> LoaderResponse:
+    def get_help(self, request: LoaderRequest) -> LoaderResponse:
         """
         Get bot functions
         :return: {'res': 'OK or ERROR', 'text': 'message'}
         """
         resp = LoaderResponse()
         resp.text = ''
-        if Loader.privileges_levels['regular'] <= kwargs['privileges']:
+        if Loader.privileges_levels['regular'] <= request.privileges:
             resp.text += str(
                 f'Ты можешь написать "новости", "стих" и "фильм" с параметром\n'
                 f'Новости "количество новостей"\n'
@@ -230,31 +230,31 @@ class FileLoader(Loader):
                 f'Так же, ты можешь написать phone и номер телефона, что бы узнать информацию о нем\n'
                 f'Что бы отправить сообщение админу, напиши to_admin и все что угодно после\n'
             )
-        if Loader.privileges_levels['trusted'] <= kwargs['privileges']:
+        if Loader.privileges_levels['trusted'] <= request.privileges:
             pass
-        if Loader.privileges_levels['root'] <= kwargs['privileges']:
+        if Loader.privileges_levels['root'] <= request.privileges:
             pass
         return resp
 
     @check_permission()
-    def get_hello(self, **kwargs) -> LoaderResponse:
+    def get_hello(self, request: LoaderRequest) -> LoaderResponse:
         """
         Get hello from bot
-        :return: {'res': 'OK or ERROR', 'text': 'message'}
+        :return:
         """
         resp = LoaderResponse()
-        if Loader.privileges_levels['regular'] <= kwargs['privileges']:
+        if Loader.privileges_levels['regular'] <= request.privileges:
             resp.text = f'Привет! Меня зовут InfoBot\n'
-        if Loader.privileges_levels['trusted'] <= kwargs['privileges']:
+        if Loader.privileges_levels['trusted'] <= request.privileges:
             pass
-        if Loader.privileges_levels['root'] <= kwargs['privileges']:
+        if Loader.privileges_levels['root'] <= request.privileges:
             resp.text = f'Вы root-пользователь'
-        resp.markup = main_markup(kwargs['privileges'])
+        resp.markup = main_markup(request.privileges)
         resp.is_extra_log = False
         return resp
 
     @check_permission(needed_level='root')
-    def get_admins_help(self, **kwargs) -> LoaderResponse:
+    def get_admins_help(self, request: LoaderRequest) -> LoaderResponse:
         """
         Get bot functions for admin
         :param :
