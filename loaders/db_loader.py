@@ -505,11 +505,11 @@ class DBLoader(Loader):
                             cast(md.LogRequests.date_ins, Date),
                             func.count(md.LogRequests.chat_id)
                         ).filter(
-                            md.LogRequests.date_ins >= interval
+                            md.LogRequests.date_ins >= interval,
+                            md.LogRequests.action.is_not(None),
+                            md.LogRequests.action != 'hello'
                         ).group_by(
                             cast(md.LogRequests.date_ins, Date)
-                        ).order_by(
-
                         ).all()
                         dt = []
                         cnt = []
@@ -530,20 +530,19 @@ class DBLoader(Loader):
                         md.Users,
                         md.LogRequests.chat_id == md.Users.chat_id
                     ).filter(
-                        md.LogRequests.date_ins >= interval
+                        md.LogRequests.date_ins >= interval,
+                        md.LogRequests.action.is_not(None),
+                        md.LogRequests.action != 'hello'
                     ).with_entities(
                         func.count(md.Users.chat_id),
                         md.Users.login,
                         md.Users.first_name
                     ).group_by(
                         md.Users.chat_id
+                    ).order_by(
+                        desc(func.count(md.Users.chat_id))
                     ).all()
-                    for index_i in range(len(to_sort)):
-                        for index_j in range(len(to_sort) - 1):
-                            if index_i == index_j:
-                                continue
-                            elif to_sort[index_j][0] < to_sort[index_j + 1][0]:
-                                to_sort[index_j], to_sort[index_j + 1] = to_sort[index_j + 1], to_sort[index_j]
+                    resp.text = ''
                     for cur in to_sort:
                         resp.text += ' '.join([str(i) for i in cur]) + '\n'
                     return resp
