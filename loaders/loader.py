@@ -22,20 +22,20 @@ def check_permission(needed_level: str = 'regular'):
     """
     def decorator(func):
         @wraps(func)
-        def wrap(self, *args, **kwargs):
+        def wrap(self, request: LoaderRequest) -> LoaderResponse:
             logger.info(f'Check permission')
             if needed_level not in Loader.privileges_levels.keys():
                 logger.error(f'{needed_level} is not permission level name')
-            user_permission = kwargs['privileges']
+            user_permission = request.privileges
             logger.info(f'User permission: {user_permission}, '
                         f'needed permission: {Loader.privileges_levels[needed_level]}')
             if user_permission < Loader.privileges_levels[needed_level]:
                 logger.info('Access denied')
-                return dict(text='Permission denied')
+                return LoaderResponse(text='Permission denied')
             else:
                 logger.info('Access allowed')
                 logger.info(func.__qualname__)
-                resp = func(self, *args, **kwargs)
+                resp = func(self, request)
             return resp
         return wrap
     return decorator
@@ -59,15 +59,26 @@ class Loader:
         privileges_levels = config.PRIVILEGES_LEVELS
 
 
+class LoaderRequest:
+    def __init__(
+        self,
+        text: str,
+        privileges: int,
+        chat_id: str
+    ):
+        self.text = text
+        self.privileges = privileges
+        self.chat_id = chat_id
+
 class LoaderResponse:
     def __init__(
-            self,
-            text: str = None,
-            photo: str = None,
-            chat_id: int or list = None,
-            markup: InlineKeyboardMarkup = None,
-            parse_mode: str = None,
-            is_extra_log: bool = True  # Нужно ли логировать название функции
+        self,
+        text: str = None,
+        photo: str = None,
+        chat_id: int or list = None,
+        markup: InlineKeyboardMarkup = None,
+        parse_mode: str = None,
+        is_extra_log: bool = True  # Нужно ли логировать название функции
     ):
         self.text = text
         self.photo = photo
