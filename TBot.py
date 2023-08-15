@@ -274,11 +274,10 @@ class TBot:
                     send_data = dict(subject=f'TBot DB connection error', text=f'{e}')
                     send_dev_message(data=send_data, by='telegram')
                     TBot.internet_loader.tbot_restart(request=request)
-
             res = asyncio.run(func(request=request)) \
                 if inspect.iscoroutinefunction(func.__wrapped__) \
                 else func(request=request)
-            if config.USE_DB and res.is_extra_log:
+            if config.USE_DB and action in TBot.mapping.keys() and res.is_extra_log:
                 res.extra_log(request_id=log_request.lr_id, action=action)
         duration = datetime.datetime.now() - start
         dur = float(str(duration.seconds) + '.' + str(duration.microseconds)[:3])
