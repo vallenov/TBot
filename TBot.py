@@ -14,7 +14,7 @@ import config
 from mysql.connector.errors import OperationalError
 from sqlalchemy import exc
 
-from loaders.loader import Loader, LoaderResponse
+from loaders.loader import Loader, LoaderResponse, LoaderRequest
 from loaders.internet_loader import InternetLoader
 from loaders.file_loader import FileLoader
 from loaders.db_loader import DBLoader
@@ -53,7 +53,7 @@ class TBot:
             chat_id = call.message.json['chat']['id']
             replace = TBot.replace(call.message)
             try:
-                TBot.safe_send(call.message.json['chat']['id'], replace, reply_markup=replace.markup)
+                TBot.safe_send(call.message.json['chat']['id'], replace)
             except TBotException:
                 logger.exception(f'Message to {chat_id} is not send')
                 TBot.safe_send(chat_id, LoaderResponse(text=f"Something is wrong"))
@@ -71,7 +71,7 @@ class TBot:
                     chat_id = message.chat.id
                 if chat_id and isinstance(chat_id, int):
                     try:
-                        TBot.safe_send(chat_id, replace, reply_markup=replace.markup)
+                        TBot.safe_send(chat_id, replace)
                     except TBotException:
                         logger.exception(f'Message to {chat_id} is not send')
                         TBot.safe_send(message.chat.id, LoaderResponse(text=f"Something is wrong"))
@@ -83,7 +83,7 @@ class TBot:
                     is_not_send = []
                     for user_chat_id in replace.chat_id:
                         try:
-                            TBot.safe_send(user_chat_id, replace, reply_markup=replace.markup)
+                            TBot.safe_send(user_chat_id, replace)
                         except TBotException:
                             is_not_send.append(str(user_chat_id))
                         else:
@@ -151,12 +151,11 @@ class TBot:
             logger.info(f'Connection to bot success')
 
     @staticmethod
-    def safe_send(chat_id: int, replace: LoaderResponse, reply_markup=None):
+    def safe_send(chat_id: int, replace: LoaderResponse):
         """
         Send message with several tries
         :param chat_id: id of users chat
         :param replace: replace dict
-        :param reply_markup: markup or None
         :return:
         """
         text = replace.text
@@ -182,12 +181,12 @@ class TBot:
                     elif text is not None:
                         if start + config.MESSAGE_MAX_LEN >= len(replace.text):
                             TBot.bot.send_message(chat_id, text[start:],
-                                                  reply_markup=reply_markup,
+                                                  reply_markup=replace.markup,
                                                   parse_mode=parse_mode)
                         else:
                             TBot.bot.send_message(chat_id,
                                                   text[start:start + config.MESSAGE_MAX_LEN],
-                                                  reply_markup=reply_markup,
+                                                  reply_markup=replace.markup,
                                                   parse_mode=parse_mode)
                         start += config.MESSAGE_MAX_LEN
                 except ConnectionResetError as cre:
@@ -221,7 +220,7 @@ class TBot:
         """
         Send result message to chat
         :param message: message from user
-        :return: replace dict
+        :return:
         """
         start = datetime.datetime.now()
         res = {}
@@ -260,7 +259,7 @@ class TBot:
             form_text = message.text.strip().rstrip()
             action = form_text.split()[0].lower()
             func = TBot.mapping.get(action, TBot.file_loader.get_hello)
-            _kwargs = dict(
+            request = LoaderRequest(
                 text=form_text,
                 privileges=privileges,
                 chat_id=chat_id
@@ -274,11 +273,11 @@ class TBot:
                 except (OperationalError, exc.OperationalError) as e:
                     send_data = dict(subject=f'TBot DB connection error', text=f'{e}')
                     send_dev_message(data=send_data, by='telegram')
-                    TBot.internet_loader.tbot_restart(privileges=privileges)
+                    TBot.internet_loader.tbot_restart(request=request)
 
-            res = asyncio.run(func(**_kwargs)) \
+            res = asyncio.run(func(request=request)) \
                 if inspect.iscoroutinefunction(func.__wrapped__) \
-                else func(**_kwargs)
+                else func(request=request)
             if config.USE_DB and res.is_extra_log:
                 res.extra_log(request_id=log_request.lr_id, action=action)
         duration = datetime.datetime.now() - start
