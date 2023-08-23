@@ -570,7 +570,13 @@ class DBLoader(Loader):
                         while func_name:
                             subbars.append(
                                 BaseSubGraphInfo(
-                                    'bar', None, 'green', 'Name of function', 'Count of requests', func_name[:index], cnt[:index]
+                                    'bar',
+                                    None,
+                                    'green',
+                                    'Name of function',
+                                    'Count of requests',
+                                    func_name[:index],
+                                    cnt[:index]
                                 )
                             )
                             func_name = func_name[index:]
