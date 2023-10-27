@@ -802,7 +802,7 @@ class InternetLoader(Loader):
             action = command[1].lower()
             if action not in valid_actions:
                 raise TBotException(code=6, return_message=f'Неправильное значение параметра: {action}')
-            data = InternetLoader.regular_request(url + f'serveo_{action}')
+            data = InternetLoader.regular_request(url + f'serveo_ssh_{action}')
             sys_mon_res = json.loads(data.text)
             resp.text = sys_mon_res['msg']
             return resp
