@@ -80,6 +80,7 @@ def main_markup(privileges: int) -> InlineKeyboardMarkup:
                    InlineKeyboardButton("🔃 Перезагрузка системы", callback_data="restart_system"),
                    InlineKeyboardButton("🖥 Ngrok", callback_data="ngrok"),
                    InlineKeyboardButton("📦 Ngrok DB", callback_data="ngrok_db"),
+                   InlineKeyboardButton("📦 Serveo (SSH)", callback_data="serveo_ssh"),
                    InlineKeyboardButton("📷 Камера", callback_data="camera"),
                    InlineKeyboardButton("👥 Пользователи", callback_data="users"),
                    InlineKeyboardButton("🌐 IP-адрес сервера", callback_data="ip"),

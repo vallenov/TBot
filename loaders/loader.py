@@ -70,6 +70,7 @@ class LoaderRequest:
         self.privileges = privileges
         self.chat_id = chat_id
 
+
 class LoaderResponse:
     def __init__(
         self,
