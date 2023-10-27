@@ -777,6 +777,41 @@ class InternetLoader(Loader):
             return e.return_message()
 
     @check_permission(needed_level='root')
+    def serveo_ssh(self, request: LoaderRequest) -> LoaderResponse:
+        """
+        Actions with serveo_ssh
+        :param:
+        :return: operation status or tunnel's info
+        """
+        resp = LoaderResponse()
+        try:
+            url = check_config_attribute('system-monitor')
+            command = request.text.split()
+            valid_actions = ['start', 'stop', 'restart']
+            if len(command) > 2:
+                raise TBotException(code=6, return_message=f'Неверное количество параметров: {len(command)}')
+            if len(command) == 1:
+                resp.text = 'Выберите действие'
+                resp.markup = custom_markup(
+                    command='serveo_ssh',
+                    category=valid_actions,
+                    smile='🖥'
+                )
+                resp.is_extra_log = False
+                return resp
+            action = command[1].lower()
+            if action not in valid_actions:
+                raise TBotException(code=6, return_message=f'Неправильное значение параметра: {action}')
+            data = InternetLoader.regular_request(url + f'serveo_{action}')
+            sys_mon_res = json.loads(data.text)
+            resp.text = sys_mon_res['msg']
+            return resp
+        except TBotException as e:
+            logger.exception(e.context)
+            e.send_error(traceback.format_exc())
+            return e.return_message()
+
+    @check_permission(needed_level='root')
     def ngrok_db(self, request: LoaderRequest) -> LoaderResponse:
         """
         Actions with ngrok_db
