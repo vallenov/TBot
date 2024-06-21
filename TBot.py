@@ -20,9 +20,11 @@ from loaders.file_loader import FileLoader
 from loaders.db_loader import DBLoader
 from send_service import send_dev_message
 from helpers import now_time, get_hash_name
-from loggers import get_logger, get_conversation_logger
+from loggers import get_logger, get_conversation_logger, init_dirs
 from exceptions import TBotException
 from users import tbot_users
+
+init_dirs()
 
 logger = get_logger(__name__)
 conversation_logger = get_conversation_logger()
@@ -42,7 +44,6 @@ class TBot:
     def init_bot():
         TBot.bot = telebot.TeleBot(config.TOKEN)
         TBot.check_bot_connection(TBot.bot)
-        TBot.init_dirs()
         TBot.init_loaders()
         TBot.mapping = {
             'exchange': TBot.internet_loader.get_exchange,
@@ -157,18 +158,7 @@ class TBot:
         TBot.db_loader = DBLoader()
         TBot.file_loader = FileLoader()
 
-    @staticmethod
-    def init_dirs():
-        """
-        Init downloads dir
-        """
-        curdir = os.curdir
-        if not os.path.exists(os.path.join(curdir, 'downloads')):
-            os.mkdir(os.path.join(curdir, 'downloads'))
-            os.chown(os.path.join(curdir, 'downloads'), 1000, 1000)
-        if not os.path.exists(os.path.join('downloads', 'text')):
-            os.mkdir(os.path.join('downloads', 'text'))
-            os.chown(os.path.join('downloads', 'text'), 1000, 1000)
+
 
     @staticmethod
     def check_bot_connection(bot_obj) -> None:
