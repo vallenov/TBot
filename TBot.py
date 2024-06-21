@@ -20,9 +20,11 @@ from loaders.file_loader import FileLoader
 from loaders.db_loader import DBLoader
 from send_service import send_dev_message
 from helpers import now_time, get_hash_name
-from loggers import get_logger, get_conversation_logger
+from loggers import get_logger, get_conversation_logger, init_dirs
 from exceptions import TBotException
 from users import tbot_users
+
+init_dirs()
 
 logger = get_logger(__name__)
 conversation_logger = get_conversation_logger()
@@ -42,6 +44,41 @@ class TBot:
     def init_bot():
         TBot.bot = telebot.TeleBot(config.TOKEN)
         TBot.check_bot_connection(TBot.bot)
+        TBot.init_loaders()
+        TBot.mapping = {
+            'exchange': TBot.internet_loader.get_exchange,
+            'weather': TBot.internet_loader.get_weather,
+            'quote': TBot.internet_loader.get_quote,
+            'wish': TBot.internet_loader.get_wish,
+            'news': TBot.internet_loader.get_news,
+            'affirmation': TBot.internet_loader.get_affirmation,
+            'events': TBot.internet_loader.async_events,
+            'food': TBot.internet_loader.get_restaurant,
+            'poem': TBot.db_loader.get_poem if config.USE_DB else TBot.file_loader.get_poem,
+            'divination': TBot.db_loader.poem_divination if config.USE_DB else TBot.file_loader.poem_divination,
+            'movie': TBot.internet_loader.get_random_movie,
+            'book': TBot.internet_loader.get_book,
+            'update': TBot.db_loader.update_user_data,
+            'users': TBot.db_loader.show_users,
+            'hidden_functions': TBot.file_loader.get_help,
+            'admins_help': TBot.file_loader.get_admins_help,
+            'send_other': TBot.db_loader.send_other,
+            'to_admin': TBot.db_loader.send_to_admin,
+            'send_all': TBot.db_loader.send_to_all_users,
+            'metaphorical_card': TBot.file_loader.get_metaphorical_card,
+            'russian_painting': TBot.internet_loader.get_russian_painting,
+            'ip': TBot.internet_loader.get_server_ip,
+            'statistic': TBot.db_loader.get_statistic,
+            'phone': TBot.internet_loader.get_phone_number_info,
+            'camera': TBot.file_loader.get_camera_capture,
+            'ngrok': TBot.internet_loader.ngrok,
+            'serveo_ssh': TBot.internet_loader.serveo_ssh,
+            'ngrok_db': TBot.internet_loader.ngrok_db,
+            'restart_bot': TBot.internet_loader.tbot_restart,
+            'restart_system': TBot.internet_loader.system_restart,
+            'systemctl': TBot.internet_loader.systemctl,
+            'allow_connection': TBot.internet_loader.allow_connection
+        }
 
         @TBot.bot.callback_query_handler(func=lambda call: True)
         def callback_query(call):
@@ -121,18 +158,7 @@ class TBot:
         TBot.db_loader = DBLoader()
         TBot.file_loader = FileLoader()
 
-    @staticmethod
-    def init_dirs():
-        """
-        Init downloads dir
-        """
-        curdir = os.curdir
-        if not os.path.exists(os.path.join(curdir, 'downloads')):
-            os.mkdir(os.path.join(curdir, 'downloads'))
-            os.chown(os.path.join(curdir, 'downloads'), 1000, 1000)
-        if not os.path.exists(os.path.join('downloads', 'text')):
-            os.mkdir(os.path.join('downloads', 'text'))
-            os.chown(os.path.join('downloads', 'text'), 1000, 1000)
+
 
     @staticmethod
     def check_bot_connection(bot_obj) -> None:
@@ -247,9 +273,11 @@ class TBot:
                     text=f'New user added. Chat_id: {chat_id}, login: {login}, first_name: {first_name}'
                 )
                 mail_resp = send_dev_message(send_data, 'mail')
+                if mail_resp and mail_resp['res'] == 'ERROR':
+                    logger.warning(f'Message do not received. MAIL = {mail_resp}')
                 telegram_resp = send_dev_message(send_data, 'telegram')
-                if mail_resp['res'] == 'ERROR' or telegram_resp['res'] == 'ERROR':
-                    logger.warning(f'Message do not received. MAIL = {mail_resp}, Telegram = {telegram_resp}')
+                if telegram_resp and telegram_resp['res'] == 'ERROR':
+                    logger.warning(f'Message do not received. Telegram = {telegram_resp}')
             else:
                 if tbot_users(chat_id).login != login or \
                         tbot_users(chat_id).first_name != first_name:
@@ -322,42 +350,6 @@ class TBot:
         Main method
         """
         TBot.init_bot()
-        TBot.init_dirs()
-        TBot.init_loaders()
-        TBot.mapping = {
-            'exchange': TBot.internet_loader.get_exchange,
-            'weather': TBot.internet_loader.get_weather,
-            'quote': TBot.internet_loader.get_quote,
-            'wish': TBot.internet_loader.get_wish,
-            'news': TBot.internet_loader.get_news,
-            'affirmation': TBot.internet_loader.get_affirmation,
-            'events': TBot.internet_loader.async_events,
-            'food': TBot.internet_loader.get_restaurant,
-            'poem': TBot.db_loader.get_poem if config.USE_DB else TBot.file_loader.get_poem,
-            'divination': TBot.db_loader.poem_divination if config.USE_DB else TBot.file_loader.poem_divination,
-            'movie': TBot.internet_loader.get_random_movie,
-            'book': TBot.internet_loader.get_book,
-            'update': TBot.db_loader.update_user_data,
-            'users': TBot.db_loader.show_users,
-            'hidden_functions': TBot.file_loader.get_help,
-            'admins_help': TBot.file_loader.get_admins_help,
-            'send_other': TBot.db_loader.send_other,
-            'to_admin': TBot.db_loader.send_to_admin,
-            'send_all': TBot.db_loader.send_to_all_users,
-            'metaphorical_card': TBot.file_loader.get_metaphorical_card,
-            'russian_painting': TBot.internet_loader.get_russian_painting,
-            'ip': TBot.internet_loader.get_server_ip,
-            'statistic': TBot.db_loader.get_statistic,
-            'phone': TBot.internet_loader.get_phone_number_info,
-            'camera': TBot.file_loader.get_camera_capture,
-            'ngrok': TBot.internet_loader.ngrok,
-            'serveo_ssh': TBot.internet_loader.serveo_ssh,
-            'ngrok_db': TBot.internet_loader.ngrok_db,
-            'restart_bot': TBot.internet_loader.tbot_restart,
-            'restart_system': TBot.internet_loader.system_restart,
-            'systemctl': TBot.internet_loader.systemctl,
-            'allow_connection': TBot.internet_loader.allow_connection
-        }
         # отправка сообщения о начале работы только с прода
         if config.PROD:
             logger.info(f'Send start message to root users')

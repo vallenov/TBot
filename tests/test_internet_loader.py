@@ -2,19 +2,21 @@ import re
 from bs4 import BeautifulSoup
 
 from loaders.internet_loader import InternetLoader
+from loaders.loader import LoaderRequest
 
 
 def test_ip():
     il = InternetLoader()
-    res = il.get_server_ip(privileges=50)
-    ip = res.get('text', False)
+    request = LoaderRequest(text='', privileges=50, chat_id='')
+    res = il.get_server_ip(request)
+    ip = res.text
     assert ip, 'No response data'
     fnd = re.search(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$', ip)
     if fnd:
         fnd = fnd.group(0)
         assert fnd
     else:
-        assert False, f"Not ip in response ({res.get('text', '')})"
+        assert False, f"Not ip in response ({res.text})"
 
 
 def test_site_to_lxml():
