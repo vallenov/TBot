@@ -31,7 +31,7 @@ class InternetLoader(Loader):
 
     def __init__(self):
         try:
-            #self.get_cities_coordinates()
+            self.get_cities_coordinates()
             self.book_genres = {}
         except TBotException as e:
             logger.exception(e.context)
@@ -118,6 +118,7 @@ class InternetLoader(Loader):
         :param:
         :return:
         """
+        print('aaaaaaaaaaaaaaaaaaaaaaaa')
         url = check_config_attribute('city_coordinates_url')
         soup = InternetLoader.site_to_lxml(url)
         table_raw = soup.find('table', class_='tablesorter')
@@ -133,7 +134,7 @@ class InternetLoader(Loader):
                 continue
 
     @check_permission()
-    def get_weather(self, text: str, request: LoaderRequest) -> LoaderResponse:
+    def get_weather(self, request: LoaderRequest) -> LoaderResponse:
         """
         Get weather from internet
         :param:
@@ -147,7 +148,7 @@ class InternetLoader(Loader):
                     message=f"Coordinates is empty",
                     send=True
                 )
-            cmd = text.split()
+            cmd = request.text.split()
             if len(cmd) == 1:
                 resp.text = 'Выберите город'
                 resp.markup = custom_markup(
