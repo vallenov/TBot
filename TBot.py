@@ -9,6 +9,7 @@ import urllib3.exceptions
 import math
 import inspect
 import asyncio
+import aiohttp
 import config
 
 from mysql.connector.errors import OperationalError
@@ -249,7 +250,7 @@ class TBot:
         :return:
         """
         start = datetime.datetime.now()
-        res = {}
+        res = LoaderResponse()
         chat_id = str(message.json['chat']['id'])
         if config.USE_DB:
             login = message.json['chat'].get('username', None)
@@ -302,9 +303,16 @@ class TBot:
                     send_data = dict(subject=f'TBot DB connection error', text=f'{e}')
                     send_dev_message(data=send_data, by='telegram')
                     TBot.internet_loader.tbot_restart(request=request)
-            res = asyncio.run(func(request=request)) \
-                if inspect.iscoroutinefunction(func.__wrapped__) \
-                else func(request=request)
+            try:
+                res = asyncio.run(func(request=request)) \
+                    if inspect.iscoroutinefunction(func.__wrapped__) \
+                    else func(request=request)
+            except (
+                aiohttp.client_exceptions.ClientConnectionError,
+                aiohttp.client_exceptions.ClientConnectorCertificateError,
+                RuntimeError
+            ):
+                pass
             if config.USE_DB and action in TBot.mapping.keys() and res.is_extra_log:
                 res.extra_log(request_id=log_request.lr_id, action=action)
         duration = datetime.datetime.now() - start
