@@ -45,7 +45,7 @@ def test_get_users():
     assert len(tbot_users.all()) > 0, 'Error get users from DB'
 
 
-def test_add_user1(disable_db_commit):
+def test_add_user(disable_db_commit):
     dl = DBLoader()
     chat_id = '12345678'
     dl.add_user(chat_id=chat_id, privileges=30, first_name='test', login='')
