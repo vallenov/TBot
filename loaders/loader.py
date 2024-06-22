@@ -70,6 +70,9 @@ class LoaderRequest:
         self.privileges = privileges
         self.chat_id = chat_id
 
+    def __repr__(self):
+        return f'TEXT: {self.text}, PRIVILEGES: {self.privileges}, CHAT_ID: {self.chat_id}'
+
 
 class LoaderResponse:
     def __init__(
@@ -96,3 +99,11 @@ class LoaderResponse:
         if lr:
             lr.action = action
             db.session.commit()
+
+    def __repr__(self):
+        return (f'CHAT_ID: {self.chat_id}, '
+                f'TEXT: {self.text}, '
+                f'PHOTO: {self.photo}, '
+                f'MARKUP: {self.markup}, '
+                f'PARSE_MODE: {self.parse_mode}, '
+                f'IS_EXTRA_LOG: {self.is_extra_log}')
