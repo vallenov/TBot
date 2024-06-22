@@ -1,6 +1,7 @@
 import re
 from bs4 import BeautifulSoup
 
+import config
 from loaders.internet_loader import InternetLoader
 from loaders.loader import LoaderRequest
 
@@ -30,3 +31,13 @@ def test_site_to_lxml():
         assert fnd
     else:
         assert False, f'Wrong response data {res}'
+
+
+def test_get_exchange():
+    il = InternetLoader()
+    request = LoaderRequest(text='', privileges=30, chat_id='')
+    res = il.get_exchange(request)
+    search_raw = re.search(r'\D{3}', res.text)
+    assert search_raw
+    currency = search_raw.group(0)
+    assert currency in config.EXCHANGES_CURRENCIES
