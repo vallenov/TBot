@@ -96,7 +96,7 @@ class InternetLoader(Loader):
         resp = LoaderResponse()
         try:
             url = check_config_attribute('exchange_url')
-            ex = ['USD', 'EUR']
+            ex = config.EXCHANGES_CURRENCIES
             soup = InternetLoader.site_to_lxml(url)
             parse = soup.find_all('tr')
             exchange = {}
