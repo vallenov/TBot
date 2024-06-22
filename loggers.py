@@ -15,7 +15,6 @@ def init_dirs():
     if not os.path.exists(os.path.join('downloads', 'text')):
         os.mkdir(os.path.join('downloads', 'text'))
         os.chown(os.path.join('downloads', 'text'), 1000, 1000)
-    print(os.path.join(curdir, 'tests', 'downloads'))
     if not os.path.exists(os.path.join(curdir, 'tests', 'downloads')):
         os.mkdir(os.path.join(curdir, 'tests', 'downloads'))
         os.chown(os.path.join(curdir, 'tests', 'downloads'), 1000, 1000)
