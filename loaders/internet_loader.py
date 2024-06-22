@@ -118,7 +118,6 @@ class InternetLoader(Loader):
         :param:
         :return:
         """
-        print('aaaaaaaaaaaaaaaaaaaaaaaa')
         url = check_config_attribute('city_coordinates_url')
         soup = InternetLoader.site_to_lxml(url)
         table_raw = soup.find('table', class_='tablesorter')
