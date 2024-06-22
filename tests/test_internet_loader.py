@@ -1,6 +1,9 @@
 import re
 import os
 from bs4 import BeautifulSoup
+import asyncio
+import aiohttp
+import pytest
 
 import config
 from loaders.internet_loader import InternetLoader
@@ -38,12 +41,27 @@ def test_site_to_lxml():
         assert False, f'Wrong response data {res}'
 
 
-def test_routes():
+@pytest.mark.asyncio
+async def test_routes():
     """Test all the routes"""
     il = InternetLoader()
-    url = check_config_attribute('exchange_url')
-    res = il.regular_request(url)
-    assert res.status_code == 200
+    tasks = []
+    il.async_url_data = []
+    headers = {
+        'User-Agent': 'Mozilla/5.0',
+        'Connection': 'close'
+    }
+    async with aiohttp.ClientSession(headers=headers) as session:
+        for name, url in config.LINKS.items():
+            if name in (
+                'system-monitor'
+            ):
+                continue
+            url = check_config_attribute(name)
+            tasks.append(asyncio.create_task(il._get_url(session, url)))
+        await asyncio.gather(*tasks)
+        for res in il.async_url_data:
+            assert res.status == 200
 
 
 def test_get_exchange():
