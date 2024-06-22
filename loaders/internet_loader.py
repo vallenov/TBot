@@ -313,11 +313,19 @@ class InternetLoader(Loader):
         """
         Get async url data
         """
-        async with session.get(url) as res:
-            data = await res.text()
-            if res.status >= 400:
-                raise TBotException(code=1, message=f'URL: {url}. Bad response status: {res.status}')
-            self.async_url_data.append(data)
+        try:
+            async with session.get(url) as res:
+                await res.text()
+                if res.status >= 400:
+                    raise TBotException(code=1, message=f'URL: {url}. Bad response status: {res.status}')
+                self.async_url_data.append(res)
+        except (
+            TBotException,
+            aiohttp.client_exceptions.ClientConnectionError,
+            aiohttp.client_exceptions.ClientConnectorCertificateError,
+            RuntimeError
+        ):
+            pass
 
     @check_permission()
     async def async_events(self, request: LoaderRequest) -> LoaderResponse:
@@ -329,13 +337,19 @@ class InternetLoader(Loader):
         self.async_url_data = []
         tasks = []
         resp = LoaderResponse()
+        headers = {
+            'User-Agent': 'Mozilla/5.0',
+            'Connection': 'close'
+        }
         try:
             url = check_config_attribute('events_url')
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession(headers=headers) as session:
                 tasks.append(asyncio.create_task(self._get_url(session, url)))
                 await asyncio.gather(*tasks)
                 tasks = []
-                soup = BeautifulSoup(self.async_url_data.pop(), 'lxml')
+                res = self.async_url_data.pop()
+                res_text = await res.text()
+                soup = BeautifulSoup(res_text, 'lxml')
                 if not soup:
                     raise TBotException(code=1, message=f'Bad soup parsing {url}')
                 links = {}
@@ -349,19 +363,21 @@ class InternetLoader(Loader):
                 events = {}
                 for raw in self.async_url_data:
                     events_links = []
-                    soup_curr = BeautifulSoup(raw, 'lxml')
+                    raw_text = await raw.text()
+                    soup_curr = BeautifulSoup(raw_text, 'lxml')
                     if not soup_curr:
                         raise TBotException(code=1, message=f'Bad soup parsing')
                     name = soup_curr.find('title').text.split('.')[0]
-                    raw_div = soup_curr.find('div', class_='feed-container')
+                    raw_div = soup_curr.find('div', class_='feed-child')
                     article = raw_div.find_all('article', class_='post post-rect')
                     for art in article:
-                        h2s = art.find_all('h2', class_='post-title')
-                        for raw_h2 in h2s:
+                        p_raw = art.find_all('p', class_='post-title')
+                        for raw_h2 in p_raw:
                             a = raw_h2.find('a')
                             descr = a.text.replace('\n', '')
                             events_links.append(f"{descr}\n{a.get('href')}\n")
-                    events[name] = random.choice(events_links)
+                    if events_links:
+                        events[name] = random.choice(events_links)
                 resp.text = dict_to_str(events, '\n')
                 return resp
         except TBotException as e:
