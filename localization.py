@@ -28,6 +28,7 @@ class Eng(Language):
         'users': 'users',
         'hidden_functions': 'hidden_functions',
         'help': 'hidden_functions',
+        'commands': 'commands',
         'admins_help': 'admins_help',
         'send_other': 'send_other',
         'to_admin': 'to_admin',
@@ -67,13 +68,20 @@ class Rus(Language):
             'книга': 'book',
             'пользователи': 'users',
             'помощь': 'hidden_functions',
+            'команды': 'commands',
             'админу': 'to_admin',
             'карта': 'metaphorical_card',
             'картина': 'russian_painting',
-            'statistic': 'statistic',
             'телефон': 'phone',
-            'камера': 'camera'
+            'камера': 'camera',
         }
+
+    def to_message(self):
+        items = []
+        for key in self.mapping.keys():
+            if key not in ('камера', 'пользователи'):
+                items.append(f'🔹 {key}')
+        return '\n'.join(items)
 
 
 class Localization:
