@@ -117,7 +117,9 @@ class TBot:
                         TBot.safe_send(message.chat.id, LoaderResponse(text=f"Something is wrong"))
                     else:
                         if chat_id != message.chat.id:
-                            TBot.safe_send(message.chat.id, LoaderResponse(text=f"Something is wrong"))
+                            TBot.safe_send(
+                                message.chat.id, LoaderResponse(text=f"Сообщение отправлено пользователю {chat_id}")
+                            )
                 elif chat_id and isinstance(chat_id, list):
                     is_send = []
                     is_not_send = []
@@ -129,9 +131,19 @@ class TBot:
                         else:
                             is_send.append(str(user_chat_id))
                     if is_send:
-                        TBot.safe_send(message.chat.id, LoaderResponse(text=f"Something is wrong"))
+                        chat_ids = ', '.join(is_send)
+                        TBot.safe_send(
+                            message.chat.id, LoaderResponse(
+                                text=f"Сообщения доставлены пользователям: {chat_ids}"
+                            )
+                        )
                     if is_not_send:
-                        TBot.safe_send(message.chat.id, LoaderResponse(text=f"Something is wrong"))
+                        chat_ids = ', '.join(is_send)
+                        TBot.safe_send(
+                            message.chat.id, LoaderResponse(
+                                text=f"Сообщения не доставлены пользователям: {chat_ids}"
+                            )
+                        )
             else:
                 try:
                     TBot.save_file(message)
@@ -260,10 +272,12 @@ class TBot:
             if chat_id not in tbot_users:
                 privileges = Loader.privileges_levels['regular']
                 try:
-                    TBot.db_loader.add_user(chat_id=chat_id,
-                                            privileges=privileges,
-                                            login=login,
-                                            first_name=first_name)
+                    TBot.db_loader.add_user(
+                        chat_id=chat_id,
+                        privileges=privileges,
+                        login=login,
+                        first_name=first_name
+                    )
                 except (OperationalError, exc.OperationalError) as e:
                     send_data = dict(
                         subject=f'TBot DB connection error',
