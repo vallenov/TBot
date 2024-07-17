@@ -12,6 +12,7 @@ def custom_markup(
         category: list or dict,
         subcommands: list = [],
         smile: str = '🔹',
+        cut_id: bool = False,  # обрезка id, который идет после команды
         row_width=1) -> InlineKeyboardMarkup:
     """
     Make custom markup
@@ -36,6 +37,7 @@ def custom_markup(
     for cat in item:
         short_cat = cat.split()[0]
         short_cat = short_cat.replace(',', '')
+        cat = cat if not cut_id else ' '.join(cat.split()[1:])
         markup.add(
             InlineKeyboardButton(
                 f'{smile} {cat}',
