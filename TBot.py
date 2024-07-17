@@ -63,6 +63,7 @@ class TBot:
             'update': TBot.db_loader.update_user_data,
             'users': TBot.db_loader.show_users,
             'hidden_functions': TBot.file_loader.get_help,
+            'commands': TBot.file_loader.commands_list,
             'admins_help': TBot.file_loader.get_admins_help,
             'send_other': TBot.db_loader.send_other,
             'to_admin': TBot.db_loader.send_to_admin,
