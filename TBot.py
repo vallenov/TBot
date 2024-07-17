@@ -24,6 +24,7 @@ from helpers import now_time, get_hash_name
 from loggers import get_logger, get_conversation_logger, init_dirs
 from exceptions import TBotException
 from users import tbot_users
+from localization import localization
 
 init_dirs()
 
@@ -62,6 +63,7 @@ class TBot:
             'update': TBot.db_loader.update_user_data,
             'users': TBot.db_loader.show_users,
             'hidden_functions': TBot.file_loader.get_help,
+            'commands': TBot.file_loader.commands_list,
             'admins_help': TBot.file_loader.get_admins_help,
             'send_other': TBot.db_loader.send_other,
             'to_admin': TBot.db_loader.send_to_admin,
@@ -287,6 +289,7 @@ class TBot:
         if message.content_type == 'text':
             form_text = message.text.strip().rstrip()
             action = form_text.split()[0].lower()
+            action = localization.get(action)
             func = TBot.mapping.get(action, TBot.file_loader.get_hello)
             request = LoaderRequest(
                 text=form_text,

@@ -371,6 +371,7 @@ class DBLoader(Loader):
         :return: poesy string
         """
         resp = LoaderResponse()
+        count = 10  # максимальное количество вариантов стихов, которые выдаются методом
         try:
             if config.USE_DB:
                 lst = request.text.split()
@@ -378,17 +379,44 @@ class DBLoader(Loader):
                     poem = self._get_random_poem()
                     if not poem:
                         raise TBotException(code=3, message='Стих не найден')
+                    resp.text = f"{poem.author}\n\n{poem.name}\n\n{poem.text}"
+                    return resp
                 else:
-                    search_string = ' '.join(lst[1:])
-                    poems = md.Poems.query.filter(
-                        md.Poems.author.like(f'%{search_string}%') | md.Poems.name.like(f'%{search_string}%')
-                    ).all()
-                    if poems:
-                        poem = random.choice(poems)
+                    try:
+                        poem_id = int(lst[1])
+                    except ValueError:
+                        poem_id = None
+                    if len(lst) == 2 and poem_id is not None:
+                        poem = md.Poems.query.filter(md.Poems.p_id == poem_id).first()
+                        resp.text = f"{poem.author}\n\n{poem.name}\n\n{poem.text}"
+                        return resp
                     else:
-                        raise TBotException(code=3, message='Стих не найден')
-                resp.text = f"{poem.author}\n\n{poem.name}\n\n{poem.text}"
-                return resp
+                        search_string = ' '.join(lst[1:])
+                        poems = md.Poems.query.filter(
+                            md.Poems.author.like(f'%{search_string}%') |
+                            md.Poems.name.like(f'%{search_string}%') |
+                            md.Poems.text.like(f'%{search_string}%')
+                        ).order_by(
+                            md.Poems.author
+                        ).all()
+                    if not poems:
+                        raise TBotException(code=3, return_message='По вашему запросу ничего не найдено')
+                    if len(poems) == 1:
+                        resp.text = f"{poems[0].author}\n\n{poems[0].name}\n\n{poems[0].text}"
+                        return resp
+                    else:
+                        poems_ids = []
+                        poems = poems if len(poems) < count else poems[:count]
+                        for poem in poems:
+                            poems_ids.append(f'{poem.p_id} {poem.author}. {poem.name}')
+                        resp.text = 'Вот, несколько стихов, подходящих под описание'
+                        resp.markup = custom_markup(
+                            command='poem',
+                            category=poems_ids,
+                            smile='🪶',
+                            cut_id=True
+                        )
+                        return resp
             else:
                 raise TBotException(code=3, return_message='Нет подключения к БД')
         except TBotException as e:
