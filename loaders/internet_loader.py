@@ -201,13 +201,29 @@ class InternetLoader(Loader):
         try:
             url = check_config_attribute('quote_url')
             soup = InternetLoader.site_to_lxml(url)
-            quotes = soup.find_all('div', class_='quote')
-            random_quote = random.choice(quotes)
-            author = random_quote.find('a')
-            text = random_quote.find('div', class_='quote_name')
-            quote = dict()
-            quote[text.text] = author.text
-            resp.text = dict_to_str(quote, '\n')
+            random_quote_block = soup.find('div', class_='random__quote')
+            quote_text_block_raw = random_quote_block.find('div', class_='node__content')
+            quote_text_raw = quote_text_block_raw.find_all('div', class_='field-items')
+            lst = []
+            is_author = False
+            for i, part in enumerate(quote_text_raw):
+
+                if i == 0:
+                    quote = part.find('p')
+                    lst.append(quote.text)
+                elif i == 1:
+                    data = part.find('a')
+                    if data:
+                        lst.append(data.text)
+                        is_author = True
+                else:
+                    data = part.find('a')
+                    if data and not is_author:
+                        lst.append(data.text)
+                        is_author = True
+                    continue
+            random_quote = '\n\n'.join(lst)
+            resp.text = random_quote
             return resp
         except TBotException as e:
             logger.exception(e.context)
