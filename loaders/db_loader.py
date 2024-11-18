@@ -8,7 +8,11 @@ from sqlalchemy.sql import func
 import config
 
 from loaders.loader import Loader, check_permission, LoaderResponse, LoaderRequest
-from helpers import dict_to_str, cut_commands
+from helpers import (
+    dict_to_str,
+    cut_commands,
+    MarkDown as mdown,
+)
 import models as md
 from extentions import db
 from markup import custom_markup
@@ -267,9 +271,12 @@ class DBLoader(Loader):
             elif len(lst) == 2:
                 if not tbot_users(lst[1]):
                     raise TBotException(code=3, return_message=f'Пользователь {lst[1]} не найден')
-                user_info = {'chat_id': lst[1]}
-                user_info.update(tbot_users(lst[1]).as_dict())
-                resp.text = dict_to_str(user_info, ': ')
+                # user_info = {'chat_id': mdown.fixed_width(lst[1])}
+                user = tbot_users(lst[1])
+                user.chat_id = mdown.fixed_width(user.chat_id)
+                out_text = dict_to_str(user.as_dict(), ': ')
+                resp.text = out_text.replace('_', ' ')
+                resp.parse_mode = 'MarkdownV2'
             else:
                 raise TBotException(code=6, return_message=f'Неверное количество параметров: {len(lst)}')
             return resp
