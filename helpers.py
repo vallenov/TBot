@@ -103,3 +103,11 @@ def shild_special_symbols(inp: str) -> str:
     for symbol in special_symbols:
         inp = inp.replace(symbol, fr'\{symbol}')
     return inp
+
+
+class MarkDown:
+
+    @staticmethod
+    def fixed_width(text):
+        """Моноширинный"""
+        return f'`{text}`'
