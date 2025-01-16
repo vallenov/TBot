@@ -359,11 +359,20 @@ class TBot:
             file_info = TBot.bot.get_file(message.video.file_id)
         else:
             raise TBotException(code=2, return_message='Я пока не умею обрабатывать этот тип данных')
-        if not os.path.exists(os.path.join(curdir, 'downloads', message.content_type)):
-            os.mkdir(os.path.join(curdir, 'downloads', message.content_type))
-            os.chown(os.path.join(curdir, 'downloads', message.content_type), 1000, 1000)
-        file_name = os.path.join(curdir, 'downloads', message.content_type,
-                                 f'{now_time()}{get_hash_name()}{file_extension}')
+        if not os.path.exists(
+            os.path.join(curdir, 'downloads', message.content_type)
+        ):
+            os.mkdir(
+                os.path.join(curdir, 'downloads', message.content_type)
+            )
+            os.chown(
+                os.path.join(curdir, 'downloads', message.content_type),
+                1000,
+                1000
+            )
+        file_name = os.path.join(
+            curdir, 'downloads', message.content_type, f'{now_time()}{get_hash_name()}{file_extension}'
+        )
         downloaded_info = TBot.bot.download_file(file_info.file_path)
         with open(file_name, 'wb') as new_file:
             new_file.write(downloaded_info)
