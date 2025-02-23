@@ -5,7 +5,7 @@ import telebot
 import os
 import datetime
 import requests
-import urllib3.exceptions
+import urllib3.exceptions as url_lib_exceptions
 import math
 import inspect
 import asyncio
@@ -234,8 +234,8 @@ class TBot:
                     logger.exception(f'ConnectionResetError exception: {cre}')
                 except requests.exceptions.ConnectionError as rec:
                     logger.exception(f'requests.exceptions.ConnectionError exception: {rec}')
-                except urllib3.exceptions.ProtocolError as uep:
-                    logger.exception(f'urllib3.exceptions.ProtocolError exception: {uep}')
+                except url_lib_exceptions.ProtocolError as uep:
+                    logger.exception(f'ProtocolError exception: {uep}')
                 except TypeError as te:
                     logger.exception(f'File not ready yet: {te}')
                     time.sleep(1)
@@ -388,7 +388,16 @@ class TBot:
         if config.PROD:
             logger.info(f'Send start message to root users')
             send_dev_message({'text': 'TBot is started'}, 'telegram')
-        TBot.bot.infinity_polling(none_stop=True)
+        while True:
+            try:
+                TBot.bot.infinity_polling(none_stop=True)
+            except (
+                url_lib_exceptions.NewConnectionError,
+                url_lib_exceptions.MaxRetryError,
+                url_lib_exceptions.ConnectionError,
+            ) as url_lib_ex:
+                logger.exception(url_lib_ex)
+
 
 
 if __name__ == '__main__':

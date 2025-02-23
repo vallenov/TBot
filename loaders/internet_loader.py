@@ -64,9 +64,7 @@ class InternetLoader(Loader):
         except TBotException:
             raise
         except requests.exceptions.ConnectionError:
-            raise TBotException(code=1,
-                                message=f"Error connection to {check_config_attribute('system-monitor')}",
-                                send=True)
+            raise TBotException(code=1, message=f"Error connection to {url}", send=True)
         except Exception:
             raise TBotException(code=100, message=f'Exception in {__name__}', send=True)
 
